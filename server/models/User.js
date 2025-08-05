@@ -37,6 +37,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'inactive'],
     default: 'active'
+  },
+  businessUnits: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BusinessUnit'
+  }],
+  defaultBusinessUnit: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BusinessUnit'
   }
 }, {
   timestamps: true  // This automatically adds createdAt and updatedAt

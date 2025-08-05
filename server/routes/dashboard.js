@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const BusinessUnit = require('../models/BusinessUnit');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -8,6 +9,10 @@ router.get('/stats', async (req, res) => {
     // Get user statistics
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ status: { $ne: 'inactive' } });
+
+    // Get business unit statistics
+    const totalBusinessUnits = await BusinessUnit.countDocuments();
+    const activeBusinessUnits = await BusinessUnit.countDocuments({ isActive: true });
 
     // For now, we'll use placeholder data for other modules
     // These can be replaced with real models when those modules are implemented
@@ -17,6 +22,12 @@ router.get('/stats', async (req, res) => {
         active: activeUsers,
         count: activeUsers,
         label: 'Active Users'
+      },
+      businessUnits: {
+        total: totalBusinessUnits,
+        active: activeBusinessUnits,
+        count: activeBusinessUnits,
+        label: 'Business Units'
       },
       billing: {
         total: 45,

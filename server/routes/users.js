@@ -5,7 +5,10 @@ const User = require('../models/User');
 // GET /api/users - Get all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find({}).sort({ createdAt: -1 });
+    const users = await User.find({})
+      .populate('businessUnits', 'code name')
+      .populate('defaultBusinessUnit', 'code name')
+      .sort({ createdAt: -1 });
     res.json({
       success: true,
       data: users,
@@ -23,7 +26,9 @@ router.get('/', async (req, res) => {
 // GET /api/users/:id - Get user by ID
 router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id)
+      .populate('businessUnits', 'code name')
+      .populate('defaultBusinessUnit', 'code name');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -48,8 +53,8 @@ router.post('/', async (req, res) => {
   console.log('=== CREATE USER ROUTE HIT ===');
   try {
     console.log('Received request body:', req.body);
-    const { firstName, lastName, email, password, phone, role, status } = req.body;
-    console.log('Extracted fields:', { firstName, lastName, email, password: password ? '[HIDDEN]' : 'MISSING', phone, role, status });
+    const { firstName, lastName, email, password, phone, role, status, businessUnits, defaultBusinessUnit } = req.body;
+    console.log('Extracted fields:', { firstName, lastName, email, password: password ? '[HIDDEN]' : 'MISSING', phone, role, status, businessUnits, defaultBusinessUnit });
 
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
@@ -69,7 +74,9 @@ router.post('/', async (req, res) => {
       password,
       phone,
       role,
-      status
+      status,
+      businessUnits: businessUnits || [],
+      defaultBusinessUnit: defaultBusinessUnit || null
     });
 
     console.log('User object created, saving...');
@@ -93,7 +100,7 @@ router.post('/', async (req, res) => {
 // PUT /api/users/:id - Update user
 router.put('/:id', async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, role, status } = req.body;
+    const { firstName, lastName, email, password, phone, role, status, businessUnits, defaultBusinessUnit } = req.body;
 
     // Check if another user with the same email exists
     if (email) {
@@ -117,6 +124,8 @@ router.put('/:id', async (req, res) => {
       phone,
       role,
       status,
+      businessUnits: businessUnits || [],
+      defaultBusinessUnit: defaultBusinessUnit || null,
       updatedAt: Date.now()
     };
 

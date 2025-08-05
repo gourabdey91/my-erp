@@ -44,6 +44,16 @@ const Dashboard = ({ onViewChange }) => {
           enabled: true
         },
         {
+          id: 'business-units',
+          title: 'Business Units',
+          subtitle: 'Manage Business Units',
+          icon: '🏢',
+          count: '...',
+          countLabel: 'Business Units',
+          onClick: () => onViewChange('business-units'),
+          enabled: true
+        },
+        {
           id: 'billing',
           title: 'Billing & Invoicing',
           subtitle: 'Create & Manage Bills',
@@ -105,6 +115,16 @@ const Dashboard = ({ onViewChange }) => {
         count: stats.users.count,
         countLabel: stats.users.label,
         onClick: () => onViewChange('users'),
+        enabled: true
+      },
+      {
+        id: 'business-units',
+        title: 'Business Units',
+        subtitle: 'Manage Business Units',
+        icon: '🏢',
+        count: stats.businessUnits?.count || '...',
+        countLabel: stats.businessUnits?.label || 'Business Units',
+        onClick: () => onViewChange('business-units'),
         enabled: true
       },
       {

@@ -235,3 +235,78 @@
     font-size: 16px;
   }
 }
+
+/* Business Unit Styles */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background-color: #f8f9fa;
+  border-color: #0070f3;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex: 1;
+  margin: 0;
+}
+
+.bu-code {
+  font-family: 'Courier New', monospace;
+  background-color: #e7f3ff;
+  color: #0070f3;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.bu-name {
+  color: #333;
+  font-weight: 500;
+}
+
+.checkbox-item:hover .bu-code {
+  background-color: #0070f3;
+  color: white;
+}
+
+/* Default Business Unit Select */
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: white;
+  transition: border-color 0.2s ease;
+}
+
+select:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.1);
+}

@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import './Navigation.css';
 
 const Navigation = ({ currentView, onViewChange }) => {
+  const { currentBusinessUnit, userBusinessUnits, switchBusinessUnit } = useBusinessUnit();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  const handleBusinessUnitSwitch = (businessUnit) => {
+    switchBusinessUnit(businessUnit);
+    setIsUserMenuOpen(false);
+  };
+
+  const toggleUserMenu = () => {
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  const handleLogout = () => {
+    // TODO: Implement logout functionality
+    console.log('Logout clicked');
+    setIsUserMenuOpen(false);
+  };
+
   return (
     <nav className="navigation">
       <div className="nav-brand" onClick={() => onViewChange('dashboard')}>
@@ -16,11 +35,68 @@ const Navigation = ({ currentView, onViewChange }) => {
         </div>
         <h1>My ERP Launchpad</h1>
       </div>
-      <div className="nav-user-info">
-        <div className="user-avatar">
-          <span>A</span>
+      
+      <div className="nav-right">
+        <div className="nav-user-info" onClick={toggleUserMenu}>
+          <div className="user-avatar">
+            <span>A</span>
+          </div>
+          <span className="user-name">Admin User</span>
+          <span className={`dropdown-arrow ${isUserMenuOpen ? 'open' : ''}`}>▼</span>
+          
+          {isUserMenuOpen && (
+            <div className="user-menu">
+              <div className="user-menu-header">
+                <div className="user-avatar-large">
+                  <span>A</span>
+                </div>
+                <div className="user-details">
+                  <div className="user-name-large">Admin User</div>
+                  <div className="user-email">admin@example.com</div>
+                </div>
+              </div>
+              
+              <div className="menu-divider"></div>
+              
+              <div className="menu-section">
+                <div className="menu-section-title">
+                  🏢 Switch Business Unit
+                  {currentBusinessUnit && (
+                    <span className="current-bu-indicator">
+                      (Current: {currentBusinessUnit.code})
+                    </span>
+                  )}
+                </div>
+                {userBusinessUnits.length > 0 ? (
+                  userBusinessUnits.map((bu) => (
+                    <div 
+                      key={bu._id} 
+                      className={`menu-item bu-item ${currentBusinessUnit?._id === bu._id ? 'active' : ''}`}
+                      onClick={() => handleBusinessUnitSwitch(bu)}
+                    >
+                      <span className="bu-item-code">{bu.code}</span>
+                      <span className="bu-item-name">{bu.name}</span>
+                      {currentBusinessUnit?._id === bu._id && <span className="current-indicator">✓</span>}
+                    </div>
+                  ))
+                ) : (
+                  <div className="menu-item disabled">
+                    <span>No business units assigned</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="menu-divider"></div>
+              
+              <div className="menu-item" onClick={() => setIsUserMenuOpen(false)}>
+                <span>⚙️ Settings</span>
+              </div>
+              <div className="menu-item logout" onClick={handleLogout}>
+                <span>🔓 Logout</span>
+              </div>
+            </div>
+          )}
         </div>
-        <span className="user-name">Admin User</span>
       </div>
     </nav>
   );
