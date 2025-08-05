@@ -5,15 +5,22 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Database connection with environment-based naming
+const mongoUri = process.env.MONGO_URI;
+console.log(`Starting in ${NODE_ENV} mode`);
+console.log(`Connecting to database: ${mongoUri.split('@')[1].split('?')[0]}`); // Log only the cluster info, not credentials
 
 // CORS configuration for production
 const corsOptions = {
   origin: [
     'http://localhost:3000', // Development
     'https://localhost:3000', // Development with HTTPS
+    process.env.CORS_ORIGIN, // Production frontend URL
     // Add your production URLs here after deployment
     // 'https://your-app-name.netlify.app'
-  ],
+  ].filter(Boolean), // Remove undefined values
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -35,13 +42,22 @@ app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/business-units', businessUnitRoutes);
 
-// MongoDB connection placeholder
-mongoose.connect(process.env.MONGO_URI);
+// MongoDB connection with environment awareness
+mongoose.connect(mongoUri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 mongoose.connection.once('open', () => {
-  console.log('Connected to MongoDB');
+  console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
+  const dbName = mongoose.connection.db.databaseName;
+  console.log(`Database: ${dbName}`);
+});
+
+mongoose.connection.on('error', (error) => {
+  console.error('MongoDB connection error:', error);
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
 });
