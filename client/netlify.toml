@@ -1,0 +1,14 @@
+# Netlify Deployment Configuration
+# This file tells Netlify how to build and deploy your frontend
+
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
