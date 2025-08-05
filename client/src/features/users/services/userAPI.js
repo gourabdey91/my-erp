@@ -1,15 +1,6 @@
-import axios from 'axios';
+import api from '../../../shared/services/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// User API functions
+// User-specific API functions
 export const userAPI = {
   // Get all users
   getUsers: () => api.get('/users'),
@@ -30,4 +21,4 @@ export const userAPI = {
   updateUserStatus: (id, status) => api.patch(`/users/${id}/status`, { status }),
 };
 
-export default api;
+export default userAPI;

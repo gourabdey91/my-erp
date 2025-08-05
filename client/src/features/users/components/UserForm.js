@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { userAPI } from '../services/api';
+import { userAPI } from '../services/userAPI';
 import './UserForm.css';
 
 const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {

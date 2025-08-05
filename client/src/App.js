@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Navigation from './components/Navigation';
-import Dashboard from './components/Dashboard';
-import Users from './components/Users';
+import Navigation from './shared/components/Navigation';
+import Dashboard from './features/dashboard/Dashboard';
+import Users from './features/users/Users';
 import './App.css';
 
 function App() {
