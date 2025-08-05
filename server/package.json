@@ -8,6 +8,8 @@
     "dev": "nodemon index.js",
     "seed": "node seedData.js",
     "seed:dev": "set NODE_ENV=development && node seedData.js",
+    "backup:prod": "cd ../scripts && node backup-manager.js backup",
+    "restore:prod": "cd ../scripts && node backup-manager.js restore",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

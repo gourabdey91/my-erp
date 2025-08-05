@@ -1,0 +1,14 @@
+{
+  "name": "myerp-backup-scripts",
+  "version": "1.0.0",
+  "description": "Backup and restore scripts for MyERP production database",
+  "main": "backup-manager.js",
+  "scripts": {
+    "backup": "node backup-manager.js backup",
+    "restore": "node backup-manager.js restore"
+  },
+  "dependencies": {
+    "mongodb": "^6.0.0",
+    "dotenv": "^17.2.1"
+  }
+}
