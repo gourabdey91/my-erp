@@ -179,7 +179,7 @@
 @media (max-width: 1024px) {
   .table-header,
   .table-row {
-    grid-template-columns: 100px 1fr 150px 80px 120px;
+    grid-template-columns: 100px 1fr 140px 80px 110px;
   }
   
   .partners-list {
@@ -195,17 +195,73 @@
   
   .table-header,
   .table-row {
-    grid-template-columns: 80px 150px 120px 70px 100px;
-    min-width: 520px;
+    display: flex;
+    flex-direction: column;
+    min-width: auto;
+  }
+  
+  .table-header {
+    display: none; /* Hide header on mobile, we'll show labels inline */
+  }
+  
+  .table-row {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 16px;
+    background: white;
   }
   
   .cell {
-    padding: 12px 8px;
-    font-size: 13px;
+    padding: 8px 0;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .cell:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-top: 16px;
+  }
+  
+  .cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn-small {
+    flex: 1;
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-row {
+    padding: 12px;
+  }
+  
+  .business-unit-code {
+    font-size: 11px;
+    padding: 3px 6px;
   }
   
   .action-buttons {
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 }

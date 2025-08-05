@@ -88,15 +88,15 @@ const UserList = ({ onEditUser, onCreateUser }) => {
             <tbody>
               {users.map(user => (
                 <tr key={user._id}>
-                  <td>{user.fullName}</td>
-                  <td>{user.email}</td>
-                  <td>{user.phone}</td>
-                  <td>
+                  <td data-label="Name">{user.fullName}</td>
+                  <td data-label="Email">{user.email}</td>
+                  <td data-label="Phone">{user.phone}</td>
+                  <td data-label="Role">
                     <span className={`role-badge role-${user.role}`}>
                       {user.role}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <button
                       className={`status-badge status-${user.status}`}
                       onClick={() => handleStatusToggle(user._id, user.status)}
@@ -105,8 +105,8 @@ const UserList = ({ onEditUser, onCreateUser }) => {
                       {user.status}
                     </button>
                   </td>
-                  <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td>
+                  <td data-label="Created">{new Date(user.createdAt).toLocaleDateString()}</td>
+                  <td data-label="Actions">
                     <div className="action-buttons">
                       <button
                         className="btn btn-small btn-secondary"

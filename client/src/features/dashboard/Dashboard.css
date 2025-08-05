@@ -198,44 +198,101 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .fiori-tile-container {
-    padding: 1rem;
+    padding: 12px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding: 0 4px;
   }
 
   .fiori-tiles-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
   }
 
   .fiori-tile {
-    min-height: 160px;
-    padding: 1.25rem;
+    min-height: 140px;
+    padding: 20px 16px;
+    border-radius: 8px;
+  }
+
+  .tile-header {
+    margin-bottom: 12px;
   }
 
   .tile-icon {
-    font-size: 1.75rem;
+    font-size: 28px;
+    margin-bottom: 8px;
   }
 
   .tile-title {
-    font-size: 1rem;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  .tile-subtitle {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .tile-content {
+    margin-top: 12px;
   }
 
   .tile-count {
-    font-size: 1.25rem;
+    font-size: 24px;
+  }
+
+  .tile-count-label {
+    font-size: 11px;
+    margin-top: 4px;
   }
 }
 
 @media (max-width: 480px) {
   .fiori-tile-container {
-    padding: 0.75rem;
-  }
-
-  .fiori-tile {
-    min-height: 140px;
-    padding: 1rem;
+    padding: 8px;
   }
 
   .section-title {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-size: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .fiori-tiles-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .fiori-tile {
+    min-height: 120px;
+    padding: 16px 12px;
+  }
+
+  .tile-icon {
+    font-size: 24px;
+  }
+
+  .tile-title {
+    font-size: 15px;
+  }
+
+  .tile-count {
+    font-size: 20px;
+  }
+}
+
+/* Touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  .fiori-tile {
+    transition: transform 0.1s ease;
+  }
+  
+  .fiori-tile:active {
+    transform: scale(0.98);
+    background: rgba(0, 112, 243, 0.15);
   }
 }

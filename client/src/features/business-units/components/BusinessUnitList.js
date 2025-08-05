@@ -26,13 +26,13 @@ const BusinessUnitList = ({ businessUnits, onEdit, onDelete }) => {
         <div className="table-body">
           {businessUnits.map((businessUnit) => (
             <div key={businessUnit._id} className="table-row">
-              <div className="cell">
+              <div className="cell" data-label="Code">
                 <span className="business-unit-code">{businessUnit.code}</span>
               </div>
-              <div className="cell">
+              <div className="cell" data-label="Name">
                 <span className="business-unit-name">{businessUnit.name}</span>
               </div>
-              <div className="cell">
+              <div className="cell" data-label="Partners">
                 <div className="partners-cell">
                   {businessUnit.partners && businessUnit.partners.length > 0 ? (
                     <div className="partners-list">
@@ -52,12 +52,12 @@ const BusinessUnitList = ({ businessUnits, onEdit, onDelete }) => {
                   )}
                 </div>
               </div>
-              <div className="cell">
+              <div className="cell" data-label="Status">
                 <span className={`status-badge ${businessUnit.isActive ? 'active' : 'inactive'}`}>
                   {businessUnit.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              <div className="cell">
+              <div className="cell" data-label="Actions">
                 <div className="action-buttons">
                   <button
                     onClick={() => onEdit(businessUnit)}

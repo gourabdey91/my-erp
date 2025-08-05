@@ -279,28 +279,29 @@
 
 @media (max-width: 768px) {
   .navigation {
-    padding: 0 15px;
+    padding: 0 12px;
+    min-height: 56px;
+  }
+
+  .nav-brand {
+    padding: 6px 8px;
   }
 
   .nav-brand h1 {
-    font-size: 18px;
-  }
-
-  .nav-menu {
-    gap: 5px;
-  }
-
-  .nav-link {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .nav-label {
-    display: none;
-  }
-
-  .nav-icon {
     font-size: 16px;
+  }
+
+  .nav-logo svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nav-right {
+    gap: 8px;
+  }
+
+  .nav-user-info {
+    padding: 6px 8px;
   }
   
   .nav-user-info .user-name {
@@ -308,8 +309,56 @@
   }
   
   .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  
+  /* Make user menu touch-friendly */
+  .user-menu {
+    right: -8px;
+    left: 8px;
+    min-width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+  
+  .menu-item {
+    padding: 16px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  .bu-item {
+    padding: 14px 16px;
+  }
+  
+  .bu-item-code {
+    font-size: 13px;
+  }
+  
+  .bu-item-name {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navigation {
+    padding: 0 8px;
+  }
+  
+  .nav-brand h1 {
+    font-size: 14px;
+  }
+  
+  .nav-logo svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .user-menu {
+    right: -4px;
+    left: 4px;
+    min-width: calc(100vw - 8px);
+    max-width: calc(100vw - 8px);
   }
 }

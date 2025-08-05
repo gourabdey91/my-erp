@@ -124,6 +124,31 @@ body {
   .hide-mobile {
     display: none;
   }
+  
+  .app-content {
+    padding: 0;
+  }
+  
+  /* Make buttons more touch-friendly */
+  .btn {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  /* Improve form inputs for mobile */
+  input, select, textarea {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
 }
 
 @media (min-width: 769px) {

@@ -64,16 +64,33 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .business-units-container {
-    padding: 15px;
+    padding: 12px;
   }
   
   .business-units-header {
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
     align-items: stretch;
+    padding-bottom: 12px;
   }
   
   .business-units-header h1 {
     text-align: center;
+    font-size: 20px;
+  }
+  
+  .btn-primary {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .business-units-container {
+    padding: 8px;
+  }
+  
+  .business-units-header h1 {
+    font-size: 18px;
   }
 }

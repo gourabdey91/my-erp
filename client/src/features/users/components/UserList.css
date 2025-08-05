@@ -209,25 +209,95 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .user-list {
-    padding: 10px;
+    padding: 12px;
   }
   
   .user-list-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .user-list-header h1 {
+    text-align: center;
+    font-size: 20px;
   }
   
   .user-table-container {
-    overflow-x: auto;
+    overflow: visible;
   }
   
   .user-table {
-    min-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: auto;
+  }
+  
+  .user-table-header {
+    display: none;
+  }
+  
+  .user-table-row {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .user-table-cell {
+    padding: 8px 0;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .user-table-cell:last-child {
+    border-bottom: none;
+    justify-content: center;
+    padding-top: 16px;
+  }
+  
+  .user-table-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 80px;
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn {
+    flex: 1;
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-list {
+    padding: 8px;
+  }
+  
+  .user-table-row {
+    padding: 12px;
   }
   
   .action-buttons {
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 }
