@@ -32,6 +32,7 @@ app.use(express.json());
 const userRoutes = require('./routes/users');
 const dashboardRoutes = require('./routes/dashboard');
 const businessUnitRoutes = require('./routes/businessUnits');
+const authRoutes = require('./routes/auth');
 
 app.get('/', (req, res) => {
   res.send('ERP Billing App Backend');
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/business-units', businessUnitRoutes);
+app.use('/api/auth', authRoutes);
 
 // MongoDB connection with environment awareness
 mongoose.connect(mongoUri, {

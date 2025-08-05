@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import './Navigation.css';
 
 const Navigation = ({ currentView, onViewChange }) => {
+  const { currentUser, logout } = useAuth();
   const { currentBusinessUnit, userBusinessUnits, switchBusinessUnit } = useBusinessUnit();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -16,8 +18,7 @@ const Navigation = ({ currentView, onViewChange }) => {
   };
 
   const handleLogout = () => {
-    // TODO: Implement logout functionality
-    console.log('Logout clicked');
+    logout();
     setIsUserMenuOpen(false);
   };
 
@@ -39,20 +40,20 @@ const Navigation = ({ currentView, onViewChange }) => {
       <div className="nav-right">
         <div className="nav-user-info" onClick={toggleUserMenu}>
           <div className="user-avatar">
-            <span>A</span>
+            <span>{currentUser?.firstName ? currentUser.firstName.charAt(0).toUpperCase() : 'U'}</span>
           </div>
-          <span className="user-name">Admin User</span>
+          <span className="user-name">{currentUser?.fullName || 'User'}</span>
           <span className={`dropdown-arrow ${isUserMenuOpen ? 'open' : ''}`}>▼</span>
           
           {isUserMenuOpen && (
             <div className="user-menu">
               <div className="user-menu-header">
                 <div className="user-avatar-large">
-                  <span>A</span>
+                  <span>{currentUser?.firstName ? currentUser.firstName.charAt(0).toUpperCase() : 'U'}</span>
                 </div>
                 <div className="user-details">
-                  <div className="user-name-large">Admin User</div>
-                  <div className="user-email">admin@example.com</div>
+                  <div className="user-name-large">{currentUser?.fullName || 'User'}</div>
+                  <div className="user-email">{currentUser?.email || 'user@example.com'}</div>
                 </div>
               </div>
               

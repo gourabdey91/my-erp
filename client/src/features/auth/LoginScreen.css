@@ -1,0 +1,350 @@
+/* SAP BTP-Style Login Screen */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(135deg, #0a6ebd 0%, #005a9f 25%, #004685 50%, #003d7a 75%, #002e5d 100%);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+  opacity: 0.5;
+}
+
+.login-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 48px 40px 40px;
+  width: 100%;
+  max-width: 420px;
+  min-height: auto;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.login-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-title {
+  font-size: 32px;
+  font-weight: 300;
+  color: #0a6ebd;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  font-size: 16px;
+  color: #6a6d7d;
+  margin: 0;
+  font-weight: 400;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #32363a;
+  margin: 0;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-size: 16px;
+  background: #ffffff;
+  color: #32363a;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #0a6ebd;
+  box-shadow: 0 0 0 2px rgba(10, 110, 189, 0.1);
+}
+
+.form-input::placeholder {
+  color: #8c959f;
+}
+
+.login-button {
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.login-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.login-button.primary {
+  background: #0a6ebd;
+  color: #ffffff;
+}
+
+.login-button.primary:hover:not(:disabled) {
+  background: #005a9f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 110, 189, 0.3);
+}
+
+.login-button.secondary {
+  background: #f6f8fa;
+  color: #32363a;
+  border: 1px solid #d0d7de;
+}
+
+.login-button.secondary:hover:not(:disabled) {
+  background: #f1f3f4;
+  border-color: #b1bac4;
+}
+
+.login-button.link {
+  background: transparent;
+  color: #0a6ebd;
+  font-weight: 400;
+  text-decoration: underline;
+  padding: 8px 0;
+  min-height: auto;
+}
+
+.login-button.link:hover:not(:disabled) {
+  color: #005a9f;
+  text-decoration: none;
+}
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.success-message {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e1e8ed;
+}
+
+.login-footer p {
+  font-size: 12px;
+  color: #8c959f;
+  margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .login-card {
+    padding: 32px 24px 24px;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .login-header {
+    margin-bottom: 24px;
+  }
+
+  .logo-container {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .login-logo {
+    width: 40px;
+    height: 40px;
+    padding: 6px;
+  }
+
+  .login-title {
+    font-size: 28px;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
+  }
+
+  .login-form {
+    gap: 20px;
+  }
+
+  .form-input {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .login-button {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .login-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-container {
+    padding: 12px;
+    padding-top: 40px;
+  }
+
+  .login-card {
+    padding: 24px 20px 20px;
+  }
+
+  .logo-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .login-title {
+    font-size: 24px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .login-card {
+    border: 2px solid #000000;
+  }
+
+  .form-input {
+    border: 2px solid #000000;
+  }
+
+  .login-button.primary {
+    border: 2px solid #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .form-input,
+  .login-button {
+    transition: none;
+  }
+
+  .login-button.primary:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Dark mode support (for future implementation) */
+@media (prefers-color-scheme: dark) {
+  .login-container {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #404040 50%, #2d2d2d 75%, #1a1a1a 100%);
+  }
+
+  .login-card {
+    background: #2d2d2d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .login-title {
+    color: #ffffff;
+  }
+
+  .login-subtitle {
+    color: #b3b3b3;
+  }
+
+  .form-label {
+    color: #ffffff;
+  }
+
+  .form-input {
+    background: #404040;
+    border: 1px solid #666666;
+    color: #ffffff;
+  }
+
+  .form-input::placeholder {
+    color: #999999;
+  }
+
+  .login-button.secondary {
+    background: #404040;
+    color: #ffffff;
+    border: 1px solid #666666;
+  }
+
+  .login-footer p {
+    color: #999999;
+  }
+}

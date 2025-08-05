@@ -1,14 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BusinessUnitProvider } from './contexts/BusinessUnitContext';
 import TestBusinessUnitInitializer from './components/TestBusinessUnitInitializer';
 import Navigation from './shared/components/Navigation';
 import Dashboard from './features/dashboard/Dashboard';
 import Users from './features/users/Users';
 import BusinessUnits from './features/business-units/BusinessUnits';
+import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
-function App() {
+function AppContent() {
   const [currentView, setCurrentView] = useState('dashboard');
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   return (
     <BusinessUnitProvider>
@@ -48,6 +64,14 @@ function App() {
         return <Dashboard onViewChange={setCurrentView} />;
     }
   }
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 export default App;
