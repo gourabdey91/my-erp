@@ -35,8 +35,16 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive'],
+    enum: ['active', 'inactive', 'locked'],
     default: 'active'
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: {
+    type: Date,
+    default: null
   },
   businessUnits: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -80,6 +88,50 @@ userSchema.pre('save', async function(next) {
 // Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Virtual to check if account is locked
+userSchema.virtual('isLocked').get(function() {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+});
+
+// Method to increment login attempts
+userSchema.methods.incLoginAttempts = async function() {
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const LOCK_TIME = 30 * 60 * 1000; // 30 minutes
+
+  // If we have a previous lock that has expired, restart the attempts count
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    return this.updateOne({
+      $unset: { lockUntil: 1 },
+      $set: { loginAttempts: 1 }
+    });
+  }
+  
+  const updates = { $inc: { loginAttempts: 1 } };
+  
+  // If we have hit max attempts and it's not locked yet, lock the account
+  if (this.loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS && !this.isLocked) {
+    updates.$set = {
+      lockUntil: Date.now() + LOCK_TIME,
+      status: 'locked'
+    };
+  }
+  
+  return this.updateOne(updates);
+};
+
+// Method to reset login attempts
+userSchema.methods.resetLoginAttempts = async function() {
+  return this.updateOne({
+    $unset: {
+      loginAttempts: 1,
+      lockUntil: 1
+    },
+    $set: {
+      status: 'active'
+    }
+  });
 };
 
 // Ensure virtual fields are included in JSON output but exclude password

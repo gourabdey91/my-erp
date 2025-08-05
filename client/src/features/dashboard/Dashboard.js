@@ -54,6 +54,46 @@ const Dashboard = ({ onViewChange }) => {
           enabled: true
         },
         {
+          id: 'categories',
+          title: 'Surgical Categories',
+          subtitle: 'Manage Categories',
+          icon: '📋',
+          count: '...',
+          countLabel: 'Categories',
+          onClick: () => onViewChange('categories'),
+          enabled: true
+        },
+        {
+          id: 'payment-types',
+          title: 'Payment Types',
+          subtitle: 'Manage Payment Types',
+          icon: '💳',
+          count: '...',
+          countLabel: 'Payment Types',
+          onClick: () => onViewChange('payment-types'),
+          enabled: true
+        },
+        {
+          id: 'limits',
+          title: 'Payment Limits',
+          subtitle: 'Category Rate Mapping',
+          icon: '⚖️',
+          count: '...',
+          countLabel: 'Limits',
+          onClick: () => onViewChange('limits'),
+          enabled: true
+        },
+        {
+          id: 'company-details',
+          title: 'Company Details',
+          subtitle: 'Company Information',
+          icon: '🏛️',
+          count: '...',
+          countLabel: 'Company Info',
+          onClick: () => onViewChange('company-details'),
+          enabled: true
+        },
+        {
           id: 'billing',
           title: 'Billing & Invoicing',
           subtitle: 'Create & Manage Bills',
@@ -125,6 +165,46 @@ const Dashboard = ({ onViewChange }) => {
         count: stats.businessUnits?.count || '...',
         countLabel: stats.businessUnits?.label || 'Business Units',
         onClick: () => onViewChange('business-units'),
+        enabled: true
+      },
+      {
+        id: 'categories',
+        title: 'Surgical Categories',
+        subtitle: 'Manage Categories',
+        icon: '📋',
+        count: stats.categories?.count || '...',
+        countLabel: stats.categories?.label || 'Categories',
+        onClick: () => onViewChange('categories'),
+        enabled: true
+      },
+      {
+        id: 'payment-types',
+        title: 'Payment Types',
+        subtitle: 'Manage Payment Types',
+        icon: '💳',
+        count: stats.paymentTypes?.count || '...',
+        countLabel: stats.paymentTypes?.label || 'Payment Types',
+        onClick: () => onViewChange('payment-types'),
+        enabled: true
+      },
+      {
+        id: 'limits',
+        title: 'Payment Limits',
+        subtitle: 'Category Rate Mapping',
+        icon: '⚖️',
+        count: stats.limits?.count || '...',
+        countLabel: stats.limits?.label || 'Limits',
+        onClick: () => onViewChange('limits'),
+        enabled: true
+      },
+      {
+        id: 'company-details',
+        title: 'Company Details',
+        subtitle: 'Company Information',
+        icon: '🏛️',
+        count: stats.companyDetails?.count || '...',
+        countLabel: stats.companyDetails?.label || 'Company Info',
+        onClick: () => onViewChange('company-details'),
         enabled: true
       },
       {

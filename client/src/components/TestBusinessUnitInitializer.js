@@ -1,34 +1,39 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useBusinessUnit } from '../contexts/BusinessUnitContext';
-import { userAuthAPI } from '../services/userAuthAPI';
 
 const TestBusinessUnitInitializer = () => {
-  const { initializeBusinessUnits, currentBusinessUnit } = useBusinessUnit();
+  const { currentUser } = useAuth();
+  const { initializeBusinessUnits, userBusinessUnits } = useBusinessUnit();
 
   useEffect(() => {
-    const loadUserBusinessUnits = async () => {
-      try {
-        // Get current user data (with business units populated)
-        const currentUser = await userAuthAPI.getCurrentUser();
-        
-        if (currentUser && currentUser.businessUnits) {
-          const userBusinessUnits = currentUser.businessUnits;
-          const defaultBU = currentUser.defaultBusinessUnit;
+    if (currentUser && userBusinessUnits.length === 0) {
+      const loadUserBusinessUnits = async () => {
+        try {
+          console.log('🏢 Loading business units for user:', currentUser.email);
           
-          // Initialize with real user data
-          initializeBusinessUnits(userBusinessUnits, defaultBU);
-        } else {
-          console.log('No user business units found');
+          // Use business units from the login response (should be populated)
+          if (currentUser.businessUnits && currentUser.businessUnits.length > 0) {
+            console.log('✅ Using business units from user object:', currentUser.businessUnits);
+            console.log('📋 Default business unit:', currentUser.defaultBusinessUnit);
+            
+            // Initialize with the user's business units
+            initializeBusinessUnits(currentUser.businessUnits, currentUser.defaultBusinessUnit);
+            return;
+          }
+          
+          console.log('⚠️ No business units found in user object, user might need business units assigned');
+          initializeBusinessUnits([], null);
+          
+        } catch (error) {
+          console.error('❌ Error loading user business units:', error);
+          initializeBusinessUnits([], null);
         }
-      } catch (error) {
-        console.error('Error loading user business units:', error);
-        // Fallback to empty state
-        initializeBusinessUnits([], null);
-      }
-    };
+      };
 
-    loadUserBusinessUnits();
-  }, [initializeBusinessUnits]);
+      loadUserBusinessUnits();
+    }
+  }, [currentUser, initializeBusinessUnits, userBusinessUnits.length]);
 
   return null; // This component doesn't render anything
 };

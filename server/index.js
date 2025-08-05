@@ -33,6 +33,10 @@ const userRoutes = require('./routes/users');
 const dashboardRoutes = require('./routes/dashboard');
 const businessUnitRoutes = require('./routes/businessUnits');
 const authRoutes = require('./routes/auth');
+const companyDetailsRoutes = require('./routes/companyDetails');
+const categoryRoutes = require('./routes/categories');
+const paymentTypeRoutes = require('./routes/paymentTypes');
+const limitRoutes = require('./routes/limits');
 
 app.get('/', (req, res) => {
   res.send('ERP Billing App Backend');
@@ -43,12 +47,13 @@ app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/business-units', businessUnitRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/company-details', companyDetailsRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/payment-types', paymentTypeRoutes);
+app.use('/api/limits', limitRoutes);
 
 // MongoDB connection with environment awareness
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(mongoUri);
 
 mongoose.connection.once('open', () => {
   console.log(`Connected to MongoDB (${NODE_ENV} environment)`);

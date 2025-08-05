@@ -45,11 +45,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('🚪 Logging out user...');
+    
+    // Clear auth state
     setCurrentUser(null);
     setIsAuthenticated(false);
+    
+    // Clear all localStorage items related to user session
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentBusinessUnit');
     localStorage.removeItem('userBusinessUnits');
+    
+    console.log('✅ Logout complete - all context cleared');
   };
 
   const value = {

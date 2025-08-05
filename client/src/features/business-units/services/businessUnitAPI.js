@@ -1,16 +1,10 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-const api = axios.create({
-  baseURL: API_URL,
-});
+import api from '../../../shared/services/api';
 
 export const businessUnitAPI = {
   // Get all business units
   getAll: async () => {
     try {
-      const response = await api.get('/api/business-units');
+      const response = await api.get('/business-units');
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch business units');
@@ -20,7 +14,7 @@ export const businessUnitAPI = {
   // Get business unit by ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/api/business-units/${id}`);
+      const response = await api.get(`/business-units/${id}`);
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch business unit');
@@ -30,7 +24,7 @@ export const businessUnitAPI = {
   // Create new business unit
   create: async (businessUnitData) => {
     try {
-      const response = await api.post('/api/business-units', businessUnitData);
+      const response = await api.post('/business-units', businessUnitData);
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to create business unit');
@@ -40,7 +34,7 @@ export const businessUnitAPI = {
   // Update business unit
   update: async (id, businessUnitData) => {
     try {
-      const response = await api.put(`/api/business-units/${id}`, businessUnitData);
+      const response = await api.put(`/business-units/${id}`, businessUnitData);
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to update business unit');
@@ -50,7 +44,7 @@ export const businessUnitAPI = {
   // Delete (deactivate) business unit
   delete: async (id) => {
     try {
-      const response = await api.delete(`/api/business-units/${id}`);
+      const response = await api.delete(`/business-units/${id}`);
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to deactivate business unit');

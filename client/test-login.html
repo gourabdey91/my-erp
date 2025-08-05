@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Flow</title>
+</head>
+<body>
+    <h1>Test Login Flow</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="result"></div>
+
+    <script>
+        async function testLogin() {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'deygourab91@gmail.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (data.success) {
+                    console.log('✅ Login successful!');
+                    console.log('👤 User:', data.user.fullName);
+                    console.log('🏢 Business Units:', data.user.businessUnits);
+                    console.log('📍 Default BU:', data.user.defaultBusinessUnit);
+                    
+                    document.getElementById('result').innerHTML = `
+                        <h2>Login Successful!</h2>
+                        <p><strong>User:</strong> ${data.user.fullName}</p>
+                        <p><strong>Email:</strong> ${data.user.email}</p>
+                        <p><strong>Business Units:</strong></p>
+                        <ul>
+                            ${data.user.businessUnits.map(bu => `<li>${bu.code} - ${bu.name}</li>`).join('')}
+                        </ul>
+                        <p><strong>Default BU:</strong> ${data.user.defaultBusinessUnit?.code} - ${data.user.defaultBusinessUnit?.name}</p>
+                    `;
+                } else {
+                    console.error('❌ Login failed:', data.message);
+                    document.getElementById('result').innerHTML = `<p style="color: red;">Login failed: ${data.message}</p>`;
+                }
+            } catch (error) {
+                console.error('🚨 Error:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

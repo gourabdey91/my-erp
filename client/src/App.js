@@ -6,6 +6,10 @@ import Navigation from './shared/components/Navigation';
 import Dashboard from './features/dashboard/Dashboard';
 import Users from './features/users/Users';
 import BusinessUnits from './features/business-units/BusinessUnits';
+import CompanyDetails from './features/company/CompanyDetails';
+import Categories from './features/categories/Categories';
+import PaymentTypes from './features/payment-types/PaymentTypes';
+import Limits from './features/limits/Limits';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -46,6 +50,14 @@ function AppContent() {
         return <Users />;
       case 'business-units':
         return <BusinessUnits />;
+      case 'categories':
+        return <Categories />;
+      case 'payment-types':
+        return <PaymentTypes />;
+      case 'limits':
+        return <Limits />;
+      case 'company-details':
+        return <CompanyDetails />;
       case 'billing':
         return (
           <div style={{ padding: '50px', textAlign: 'center' }}>

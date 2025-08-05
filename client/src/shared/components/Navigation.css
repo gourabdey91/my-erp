@@ -245,11 +245,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
+  position: relative;
 }
 
 .bu-item.active {
   background-color: #e7f3ff;
   color: #0070f3;
+}
+
+.bu-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
 }
 
 .bu-item-code {
@@ -259,7 +267,7 @@
   background: #f1f3f4;
   padding: 2px 6px;
   border-radius: 3px;
-  margin-right: 8px;
+  width: fit-content;
 }
 
 .bu-item.active .bu-item-code {
@@ -268,13 +276,20 @@
 }
 
 .bu-item-name {
-  flex: 1;
   font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.bu-item.active .bu-item-name {
+  color: #0070f3;
 }
 
 .current-indicator {
   color: #0070f3;
   font-weight: 600;
+  position: absolute;
+  right: 16px;
 }
 
 @media (max-width: 768px) {
@@ -314,22 +329,41 @@
     font-size: 14px;
   }
   
-  /* Make user menu touch-friendly */
+  /* Make user menu touch-friendly and responsive */
   .user-menu {
-    right: -8px;
+    position: fixed;
+    top: 56px;
+    right: 8px;
     left: 8px;
-    min-width: calc(100vw - 16px);
-    max-width: calc(100vw - 16px);
+    width: auto;
+    min-width: unset;
+    max-width: unset;
+    margin-top: 0;
+    border-radius: 8px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    background: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .menu-item {
     padding: 16px;
     font-size: 16px;
     min-height: 44px;
+    touch-action: manipulation;
   }
   
   .bu-item {
     padding: 14px 16px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0;
+    min-height: 60px;
+  }
+  
+  .bu-item-info {
+    gap: 4px;
   }
   
   .bu-item-code {
@@ -338,6 +372,24 @@
   
   .bu-item-name {
     font-size: 14px;
+    width: 100%;
+  }
+  
+  .current-indicator {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .menu-section-title {
+    font-size: 13px;
+    padding: 12px 16px 8px;
+  }
+  
+  .current-bu-indicator {
+    display: block;
+    margin-top: 4px;
   }
 }
 
@@ -356,9 +408,33 @@
   }
   
   .user-menu {
-    right: -4px;
+    position: fixed;
+    top: 56px;
+    right: 4px;
     left: 4px;
-    min-width: calc(100vw - 8px);
-    max-width: calc(100vw - 8px);
+    width: auto;
+    min-width: unset;
+    max-width: unset;
+    margin-top: 0;
+    border-radius: 8px;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    background: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .bu-item {
+    padding: 16px;
+    min-height: 60px;
+  }
+  
+  .bu-item-code {
+    font-size: 14px;
+  }
+  
+  .bu-item-name {
+    font-size: 15px;
+    font-weight: 500;
   }
 }

@@ -16,8 +16,11 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Find user by email and populate business units
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .populate('businessUnits', 'code name')
+      .populate('defaultBusinessUnit', 'code name');
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -25,25 +28,67 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
+    // Check if account is locked
+    if (user.isLocked) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / (1000 * 60)); // minutes
+      return res.status(423).json({
         success: false,
-        message: 'Invalid email or password'
+        message: `Account is temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minutes.`,
+        lockTimeRemaining: lockTimeRemaining
       });
     }
 
-    // Return user data (excluding password)
+    // Check if user is active (not inactive or locked)
+    if (user.status === 'inactive') {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is not active'
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      // Increment login attempts
+      await user.incLoginAttempts();
+      
+      // Refresh user data to get updated login attempts
+      const updatedUser = await User.findById(user._id);
+      
+      let message = 'Invalid email or password';
+      if (updatedUser.status === 'locked') {
+        message = 'Account has been locked due to multiple failed login attempts. Please try again in 30 minutes.';
+      } else {
+        const attemptsLeft = 5 - updatedUser.loginAttempts;
+        if (attemptsLeft > 0) {
+          message = `Invalid email or password. ${attemptsLeft} attempts remaining before account lock.`;
+        }
+      }
+      
+      return res.status(401).json({
+        success: false,
+        message: message,
+        attemptsLeft: Math.max(0, 5 - updatedUser.loginAttempts)
+      });
+    }
+
+    // Successful login - reset login attempts
+    if (user.loginAttempts > 0) {
+      await user.resetLoginAttempts();
+    }
+
+    // Create response user object (exclude password)
     const userResponse = {
+      _id: user._id,
       id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       fullName: user.fullName,
       email: user.email,
+      role: user.role,
+      status: user.status,
       businessUnits: user.businessUnits,
       defaultBusinessUnit: user.defaultBusinessUnit,
-      isActive: user.isActive,
       createdAt: user.createdAt
     };
 
@@ -172,6 +217,83 @@ router.get('/verify', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during verification'
+    });
+  }
+});
+
+// Unlock account endpoint (admin only)
+router.post('/unlock-account', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Reset login attempts and unlock account
+    await user.resetLoginAttempts();
+
+    res.json({
+      success: true,
+      message: 'Account has been unlocked successfully'
+    });
+
+  } catch (error) {
+    console.error('Unlock account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during account unlock'
+    });
+  }
+});
+
+// Get login status endpoint
+router.get('/login-status/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const status = {
+      email: user.email,
+      status: user.status,
+      isLocked: user.isLocked,
+      loginAttempts: user.loginAttempts || 0,
+      lockUntil: user.lockUntil,
+      attemptsRemaining: Math.max(0, 5 - (user.loginAttempts || 0))
+    };
+
+    if (user.isLocked && user.lockUntil) {
+      status.lockTimeRemaining = Math.ceil((user.lockUntil - Date.now()) / (1000 * 60)); // minutes
+    }
+
+    res.json({
+      success: true,
+      data: status
+    });
+
+  } catch (error) {
+    console.error('Login status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error getting login status'
     });
   }
 });

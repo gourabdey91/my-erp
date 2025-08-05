@@ -1,12 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import './Navigation.css';
 
 const Navigation = ({ currentView, onViewChange }) => {
   const { currentUser, logout } = useAuth();
-  const { currentBusinessUnit, userBusinessUnits, switchBusinessUnit } = useBusinessUnit();
+  const { currentBusinessUnit, userBusinessUnits, switchBusinessUnit, loading } = useBusinessUnit();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
 
   const handleBusinessUnitSwitch = (businessUnit) => {
     switchBusinessUnit(businessUnit);
@@ -38,7 +56,7 @@ const Navigation = ({ currentView, onViewChange }) => {
       </div>
       
       <div className="nav-right">
-        <div className="nav-user-info" onClick={toggleUserMenu}>
+        <div className="nav-user-info" onClick={toggleUserMenu} ref={menuRef}>
           <div className="user-avatar">
             <span>{currentUser?.firstName ? currentUser.firstName.charAt(0).toUpperCase() : 'U'}</span>
           </div>
@@ -61,22 +79,23 @@ const Navigation = ({ currentView, onViewChange }) => {
               
               <div className="menu-section">
                 <div className="menu-section-title">
-                  🏢 Switch Business Unit
-                  {currentBusinessUnit && (
-                    <span className="current-bu-indicator">
-                      (Current: {currentBusinessUnit.code})
-                    </span>
-                  )}
+                  🏢 Business Unit
                 </div>
-                {userBusinessUnits.length > 0 ? (
+                {loading ? (
+                  <div className="menu-item disabled">
+                    <span>Loading business units...</span>
+                  </div>
+                ) : userBusinessUnits && userBusinessUnits.length > 0 ? (
                   userBusinessUnits.map((bu) => (
                     <div 
-                      key={bu._id} 
+                      key={bu._id || bu.id} 
                       className={`menu-item bu-item ${currentBusinessUnit?._id === bu._id ? 'active' : ''}`}
                       onClick={() => handleBusinessUnitSwitch(bu)}
                     >
-                      <span className="bu-item-code">{bu.code}</span>
-                      <span className="bu-item-name">{bu.name}</span>
+                      <div className="bu-item-info">
+                        <span className="bu-item-code">{bu.code}</span>
+                        <span className="bu-item-name">{bu.name}</span>
+                      </div>
                       {currentBusinessUnit?._id === bu._id && <span className="current-indicator">✓</span>}
                     </div>
                   ))

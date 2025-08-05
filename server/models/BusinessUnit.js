@@ -27,7 +27,6 @@ const businessUnitSchema = new mongoose.Schema({
 });
 
 // Index for better performance
-businessUnitSchema.index({ code: 1 });
 businessUnitSchema.index({ isActive: 1 });
 
 const BusinessUnit = mongoose.model('BusinessUnit', businessUnitSchema);

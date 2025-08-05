@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const BusinessUnit = require('../models/BusinessUnit');
+const Category = require('../models/Category');
+const PaymentType = require('../models/PaymentType');
+const Limit = require('../models/Limit');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -13,6 +16,18 @@ router.get('/stats', async (req, res) => {
     // Get business unit statistics
     const totalBusinessUnits = await BusinessUnit.countDocuments();
     const activeBusinessUnits = await BusinessUnit.countDocuments({ isActive: true });
+
+    // Get categories statistics
+    const totalCategories = await Category.countDocuments();
+    const activeCategories = await Category.countDocuments({ isActive: true });
+
+    // Get payment types statistics
+    const totalPaymentTypes = await PaymentType.countDocuments();
+    const activePaymentTypes = await PaymentType.countDocuments({ isActive: true });
+
+    // Get limits statistics
+    const totalLimits = await Limit.countDocuments();
+    const activeLimits = await Limit.countDocuments({ isActive: true });
 
     // For now, we'll use placeholder data for other modules
     // These can be replaced with real models when those modules are implemented
@@ -28,6 +43,24 @@ router.get('/stats', async (req, res) => {
         active: activeBusinessUnits,
         count: activeBusinessUnits,
         label: 'Business Units'
+      },
+      categories: {
+        total: totalCategories,
+        active: activeCategories,
+        count: activeCategories,
+        label: 'Categories'
+      },
+      paymentTypes: {
+        total: totalPaymentTypes,
+        active: activePaymentTypes,
+        count: activePaymentTypes,
+        label: 'Payment Types'
+      },
+      limits: {
+        total: totalLimits,
+        active: activeLimits,
+        count: activeLimits,
+        label: 'Limits'
       },
       billing: {
         total: 45,

@@ -8,10 +8,10 @@ const LoginScreen = () => {
     email: '',
     password: ''
   });
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [attemptsLeft, setAttemptsLeft] = useState(null);
+  const [isLocked, setIsLocked] = useState(false);
 
   const { login } = useAuth();
 
@@ -22,12 +22,16 @@ const LoginScreen = () => {
       [name]: value
     }));
     setError('');
+    setAttemptsLeft(null);
+    setIsLocked(false);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setAttemptsLeft(null);
+    setIsLocked(false);
 
     try {
       const data = await apiRequest('/api/auth/login', {
@@ -42,97 +46,29 @@ const LoginScreen = () => {
         login(data.user);
       } else {
         setError(data.message || 'Login failed');
+        
+        // Handle account locking and attempts tracking
+        if (data.attemptsLeft !== undefined) {
+          setAttemptsLeft(data.attemptsLeft);
+        }
+        
+        if (data.message && data.message.includes('locked')) {
+          setIsLocked(true);
+        }
       }
     } catch (err) {
-      setError(err.message || 'Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!formData.email) {
-      setError('Please enter your email address');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const data = await apiRequest('/api/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: formData.email
-        }),
-      });
-
-      if (data.success) {
-        setMessage('Password reset instructions sent to your email');
-        setShowForgotPassword(false);
+      // Handle different error status codes
+      if (err.status === 423) {
+        // Account locked
+        setIsLocked(true);
+        setError(err.message || 'Account is temporarily locked');
       } else {
-        setError(data.message || 'Failed to send reset email');
+        setError(err.message || 'Network error. Please try again.');
       }
-    } catch (err) {
-      setError(err.message || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  if (showForgotPassword) {
-    return (
-      <div className="login-container">
-        <div className="login-background"></div>
-        <div className="login-card">
-          <div className="login-header">
-            <div className="logo-container">
-              <img src="/logo192.png" alt="MyERP" className="login-logo" />
-              <h1 className="login-title">MyERP</h1>
-            </div>
-            <p className="login-subtitle">Reset Your Password</p>
-          </div>
-
-          <form onSubmit={handleForgotPassword} className="login-form">
-            {error && <div className="error-message">{error}</div>}
-            {message && <div className="success-message">{message}</div>}
-
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Enter your email address"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="login-button primary"
-              disabled={loading}
-            >
-              {loading ? 'Sending...' : 'Send Reset Link'}
-            </button>
-
-            <button
-              type="button"
-              className="login-button secondary"
-              onClick={() => setShowForgotPassword(false)}
-            >
-              Back to Login
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="login-container">
@@ -147,7 +83,21 @@ const LoginScreen = () => {
         </div>
 
         <form onSubmit={handleLogin} className="login-form">
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message">
+              {error}
+              {attemptsLeft !== null && attemptsLeft > 0 && !isLocked && (
+                <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 'normal' }}>
+                  ⚠️ {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining before account lock
+                </div>
+              )}
+              {isLocked && (
+                <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 'normal' }}>
+                  🔒 Please wait 30 minutes before trying again
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="email" className="form-label">Email Address</label>
@@ -180,17 +130,9 @@ const LoginScreen = () => {
           <button
             type="submit"
             className="login-button primary"
-            disabled={loading}
+            disabled={loading || isLocked}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
-
-          <button
-            type="button"
-            className="login-button link"
-            onClick={() => setShowForgotPassword(true)}
-          >
-            Forgot Password?
+            {loading ? 'Signing In...' : isLocked ? 'Account Locked' : 'Sign In'}
           </button>
         </form>
 
