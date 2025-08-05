@@ -1,78 +1,211 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
+import { dashboardAPI } from './services/dashboardAPI';
 
 const Dashboard = ({ onViewChange }) => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch dashboard statistics when component mounts
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await dashboardAPI.getStats();
+        if (response.success) {
+          setStats(response.data);
+        } else {
+          setError('Failed to fetch dashboard statistics');
+        }
+      } catch (err) {
+        console.error('Dashboard stats error:', err);
+        setError('Error connecting to server');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const getTileData = () => {
+    if (!stats) {
+      // Fallback data while loading or if API fails
+      return [
+        {
+          id: 'users',
+          title: 'User Management',
+          subtitle: 'Manage Users & Roles',
+          icon: '👥',
+          count: '...',
+          countLabel: 'Active Users',
+          onClick: () => onViewChange('users'),
+          enabled: true
+        },
+        {
+          id: 'billing',
+          title: 'Billing & Invoicing',
+          subtitle: 'Create & Manage Bills',
+          icon: '💰',
+          count: '...',
+          countLabel: 'Pending Bills',
+          onClick: () => onViewChange('billing'),
+          enabled: false
+        },
+        {
+          id: 'reports',
+          title: 'Reports & Analytics',
+          subtitle: 'View Business Insights',
+          icon: '📊',
+          count: '...',
+          countLabel: 'Reports',
+          onClick: () => onViewChange('reports'),
+          enabled: false
+        },
+        {
+          id: 'master-data',
+          title: 'Master Data',
+          subtitle: 'Manage Core Data',
+          icon: '🗂️',
+          count: '...',
+          countLabel: 'Records',
+          onClick: () => onViewChange('master-data'),
+          enabled: false
+        },
+        {
+          id: 'settings',
+          title: 'System Settings',
+          subtitle: 'Configure System',
+          icon: '⚙️',
+          count: '...',
+          countLabel: 'Settings',
+          onClick: () => onViewChange('settings'),
+          enabled: false
+        },
+        {
+          id: 'help',
+          title: 'Help & Support',
+          subtitle: 'Get Assistance',
+          icon: '❓',
+          count: '...',
+          countLabel: 'Support',
+          onClick: () => onViewChange('help'),
+          enabled: false
+        }
+      ];
+    }
+
+    return [
+      {
+        id: 'users',
+        title: 'User Management',
+        subtitle: 'Manage Users & Roles',
+        icon: '👥',
+        count: stats.users.count,
+        countLabel: stats.users.label,
+        onClick: () => onViewChange('users'),
+        enabled: true
+      },
+      {
+        id: 'billing',
+        title: 'Billing & Invoicing',
+        subtitle: 'Create & Manage Bills',
+        icon: '💰',
+        count: stats.billing.count,
+        countLabel: stats.billing.label,
+        onClick: () => onViewChange('billing'),
+        enabled: false
+      },
+      {
+        id: 'reports',
+        title: 'Reports & Analytics',
+        subtitle: 'View Business Insights',
+        icon: '📊',
+        count: stats.reports.count,
+        countLabel: stats.reports.label,
+        onClick: () => onViewChange('reports'),
+        enabled: false
+      },
+      {
+        id: 'master-data',
+        title: 'Master Data',
+        subtitle: 'Manage Core Data',
+        icon: '🗂️',
+        count: stats.masterData.count,
+        countLabel: stats.masterData.label,
+        onClick: () => onViewChange('master-data'),
+        enabled: false
+      },
+      {
+        id: 'settings',
+        title: 'System Settings',
+        subtitle: 'Configure System',
+        icon: '⚙️',
+        count: stats.settings.count,
+        countLabel: stats.settings.label,
+        onClick: () => onViewChange('settings'),
+        enabled: false
+      },
+      {
+        id: 'help',
+        title: 'Help & Support',
+        subtitle: 'Get Assistance',
+        icon: '❓',
+        count: stats.support.count,
+        countLabel: stats.support.label,
+        onClick: () => onViewChange('help'),
+        enabled: false
+      }
+    ];
+  };
+
+  const tiles = getTileData();
+
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>Dashboard</h1>
-        <p>Welcome to your ERP Billing System</p>
-      </div>
-
-      <div className="dashboard-grid">
-        <div className="dashboard-card clickable" onClick={() => onViewChange('users')}>
-          <div className="card-icon">👥</div>
-          <div className="card-content">
-            <h3>Users</h3>
-            <p>Manage system users and their roles</p>
-            <div className="card-action">
-              <span>Click to manage users</span>
-            </div>
+    <div className="fiori-dashboard">
+      {/* Tile Container */}
+      <div className="fiori-tile-container">
+        <div className="fiori-section">
+          <div className="section-header">
+            <h2 className="section-title">Business Applications</h2>
+            {loading && (
+              <div className="dashboard-status loading">
+                <span>📊</span> Loading statistics...
+              </div>
+            )}
+            {error && (
+              <div className="dashboard-status error">
+                <span>⚠️</span> {error}
+              </div>
+            )}
+            {stats && !loading && (
+              <div className="dashboard-status success">
+                <span>✅</span> Data updated {new Date().toLocaleTimeString()}
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="dashboard-card" onClick={() => onViewChange('billing')}>
-          <div className="card-icon">💰</div>
-          <div className="card-content">
-            <h3>Billing</h3>
-            <p>Create and manage invoices and bills</p>
-            <div className="card-action">
-              <span>Coming soon...</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="dashboard-card" onClick={() => onViewChange('reports')}>
-          <div className="card-icon">📈</div>
-          <div className="card-content">
-            <h3>Reports</h3>
-            <p>View analytics and generate reports</p>
-            <div className="card-action">
-              <span>Coming soon...</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="dashboard-card">
-          <div className="card-icon">⚙️</div>
-          <div className="card-content">
-            <h3>Settings</h3>
-            <p>Configure system settings and preferences</p>
-            <div className="card-action">
-              <span>Coming soon...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="quick-stats">
-        <h2>Quick Stats</h2>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-number">-</span>
-            <span className="stat-label">Total Users</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">-</span>
-            <span className="stat-label">Active Invoices</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">-</span>
-            <span className="stat-label">Monthly Revenue</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">-</span>
-            <span className="stat-label">Pending Payments</span>
+          <div className="fiori-tiles-grid">
+            {tiles.map((tile) => (
+              <div
+                key={tile.id}
+                className={`fiori-tile ${!tile.enabled ? 'disabled' : ''} ${loading ? 'loading' : ''}`}
+                onClick={tile.enabled ? tile.onClick : undefined}
+              >
+                <div className="tile-header">
+                  <div className="tile-icon">{tile.icon}</div>
+                  {!tile.enabled && <div className="coming-soon-badge">Soon</div>}
+                </div>
+                <div className="tile-content">
+                  <h3 className="tile-title">{tile.title}</h3>
+                  <p className="tile-subtitle">{tile.subtitle}</p>
+                </div>
+                <div className="tile-footer">
+                  <div className="tile-count">{loading ? '...' : tile.count}</div>
+                  <div className="tile-count-label">{tile.countLabel}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

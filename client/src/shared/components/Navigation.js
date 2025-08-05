@@ -2,31 +2,26 @@ import React from 'react';
 import './Navigation.css';
 
 const Navigation = ({ currentView, onViewChange }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'users', label: 'Users', icon: '👥' },
-    { id: 'billing', label: 'Billing', icon: '💰' },
-    { id: 'reports', label: 'Reports', icon: '📈' },
-  ];
-
   return (
     <nav className="navigation">
-      <div className="nav-brand">
-        <h1>My ERP</h1>
+      <div className="nav-brand" onClick={() => onViewChange('dashboard')}>
+        <div className="nav-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="white" fillOpacity="0.2"/>
+            <rect x="6" y="6" width="8" height="8" rx="2" fill="white"/>
+            <rect x="18" y="6" width="8" height="8" rx="2" fill="white"/>
+            <rect x="6" y="18" width="8" height="8" rx="2" fill="white"/>
+            <rect x="18" y="18" width="8" height="8" rx="2" fill="white"/>
+          </svg>
+        </div>
+        <h1>My ERP Launchpad</h1>
       </div>
-      <ul className="nav-menu">
-        {navItems.map(item => (
-          <li key={item.id} className="nav-item">
-            <button
-              className={`nav-link ${currentView === item.id ? 'active' : ''}`}
-              onClick={() => onViewChange(item.id)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="nav-user-info">
+        <div className="user-avatar">
+          <span>A</span>
+        </div>
+        <span className="user-name">Admin User</span>
+      </div>
     </nav>
   );
 };

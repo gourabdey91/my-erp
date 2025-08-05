@@ -11,6 +11,7 @@ app.use(express.json());
 
 // Import routes
 const userRoutes = require('./routes/users');
+const dashboardRoutes = require('./routes/dashboard');
 
 app.get('/', (req, res) => {
   res.send('ERP Billing App Backend');
@@ -18,6 +19,7 @@ app.get('/', (req, res) => {
 
 // Use routes
 app.use('/api/users', userRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // MongoDB connection placeholder
 mongoose.connect(process.env.MONGO_URI);
