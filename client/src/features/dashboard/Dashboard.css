@@ -6,6 +6,88 @@
   font-family: '72', 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* Status Bar */
+.dashboard-status-bar {
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e5e5e5;
+  background: #ffffff;
+}
+
+/* Dashboard Status Indicators */
+.dashboard-status {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-status.loading {
+  background: #f5f5f5;
+  color: #666666;
+  border: 1px solid #e0e0e0;
+}
+
+.dashboard-status.error {
+  background: #f5f5f5;
+  color: #666666;
+  border: 1px solid #e0e0e0;
+}
+
+.dashboard-status.success {
+  background: #f5f5f5;
+  color: #666666;
+  border: 1px solid #e0e0e0;
+}
+
+/* Tab Navigation */
+.dashboard-tabs {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  padding: 0 2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #666666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.tab-button:hover {
+  color: #333333;
+  background: #f8f9fa;
+}
+
+.tab-button.active {
+  color: #4c8dd2;
+  border-bottom-color: #4c8dd2;
+  background: transparent;
+  font-weight: 500;
+}
+
+.tab-button.active::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #4c8dd2;
+  border-radius: 2px 2px 0 0;
+}
+
 /* Tile Container */
 .fiori-tile-container {
   padding: 2rem;
@@ -17,89 +99,46 @@
   margin-bottom: 2rem;
 }
 
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #32363a;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e5e5;
-  padding-bottom: 0.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-/* Dashboard Status Indicators */
-.dashboard-status {
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dashboard-status.loading {
-  background: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #bbdefb;
-}
-
-.dashboard-status.error {
-  background: #ffebee;
-  color: #d32f2f;
-  border: 1px solid #ffcdd2;
-}
-
-.dashboard-status.success {
-  background: #e8f5e8;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-/* Tiles Grid */
+/* Tiles Grid - Square Fiori tiles */
 .fiori-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, 140px);
+  gap: 1rem;
   max-width: 100%;
+  justify-content: start;
 }
 
-/* Individual Tile */
+/* Individual Tile - Square and compact */
 .fiori-tile {
-  background: #ffffff;
+  background: #f7f7f7;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 1.5rem;
-  min-height: 180px;
+  border-radius: 8px;
+  width: 140px;
+  height: 140px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .fiori-tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.15);
-  border-color: #0070f3;
+  box-shadow: 0 3px 8px rgba(76, 141, 210, 0.15);
+  border-color: #4c8dd2;
 }
 
 .fiori-tile.disabled {
-  background: #fafafa;
+  background: #f0f0f0;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
 .fiori-tile.disabled:hover {
   transform: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border-color: #e0e0e0;
 }
 
@@ -128,160 +167,165 @@
   }
 }
 
+/* Tile Content */
+.tile-content {
+  padding: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 /* Tile Header */
 .tile-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.tile-icon {
-  font-size: 2rem;
-  opacity: 0.8;
-}
-
-.coming-soon-badge {
-  background: #0070f3;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Tile Content */
-.tile-content {
-  flex-grow: 1;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .tile-title {
-  font-size: 1.125rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #32363a;
-  margin: 0 0 0.5rem 0;
-  line-height: 1.3;
-}
-
-.tile-subtitle {
-  font-size: 0.875rem;
-  color: #6a6d70;
+  color: #333333;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.2;
+  max-width: 70%;
 }
 
-/* Tile Footer */
-.tile-footer {
+.coming-soon-badge {
+  background: #4c8dd2;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Tile Body */
+.tile-body {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.tile-icon {
+  font-size: 1.5rem;
+  filter: grayscale(100%);
+  opacity: 0.8;
 }
 
 .tile-count {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #0070f3;
-  margin-bottom: 0.25rem;
-}
-
-.tile-count-label {
-  font-size: 0.75rem;
-  color: #6a6d70;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
+  color: #333333;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .fiori-tile-container {
-    padding: 12px;
+  .dashboard-status-bar {
+    padding: 0.75rem 1rem;
   }
 
-  .section-title {
-    font-size: 18px;
-    margin-bottom: 16px;
-    padding: 0 4px;
+  .dashboard-tabs {
+    padding: 0 1rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.8rem;
+    min-width: max-content;
+    flex-shrink: 0;
+  }
+
+  .fiori-tile-container {
+    padding: 1rem;
   }
 
   .fiori-tiles-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, 120px);
+    gap: 0.75rem;
+    justify-content: start;
   }
 
   .fiori-tile {
-    min-height: 140px;
-    padding: 20px 16px;
-    border-radius: 8px;
-  }
-
-  .tile-header {
-    margin-bottom: 12px;
-  }
-
-  .tile-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
-  }
-
-  .tile-title {
-    font-size: 16px;
-    line-height: 1.3;
-  }
-
-  .tile-subtitle {
-    font-size: 12px;
-    margin-top: 4px;
+    width: 120px;
+    height: 120px;
   }
 
   .tile-content {
-    margin-top: 12px;
+    padding: 0.75rem;
+  }
+
+  .tile-title {
+    font-size: 0.7rem;
+  }
+
+  .tile-icon {
+    font-size: 1.2rem;
   }
 
   .tile-count {
-    font-size: 24px;
+    font-size: 1rem;
   }
 
-  .tile-count-label {
-    font-size: 11px;
-    margin-top: 4px;
+  .coming-soon-badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.25rem;
   }
 }
 
 @media (max-width: 480px) {
-  .fiori-tile-container {
-    padding: 8px;
-  }
-
-  .section-title {
-    font-size: 16px;
-    margin-bottom: 12px;
+  .dashboard-status-bar {
+    padding: 0.5rem;
     text-align: center;
   }
 
+  .dashboard-tabs {
+    padding: 0 0.5rem;
+  }
+
+  .tab-button {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .fiori-tile-container {
+    padding: 0.75rem;
+  }
+
   .fiori-tiles-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, 100px);
+    gap: 0.5rem;
+    justify-content: start;
   }
 
   .fiori-tile {
-    min-height: 120px;
-    padding: 16px 12px;
+    width: 100px;
+    height: 100px;
   }
 
-  .tile-icon {
-    font-size: 24px;
+  .tile-content {
+    padding: 0.5rem;
   }
 
   .tile-title {
-    font-size: 15px;
+    font-size: 0.65rem;
+    line-height: 1.1;
+  }
+
+  .tile-icon {
+    font-size: 1rem;
   }
 
   .tile-count {
-    font-size: 20px;
+    font-size: 0.9rem;
   }
 }
 
@@ -292,7 +336,12 @@
   }
   
   .fiori-tile:active {
-    transform: scale(0.98);
-    background: rgba(0, 112, 243, 0.15);
+    transform: scale(0.95);
+    background: #f0f0f0;
+  }
+
+  .tab-button:active {
+    background: #f0f0f0;
+    color: #4c8dd2;
   }
 }
