@@ -141,16 +141,18 @@
 }
 
 .btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   text-decoration: none;
   display: inline-block;
   transition: all 0.2s ease;
-  min-width: 120px;
+  min-width: 100px;
+  min-height: 32px;
+  line-height: 1.2;
 }
 
 .btn:disabled {
@@ -158,27 +160,26 @@
   cursor: not-allowed;
 }
 
-.btn:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
 .btn-primary {
-  background-color: #007bff;
+  background-color: #0070f3;
   color: white;
+  border-color: #0070f3;
 }
 
 .btn-primary:not(:disabled):hover {
-  background-color: #0056b3;
+  background-color: #0051bb;
+  border-color: #0051bb;
 }
 
 .btn-secondary {
   background-color: #6c757d;
   color: white;
+  border-color: #6c757d;
 }
 
 .btn-secondary:not(:disabled):hover {
   background-color: #545b62;
+  border-color: #545b62;
 }
 
 /* Single column layout for specific form groups */
@@ -189,50 +190,120 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .user-form-overlay {
-    padding: 10px;
+    padding: 8px;
+    align-items: flex-start;
   }
 
   .user-form-container {
-    max-height: 95vh;
+    max-height: 100vh;
+    margin-top: 0;
+    border-radius: 0;
+    width: 100%;
+    max-width: none;
   }
 
   .user-form-header {
-    padding: 15px 20px;
+    padding: 12px 16px;
+    border-radius: 0;
   }
 
   .user-form-header h2 {
+    font-size: 18px;
+  }
+
+  .close-btn {
     font-size: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   .user-form {
-    padding: 20px;
+    padding: 16px;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .user-form-header {
-    padding: 10px 15px;
-  }
-
-  .user-form {
-    padding: 15px;
+  .form-section {
+    margin-bottom: 24px;
   }
 
   .form-section h3 {
     font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 16px;
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 36px;
+    padding: 10px 16px;
+  }
+
+  .checkbox-group {
+    gap: 8px;
+  }
+
+  .checkbox-item {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-form-overlay {
+    padding: 0;
+  }
+
+  .user-form-header {
+    padding: 10px 12px;
+  }
+
+  .user-form-header h2 {
+    font-size: 16px;
+  }
+
+  .user-form {
+    padding: 12px;
+  }
+
+  .form-section h3 {
+    font-size: 14px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 8px;
+    font-size: 16px;
+  }
+}
+
+@media (max-height: 600px) and (max-width: 768px) {
+  .user-form-overlay {
+    align-items: flex-start;
+  }
+  
+  .user-form-container {
+    max-height: 100vh;
+    border-radius: 0;
   }
 }
 

@@ -21,27 +21,33 @@
 }
 
 .btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 400;
   text-decoration: none;
   display: inline-block;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  min-height: 32px;
+  line-height: 1.2;
 }
 
 .btn-primary {
   background-color: #0070f3;
   color: white;
+  border: 1px solid #0070f3;
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: #0051bb;
+  border-color: #0051bb;
 }
 
 .btn-primary:disabled {
   background-color: #ccc;
+  border-color: #ccc;
   cursor: not-allowed;
 }
 
@@ -80,8 +86,9 @@
   }
   
   .btn-primary {
-    min-height: 44px;
-    font-size: 16px;
+    min-height: 36px;
+    font-size: 14px;
+    padding: 8px 16px;
   }
 }
 
@@ -92,5 +99,11 @@
   
   .business-units-header h1 {
     font-size: 18px;
+  }
+  
+  .btn-primary {
+    min-height: 32px;
+    font-size: 13px;
+    padding: 6px 12px;
   }
 }
