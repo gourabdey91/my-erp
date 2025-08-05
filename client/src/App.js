@@ -10,7 +10,7 @@ function App() {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onViewChange={setCurrentView} />;
       case 'users':
         return <Users />;
       case 'billing':

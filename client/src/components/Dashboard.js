@@ -1,7 +1,7 @@
 import React from 'react';
 import './Dashboard.css';
 
-const Dashboard = () => {
+const Dashboard = ({ onViewChange }) => {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -10,18 +10,18 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-grid">
-        <div className="dashboard-card">
+        <div className="dashboard-card clickable" onClick={() => onViewChange('users')}>
           <div className="card-icon">👥</div>
           <div className="card-content">
             <h3>Users</h3>
             <p>Manage system users and their roles</p>
             <div className="card-action">
-              <span>Click "Users" in the navigation to get started</span>
+              <span>Click to manage users</span>
             </div>
           </div>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card" onClick={() => onViewChange('billing')}>
           <div className="card-icon">💰</div>
           <div className="card-content">
             <h3>Billing</h3>
@@ -32,7 +32,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card" onClick={() => onViewChange('reports')}>
           <div className="card-icon">📈</div>
           <div className="card-content">
             <h3>Reports</h3>

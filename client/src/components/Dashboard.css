@@ -38,11 +38,23 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid #e9ecef;
+  cursor: pointer;
 }
 
 .dashboard-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-card.clickable {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid #007bff;
+}
+
+.dashboard-card.clickable:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(0, 123, 255, 0.2);
 }
 
 .card-icon {
