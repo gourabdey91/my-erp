@@ -1,12 +1,43 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import Navigation from './components/Navigation';
+import Dashboard from './components/Dashboard';
+import Users from './components/Users';
 import './App.css';
 
 function App() {
+  const [currentView, setCurrentView] = useState('dashboard');
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'users':
+        return <Users />;
+      case 'billing':
+        return (
+          <div style={{ padding: '50px', textAlign: 'center' }}>
+            <h2>Billing Module</h2>
+            <p>Coming soon...</p>
+          </div>
+        );
+      case 'reports':
+        return (
+          <div style={{ padding: '50px', textAlign: 'center' }}>
+            <h2>Reports Module</h2>
+            <p>Coming soon...</p>
+          </div>
+        );
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <label htmlFor="erp-input" style={{ fontSize: '24px', fontWeight: 'bold' }}>My erp</label>
-      <br />
-      <input id="erp-input" type="text" style={{ marginTop: '20px', padding: '10px', fontSize: '18px' }} placeholder="Enter value..." />
+    <div className="app">
+      <Navigation currentView={currentView} onViewChange={setCurrentView} />
+      <main className="app-content">
+        {renderCurrentView()}
+      </main>
     </div>
   );
 }
