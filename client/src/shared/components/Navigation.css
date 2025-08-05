@@ -1,15 +1,16 @@
 .navigation {
-  background: linear-gradient(135deg, #0070f3 0%, #0052cc 100%);
+  background: #354a5f;
   color: white;
   padding: 0 20px;
-  box-shadow: 0 2px 12px rgba(0, 112, 243, 0.15);
+  box-shadow: 0 2px 12px rgba(53, 74, 95, 0.15);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 100;
-  min-height: 60px;
+  min-height: 50px;
+  font-family: "72", 'Helvetica Neue', Arial, sans-serif;
 }
 
 .nav-brand {
@@ -295,7 +296,7 @@
 @media (max-width: 768px) {
   .navigation {
     padding: 0 12px;
-    min-height: 56px;
+    min-height: 48px;
   }
 
   .nav-brand {
@@ -307,8 +308,8 @@
   }
 
   .nav-logo svg {
-    width: 28px;
-    height: 28px;
+    width: 20px;
+    height: 20px;
   }
 
   .nav-right {
@@ -332,7 +333,7 @@
   /* Make user menu touch-friendly and responsive */
   .user-menu {
     position: fixed;
-    top: 56px;
+    top: 48px;
     right: 8px;
     left: 8px;
     width: auto;
@@ -409,7 +410,7 @@
   
   .user-menu {
     position: fixed;
-    top: 56px;
+    top: 48px;
     right: 4px;
     left: 4px;
     width: auto;

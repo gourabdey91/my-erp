@@ -44,15 +44,14 @@ const Navigation = ({ currentView, onViewChange }) => {
     <nav className="navigation">
       <div className="nav-brand" onClick={() => onViewChange('dashboard')}>
         <div className="nav-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="32" height="32" rx="6" fill="white" fillOpacity="0.2"/>
-            <rect x="6" y="6" width="8" height="8" rx="2" fill="white"/>
-            <rect x="18" y="6" width="8" height="8" rx="2" fill="white"/>
-            <rect x="6" y="18" width="8" height="8" rx="2" fill="white"/>
-            <rect x="18" y="18" width="8" height="8" rx="2" fill="white"/>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="1" fill="white"/>
+            <rect x="14" y="3" width="7" height="7" rx="1" fill="white"/>
+            <rect x="3" y="14" width="7" height="7" rx="1" fill="white"/>
+            <rect x="14" y="14" width="7" height="7" rx="1" fill="white"/>
           </svg>
         </div>
-        <h1>My ERP Launchpad</h1>
+        <h1>Home</h1>
       </div>
       
       <div className="nav-right">

@@ -6,7 +6,15 @@ const Dashboard = ({ onViewChange }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('access');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Load saved tab from localStorage, default to 'access'
+    return localStorage.getItem('dashboardActiveTab') || 'access';
+  });
+
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dashboardActiveTab', activeTab);
+  }, [activeTab]);
 
   // Fetch dashboard statistics when component mounts
   useEffect(() => {
@@ -149,59 +157,78 @@ const Dashboard = ({ onViewChange }) => {
     { key: 'other', label: 'Other' }
   ];
 
+  // Function to scroll to section
+  const scrollToSection = (sectionKey) => {
+    const sectionElement = document.getElementById(`section-${sectionKey}`);
+    if (sectionElement) {
+      // Calculate offset to account for sticky header and tabs (approximately 100px)
+      const elementPosition = sectionElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - 100;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="fiori-dashboard">
-      {/* Status Bar */}
-      <div className="dashboard-status-bar">
-        {loading && (
-          <div className="dashboard-status loading">
-            <span>📊</span> Loading statistics...
-          </div>
-        )}
-        {error && (
-          <div className="dashboard-status error">
-            <span>⚠️</span> {error}
-          </div>
-        )}
-      </div>
-
       {/* Tab Navigation */}
       <div className="dashboard-tabs">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             className={`tab-button ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              scrollToSection(tab.key);
+            }}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tile Container */}
+      {/* Tile Container - Show All Sections */}
       <div className="fiori-tile-container">
-        <div className="fiori-section">
-          <div className="fiori-tiles-grid">
-            {sections[activeTab]?.tiles.map((tile) => (
-              <div
-                key={tile.id}
-                className={`fiori-tile ${!tile.enabled ? 'disabled' : ''} ${loading ? 'loading' : ''}`}
-                onClick={tile.enabled ? tile.onClick : undefined}
-              >
-                <div className="tile-content">
-                  <div className="tile-header">
-                    <h3 className="tile-title">{tile.title}</h3>
-                    {!tile.enabled && <div className="coming-soon-badge">Soon</div>}
-                  </div>
-                  <div className="tile-body">
-                    <div className="tile-icon">{tile.icon}</div>
-                    <div className="tile-count">{loading ? '...' : tile.count}</div>
+        {/* Error/Loading Messages */}
+        {loading && (
+          <div className="dashboard-status loading" style={{ margin: '1rem 0' }}>
+            <span>📊</span> Loading statistics...
+          </div>
+        )}
+        {error && (
+          <div className="dashboard-status error" style={{ margin: '1rem 0' }}>
+            <span>⚠️</span> {error}
+          </div>
+        )}
+        
+        {Object.entries(sections).map(([sectionKey, section]) => (
+          <div key={sectionKey} id={`section-${sectionKey}`} className="fiori-section">
+            <h2 className="section-title">{section.title}</h2>
+            <div className="fiori-tiles-grid">
+              {section.tiles.map((tile) => (
+                <div
+                  key={tile.id}
+                  className={`fiori-tile ${!tile.enabled ? 'disabled' : ''} ${loading ? 'loading' : ''}`}
+                  onClick={tile.enabled ? tile.onClick : undefined}
+                >
+                  <div className="tile-content">
+                    <div className="tile-header">
+                      <h3 className="tile-title">{tile.title}</h3>
+                      {!tile.enabled && <div className="coming-soon-badge">Soon</div>}
+                    </div>
+                    <div className="tile-body">
+                      <div className="tile-icon">{tile.icon}</div>
+                      <div className="tile-count">{loading ? '...' : tile.count}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
