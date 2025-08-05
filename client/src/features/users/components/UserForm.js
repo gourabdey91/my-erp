@@ -7,14 +7,9 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: ''
-    },
     role: 'user',
     status: 'active'
   });
@@ -27,14 +22,9 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
+        password: '',
+        confirmPassword: '',
         phone: user.phone || '',
-        address: {
-          street: user.address?.street || '',
-          city: user.address?.city || '',
-          state: user.address?.state || '',
-          zipCode: user.address?.zipCode || '',
-          country: user.address?.country || ''
-        },
         role: user.role || 'user',
         status: user.status || 'active'
       });
@@ -43,21 +33,10 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith('address.')) {
-      const addressField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [addressField]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -65,12 +44,42 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
     setLoading(true);
     setError(null);
 
+    // Password validation
+    if (!isEdit && !formData.password) {
+      setError('Password is required for new users');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Prepare data for submission (exclude confirmPassword)
+      const submitData = { ...formData };
+      delete submitData.confirmPassword;
+      
+      // If editing and no password provided, don't send password field
+      if (isEdit && !formData.password) {
+        delete submitData.password;
+      }
+
+      console.log('Submitting data:', { ...submitData, password: submitData.password ? '[HIDDEN]' : 'MISSING' });
+
       let response;
       if (isEdit) {
-        response = await userAPI.updateUser(user._id, formData);
+        response = await userAPI.updateUser(user._id, submitData);
       } else {
-        response = await userAPI.createUser(formData);
+        response = await userAPI.createUser(submitData);
       }
 
       if (response.data.success) {
@@ -143,74 +152,47 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="phone">Phone *</label>
+                <label htmlFor="phone">Phone</label>
                 <input
                   type="tel"
                   id="phone"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Address</h3>
-            <div className="form-group">
-              <label htmlFor="address.street">Street Address</label>
-              <input
-                type="text"
-                id="address.street"
-                name="address.street"
-                value={formData.address.street}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="address.city">City</label>
-                <input
-                  type="text"
-                  id="address.city"
-                  name="address.city"
-                  value={formData.address.city}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address.state">State</label>
-                <input
-                  type="text"
-                  id="address.state"
-                  name="address.state"
-                  value={formData.address.state}
-                  onChange={handleInputChange}
                 />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="address.zipCode">Zip Code</label>
+                <label htmlFor="password">
+                  Password {!isEdit && '*'}
+                  {isEdit && <small>(leave blank to keep current)</small>}
+                </label>
                 <input
-                  type="text"
-                  id="address.zipCode"
-                  name="address.zipCode"
-                  value={formData.address.zipCode}
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
                   onChange={handleInputChange}
+                  required={!isEdit}
+                  minLength="6"
+                  placeholder={isEdit ? "Enter new password" : ""}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="address.country">Country</label>
+                <label htmlFor="confirmPassword">
+                  Confirm Password {!isEdit && '*'}
+                </label>
                 <input
-                  type="text"
-                  id="address.country"
-                  name="address.country"
-                  value={formData.address.country}
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
                   onChange={handleInputChange}
+                  required={!isEdit || formData.password}
+                  minLength="6"
+                  placeholder={isEdit ? "Confirm new password" : ""}
                 />
               </div>
             </div>
@@ -250,19 +232,19 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
 
           <div className="form-actions">
             <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : (isEdit ? 'Update User' : 'Create User')}
+            </button>
+            <button
               type="button"
               className="btn btn-secondary"
               onClick={onCancel}
               disabled={loading}
             >
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (isEdit ? 'Update User' : 'Create User')}
             </button>
           </div>
         </form>

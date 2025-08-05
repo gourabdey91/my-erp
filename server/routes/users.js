@@ -45,34 +45,43 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/users - Create new user
 router.post('/', async (req, res) => {
+  console.log('=== CREATE USER ROUTE HIT ===');
   try {
-    const { firstName, lastName, email, phone, address, role } = req.body;
+    console.log('Received request body:', req.body);
+    const { firstName, lastName, email, password, phone, role, status } = req.body;
+    console.log('Extracted fields:', { firstName, lastName, email, password: password ? '[HIDDEN]' : 'MISSING', phone, role, status });
 
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log('User already exists with email:', email);
       return res.status(400).json({
         success: false,
         message: 'User with this email already exists'
       });
     }
 
+    console.log('Creating new user...');
     const newUser = new User({
       firstName,
       lastName,
       email,
+      password,
       phone,
-      address,
-      role
+      role,
+      status
     });
 
+    console.log('User object created, saving...');
     const savedUser = await newUser.save();
+    console.log('User saved successfully');
     res.status(201).json({
       success: true,
       message: 'User created successfully',
       data: savedUser
     });
   } catch (error) {
+    console.error('Error in create user route:', error);
     res.status(400).json({
       success: false,
       message: 'Error creating user',
@@ -84,7 +93,7 @@ router.post('/', async (req, res) => {
 // PUT /api/users/:id - Update user
 router.put('/:id', async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, address, role, status } = req.body;
+    const { firstName, lastName, email, password, phone, role, status } = req.body;
 
     // Check if another user with the same email exists
     if (email) {
@@ -100,18 +109,25 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    // Prepare update data - only include password if it's provided
+    const updateData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      role,
+      status,
+      updatedAt: Date.now()
+    };
+
+    // Only add password to update if it's provided (for editing)
+    if (password && password.trim() !== '') {
+      updateData.password = password;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      {
-        firstName,
-        lastName,
-        email,
-        phone,
-        address,
-        role,
-        status,
-        updatedAt: Date.now()
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
