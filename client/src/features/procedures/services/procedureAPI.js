@@ -1,9 +1,9 @@
 import { apiRequest } from '../../../services/api';
 
 export const procedureAPI = {
-  // Get all procedures for a business unit
-  getAll: async (businessUnitId) => {
-    return await apiRequest(`/api/procedures?businessUnitId=${businessUnitId}`);
+  // Get all procedures
+  getAll: async () => {
+    return await apiRequest('/api/procedures');
   },
 
   // Get procedure by ID

@@ -107,6 +107,60 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Refresh user data endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Find user by email and populate business units
+    const user = await User.findOne({ email: email.toLowerCase() })
+      .populate('businessUnits', 'code name')
+      .populate('defaultBusinessUnit', 'code name');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Create response user object (exclude password)
+    const userResponse = {
+      _id: user._id,
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      businessUnits: user.businessUnits,
+      defaultBusinessUnit: user.defaultBusinessUnit,
+      createdAt: user.createdAt
+    };
+
+    res.json({
+      success: true,
+      message: 'User data refreshed successfully',
+      user: userResponse
+    });
+
+  } catch (error) {
+    console.error('Refresh user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during user refresh'
+    });
+  }
+});
+
 // Forgot password endpoint
 router.post('/forgot-password', async (req, res) => {
   try {

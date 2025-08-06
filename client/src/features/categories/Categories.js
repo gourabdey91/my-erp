@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { categoryAPI } from './services/categoryAPI';
 import './Categories.css';
 
 const Categories = () => {
   const { currentUser } = useAuth();
-  const { currentBusinessUnit } = useBusinessUnit();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,11 +16,9 @@ const Categories = () => {
   });
 
   const loadCategories = useCallback(async () => {
-    if (!currentBusinessUnit?._id) return;
-    
     try {
       setLoading(true);
-      const response = await categoryAPI.getAll(currentBusinessUnit._id);
+      const response = await categoryAPI.getAll();
       if (response.success) {
         setCategories(response.data);
       } else {
@@ -34,7 +30,7 @@ const Categories = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   useEffect(() => {
     loadCategories();
@@ -45,7 +41,6 @@ const Categories = () => {
     try {
       const categoryData = {
         ...formData,
-        businessUnitId: currentBusinessUnit._id,
         createdBy: currentUser.id,
         updatedBy: currentUser.id
       };
@@ -98,10 +93,6 @@ const Categories = () => {
 
   if (loading) {
     return <div className="loading">Loading surgical categories...</div>;
-  }
-
-  if (!currentBusinessUnit) {
-    return <div className="loading">Loading business unit context...</div>;
   }
 
   return (
@@ -168,79 +159,37 @@ const Categories = () => {
             <p>No surgical categories found. Create your first surgical category to get started.</p>
           </div>
         ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="table-container">
-              <table className="categories-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.map((category) => (
-                    <tr key={category._id}>
-                      <td className="code-cell">{category.code}</td>
-                      <td className="description-cell">{category.description}</td>
-                      <td className="status-cell">
-                        <span className={`status-badge ${category.isActive ? 'active' : 'inactive'}`}>
-                          {category.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="actions-cell">
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEdit(category)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(category)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="categories-mobile-cards">
-              {categories.map((category) => (
-                <div key={category._id} className="category-card">
-                  <div className="category-card-header">
-                    <div className="category-card-code">{category.code}</div>
-                    <span className={`category-card-status ${category.isActive ? 'active' : 'inactive'}`}>
+          <div className="categories-grid">
+            {categories.map((category) => (
+              <div key={category._id} className="category-card">
+                <div className="category-header">
+                  <h3>{category.description}</h3>
+                  <span className="category-code">Code: {category.code}</span>
+                </div>
+                <div className="category-details">
+                  <div className="status-section">
+                    <span className={`status-badge ${category.isActive ? 'active' : 'inactive'}`}>
                       {category.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="category-card-description">
-                    {category.description}
-                  </div>
-                  <div className="category-card-actions">
-                    <button
-                      className="btn btn-sm btn-outline"
-                      onClick={() => handleEdit(category)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(category)}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </>
+                <div className="category-actions">
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEdit(category)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(category)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

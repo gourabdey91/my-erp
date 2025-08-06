@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BusinessUnitProvider } from './contexts/BusinessUnitContext';
+import TestBusinessUnitInitializer from './components/TestBusinessUnitInitializer';
 import Navigation from './shared/components/Navigation';
 import Dashboard from './features/dashboard/Dashboard';
 import Users from './features/users/Users';
@@ -10,6 +11,7 @@ import Categories from './features/categories/Categories';
 import PaymentTypes from './features/payment-types/PaymentTypes';
 import ExpenseTypes from './features/expense-types/ExpenseTypes';
 import Doctors from './features/doctors/Doctors';
+import Hospitals from './features/hospitals/Hospitals';
 import Procedures from './features/procedures/Procedures';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
@@ -33,6 +35,7 @@ function AppContent() {
 
   return (
     <BusinessUnitProvider>
+      <TestBusinessUnitInitializer />
       <div className="app">
         <Navigation currentView={currentView} onViewChange={setCurrentView} />
         <main className="app-content">
@@ -58,6 +61,8 @@ function AppContent() {
         return <ExpenseTypes />;
       case 'doctors':
         return <Doctors />;
+      case 'hospitals':
+        return <Hospitals />;
       case 'procedures':
         return <Procedures />;
       case 'company-details':

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { paymentTypeAPI } from './services/paymentTypeAPI';
 import './PaymentTypes.css';
 
 const PaymentTypes = () => {
   const { currentUser } = useAuth();
-  const { currentBusinessUnit } = useBusinessUnit();
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,11 +16,9 @@ const PaymentTypes = () => {
   });
 
   const loadPaymentTypes = useCallback(async () => {
-    if (!currentBusinessUnit?._id) return;
-    
     try {
       setLoading(true);
-      const response = await paymentTypeAPI.getAll(currentBusinessUnit._id);
+      const response = await paymentTypeAPI.getAll();
       if (response.success) {
         setPaymentTypes(response.data);
       } else {
@@ -34,7 +30,7 @@ const PaymentTypes = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   useEffect(() => {
     loadPaymentTypes();
@@ -45,7 +41,6 @@ const PaymentTypes = () => {
     try {
       const paymentTypeData = {
         ...formData,
-        businessUnitId: currentBusinessUnit._id,
         createdBy: currentUser.id,
         updatedBy: currentUser.id
       };
@@ -98,10 +93,6 @@ const PaymentTypes = () => {
 
   if (loading) {
     return <div className="loading">Loading payment types...</div>;
-  }
-
-  if (!currentBusinessUnit) {
-    return <div className="loading">Loading business unit context...</div>;
   }
 
   return (
@@ -169,79 +160,37 @@ const PaymentTypes = () => {
             <p>No payment types found. Create your first payment type to get started.</p>
           </div>
         ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="table-container">
-              <table className="payment-types-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paymentTypes.map((paymentType) => (
-                    <tr key={paymentType._id}>
-                      <td className="code-cell">{paymentType.code}</td>
-                      <td className="description-cell">{paymentType.description}</td>
-                      <td className="status-cell">
-                        <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
-                          {paymentType.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="actions-cell">
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEdit(paymentType)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(paymentType)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="payment-types-mobile-cards">
-              {paymentTypes.map((paymentType) => (
-                <div key={paymentType._id} className="payment-type-card">
-                  <div className="payment-type-card-header">
-                    <div className="payment-type-card-code">{paymentType.code}</div>
-                    <span className={`payment-type-card-status ${paymentType.isActive ? 'active' : 'inactive'}`}>
+          <div className="payment-types-grid">
+            {paymentTypes.map((paymentType) => (
+              <div key={paymentType._id} className="payment-type-card">
+                <div className="payment-type-header">
+                  <h3>{paymentType.description}</h3>
+                  <span className="payment-type-code">Code: {paymentType.code}</span>
+                </div>
+                <div className="payment-type-details">
+                  <div className="status-section">
+                    <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
                       {paymentType.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="payment-type-card-description">
-                    {paymentType.description}
-                  </div>
-                  <div className="payment-type-card-actions">
-                    <button
-                      className="btn btn-sm btn-outline"
-                      onClick={() => handleEdit(paymentType)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(paymentType)}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </>
+                <div className="payment-type-actions">
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEdit(paymentType)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(paymentType)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

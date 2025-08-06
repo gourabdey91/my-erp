@@ -2,22 +2,10 @@ const express = require('express');
 const router = express.Router();
 const PaymentType = require('../models/PaymentType');
 
-// Get all payment types for a business unit
+// Get all payment types
 router.get('/', async (req, res) => {
   try {
-    const { businessUnitId } = req.query;
-    
-    if (!businessUnitId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Business Unit ID is required'
-      });
-    }
-
-    const paymentTypes = await PaymentType.find({ 
-      businessUnitId,
-      isActive: true 
-    })
+    const paymentTypes = await PaymentType.find({ isActive: true })
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ code: 1 });
@@ -67,13 +55,13 @@ router.get('/:id', async (req, res) => {
 // Create new payment type
 router.post('/', async (req, res) => {
   try {
-    const { code, description, businessUnitId, createdBy } = req.body;
+    const { code, description, createdBy } = req.body;
     
     // Validation
-    if (!code || !description || !businessUnitId || !createdBy) {
+    if (!code || !description || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: 'Code, description, business unit ID, and created by are required'
+        message: 'Code, description, and created by are required'
       });
     }
 
@@ -84,23 +72,21 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check for existing payment type with same code in this business unit
+    // Check for existing payment type with same code
     const existingPaymentType = await PaymentType.findOne({ 
-      code: code.toUpperCase(), 
-      businessUnitId 
+      code: code.toUpperCase()
     });
     
     if (existingPaymentType) {
       return res.status(400).json({
         success: false,
-        message: 'Payment type with this code already exists in this business unit'
+        message: 'Payment type with this code already exists'
       });
     }
 
     const paymentType = new PaymentType({
       code: code.toUpperCase(),
       description,
-      businessUnitId,
       createdBy,
       updatedBy: createdBy
     });

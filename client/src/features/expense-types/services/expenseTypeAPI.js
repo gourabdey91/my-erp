@@ -1,9 +1,9 @@
 import { apiRequest } from '../../../services/api';
 
 export const expenseTypeAPI = {
-  // Get all expense types for a business unit
-  getAll: async (businessUnitId) => {
-    return await apiRequest(`/api/expense-types?businessUnitId=${businessUnitId}`);
+  // Get all expense types
+  getAll: async () => {
+    return await apiRequest('/api/expense-types');
   },
 
   // Get expense type by ID

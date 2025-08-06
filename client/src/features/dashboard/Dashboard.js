@@ -94,6 +94,43 @@ const Dashboard = ({ onViewChange }) => {
             enabled: true
           },
           {
+            id: 'procedures',
+            title: 'Procedures',
+            subtitle: 'Medical Procedures',
+            icon: '⚕️',
+            count: stats?.procedures?.count || '...',
+            onClick: () => onViewChange('procedures'),
+            enabled: true
+          }
+        ]
+      },
+      masterData: {
+        title: 'Master Data',
+        tiles: [
+          {
+            id: 'doctors',
+            title: 'Doctor Details',
+            subtitle: 'Manage Doctors',
+            icon: '👨‍⚕️',
+            count: stats?.doctors?.count || '...',
+            onClick: () => onViewChange('doctors'),
+            enabled: true
+          },
+          {
+            id: 'hospitals',
+            title: 'Hospital Details',
+            subtitle: 'Manage Hospitals',
+            icon: '🏥',
+            count: stats?.hospitals?.count || '...',
+            onClick: () => onViewChange('hospitals'),
+            enabled: true
+          }
+        ]
+      },
+      transactional: {
+        title: 'Transactional Data',
+        tiles: [
+          {
             id: 'expense-types',
             title: 'Expense Types',
             subtitle: 'Manage Expense Types',
@@ -103,37 +140,64 @@ const Dashboard = ({ onViewChange }) => {
             enabled: true
           },
           {
-            id: 'doctors',
-            title: 'Doctor Management',
-            subtitle: 'Manage Doctors',
-            icon: '👨‍⚕️',
-            count: stats?.doctors?.count || '...',
-            onClick: () => onViewChange('doctors'),
-            enabled: true
+            id: 'templates',
+            title: 'Templates',
+            subtitle: 'Document Templates',
+            icon: '📄',
+            count: stats?.templates?.count || '...',
+            onClick: () => onViewChange('templates'),
+            enabled: false
           },
           {
-            id: 'procedures',
-            title: 'Procedures',
-            subtitle: 'Medical Procedures',
-            icon: '🏥',
-            count: stats?.procedures?.count || '...',
-            onClick: () => onViewChange('procedures'),
-            enabled: true
+            id: 'sales-order',
+            title: 'Sales Order',
+            subtitle: 'Manage Sales Orders',
+            icon: '📝',
+            count: stats?.salesOrders?.count || '...',
+            onClick: () => onViewChange('sales-order'),
+            enabled: false
+          },
+          {
+            id: 'delivery',
+            title: 'Delivery',
+            subtitle: 'Track Deliveries',
+            icon: '🚚',
+            count: stats?.deliveries?.count || '...',
+            onClick: () => onViewChange('delivery'),
+            enabled: false
+          },
+          {
+            id: 'billing',
+            title: 'Billing',
+            subtitle: 'Create & Manage Bills',
+            icon: '💰',
+            count: stats?.billing?.count || '...',
+            onClick: () => onViewChange('billing'),
+            enabled: false
+          },
+          {
+            id: 'expense',
+            title: 'Expense',
+            subtitle: 'Track Expenses',
+            icon: '💸',
+            count: stats?.expenses?.count || '...',
+            onClick: () => onViewChange('expense'),
+            enabled: false
+          },
+          {
+            id: 'payment',
+            title: 'Payment',
+            subtitle: 'Manage Payments',
+            icon: '💳',
+            count: stats?.payments?.count || '...',
+            onClick: () => onViewChange('payment'),
+            enabled: false
           }
         ]
       },
       other: {
-        title: 'Other',
+        title: 'Reports & Analytics',
         tiles: [
-          {
-            id: 'billing',
-            title: 'Billing & Invoicing',
-            subtitle: 'Create & Manage Bills',
-            icon: '💰',
-            count: stats?.billing?.count || '24',
-            onClick: () => onViewChange('billing'),
-            enabled: false
-          },
           {
             id: 'reports',
             title: 'Reports & Analytics',
@@ -172,7 +236,9 @@ const Dashboard = ({ onViewChange }) => {
   const tabs = [
     { key: 'access', label: 'Access and Authorization' },
     { key: 'configuration', label: 'Configuration Data' },
-    { key: 'other', label: 'Other' }
+    { key: 'masterData', label: 'Master Data' },
+    { key: 'transactional', label: 'Transactional Data' },
+    { key: 'other', label: 'Reports & Analytics' }
   ];
 
   // Function to scroll to section

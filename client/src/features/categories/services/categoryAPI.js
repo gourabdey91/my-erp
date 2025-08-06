@@ -1,9 +1,9 @@
 import { apiRequest } from '../../../services/api';
 
 export const categoryAPI = {
-  // Get all categories for a business unit
-  getAll: async (businessUnitId) => {
-    return await apiRequest(`/api/categories?businessUnitId=${businessUnitId}`);
+  // Get all categories
+  getAll: async () => {
+    return await apiRequest('/api/categories');
   },
 
   // Get category by ID

@@ -94,8 +94,10 @@ export const BusinessUnitProvider = ({ children }) => {
   }, [userBusinessUnits]);
 
   const switchBusinessUnit = (businessUnit) => {
-    console.log('Switching to business unit:', businessUnit);
+    console.log('🔄 switchBusinessUnit called with:', businessUnit);
+    console.log('🔍 Current business unit before switch:', currentBusinessUnit);
     setCurrentBusinessUnit(businessUnit);
+    console.log('✅ Business unit switched to:', businessUnit);
     // You can add additional logic here like refreshing data, etc.
   };
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseTypeAPI } from './services/expenseTypeAPI';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { useAuth } from '../../contexts/AuthContext';
 import './ExpenseTypes.css';
 
@@ -15,13 +14,12 @@ const ExpenseTypes = () => {
     name: ''
   });
 
-  const { currentBusinessUnit } = useBusinessUnit();
   const { currentUser } = useAuth();
 
   const fetchExpenseTypes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await expenseTypeAPI.getAll(currentBusinessUnit._id);
+      const response = await expenseTypeAPI.getAll();
       setExpenseTypes(response);
       setError('');
     } catch (err) {
@@ -30,13 +28,11 @@ const ExpenseTypes = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   useEffect(() => {
-    if (currentBusinessUnit?._id) {
-      fetchExpenseTypes();
-    }
-  }, [currentBusinessUnit, fetchExpenseTypes]);
+    fetchExpenseTypes();
+  }, [fetchExpenseTypes]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,7 +62,6 @@ const ExpenseTypes = () => {
       const expenseTypeData = {
         code: formData.code.trim(),
         name: formData.name.trim(),
-        businessUnit: currentBusinessUnit._id,
         createdBy: currentUser._id,
         updatedBy: currentUser._id
       };
@@ -123,14 +118,8 @@ const ExpenseTypes = () => {
     setError('');
   };
 
-  if (!currentBusinessUnit) {
-    return (
-      <div className="expense-types-container">
-        <div className="no-business-unit">
-          <p>Please select a business unit to manage expense types.</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="loading">Loading expense types...</div>;
   }
 
   return (
@@ -193,7 +182,7 @@ const ExpenseTypes = () => {
         </div>
       )}
 
-      <div className="data-table-container">
+      <div className="expense-types-list">
         {loading && !showForm ? (
           <div className="loading">Loading expense types...</div>
         ) : expenseTypes.length === 0 ? (
@@ -202,83 +191,41 @@ const ExpenseTypes = () => {
             <p>Click "Add Expense Type" to create your first expense type.</p>
           </div>
         ) : (
-          <>
-            {/* Desktop/Tablet Table View */}
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenseTypes.map(expenseType => (
-                    <tr key={expenseType._id}>
-                      <td className="code-cell">{expenseType.code}</td>
-                      <td>{expenseType.name}</td>
-                      <td>{new Date(expenseType.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        {expenseType.updatedAt !== expenseType.createdAt 
-                          ? new Date(expenseType.updatedAt).toLocaleDateString()
-                          : '-'
-                        }
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button 
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleEdit(expenseType)}
-                            disabled={loading}
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDelete(expenseType)}
-                            disabled={loading}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Mobile Card View */}
-            <div className="mobile-card-view">
-              {expenseTypes.map(expenseType => (
-                <div key={`mobile-${expenseType._id}`} className="expense-type-mobile-card">
-                  <div className="mobile-card-header">
-                    <h3 className="mobile-card-title">{expenseType.name}</h3>
-                    <span className="mobile-card-code">{expenseType.code}</span>
-                  </div>
-                  <div className="mobile-card-actions">
-                    <button 
-                      className="btn btn-outline-primary"
-                      onClick={() => handleEdit(expenseType)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDelete(expenseType)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
+          <div className="expense-types-grid">
+            {expenseTypes.map(expenseType => (
+              <div key={expenseType._id} className="expense-type-card">
+                <div className="expense-type-header">
+                  <h3>{expenseType.name}</h3>
+                  <span className="expense-type-code">Code: {expenseType.code}</span>
+                </div>
+                <div className="expense-type-details">
+                  <p><strong>Created:</strong> {new Date(expenseType.createdAt).toLocaleDateString()}</p>
+                  {expenseType.updatedAt !== expenseType.createdAt && (
+                    <p><strong>Updated:</strong> {new Date(expenseType.updatedAt).toLocaleDateString()}</p>
+                  )}
+                  <div className="status-section">
+                    <span className="status-badge active">Active</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
+                <div className="expense-type-actions">
+                  <button 
+                    className="edit-button"
+                    onClick={() => handleEdit(expenseType)}
+                    disabled={loading}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="delete-button"
+                    onClick={() => handleDelete(expenseType)}
+                    disabled={loading}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

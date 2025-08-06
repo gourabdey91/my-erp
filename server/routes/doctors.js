@@ -3,19 +3,10 @@ const router = express.Router();
 const Doctor = require('../models/Doctor');
 const Category = require('../models/Category');
 
-// Get all doctors for a business unit
+// Get all doctors
 router.get('/', async (req, res) => {
   try {
-    const { businessUnitId } = req.query;
-    
-    if (!businessUnitId) {
-      return res.status(400).json({ message: 'Business unit ID is required' });
-    }
-
-    const doctors = await Doctor.find({ 
-      businessUnit: businessUnitId,
-      isActive: true 
-    })
+    const doctors = await Doctor.find({ isActive: true })
     .populate('surgicalCategories', 'code description')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
@@ -29,14 +20,10 @@ router.get('/', async (req, res) => {
 });
 
 // Get surgical categories for dropdown
-router.get('/categories/:businessUnitId', async (req, res) => {
+router.get('/categories', async (req, res) => {
   try {
-    const { businessUnitId } = req.params;
-    
-    const categories = await Category.find({
-      businessUnitId: businessUnitId,
-      isActive: true
-    }).select('_id code description').sort({ description: 1 });
+    const categories = await Category.find({ isActive: true })
+    .select('_id code description').sort({ description: 1 });
 
     res.json(categories);
   } catch (error) {
@@ -67,12 +54,12 @@ router.get('/:id', async (req, res) => {
 // Create new doctor
 router.post('/', async (req, res) => {
   try {
-    const { name, surgicalCategories, phoneNumber, email, businessUnit, createdBy } = req.body;
+    const { name, surgicalCategories, phoneNumber, email, createdBy } = req.body;
 
     // Validation
-    if (!name || !surgicalCategories || !businessUnit || !createdBy) {
+    if (!name || !surgicalCategories || !createdBy) {
       return res.status(400).json({ 
-        message: 'Name, surgical categories, business unit, and created by are required' 
+        message: 'Name, surgical categories, and created by are required' 
       });
     }
 

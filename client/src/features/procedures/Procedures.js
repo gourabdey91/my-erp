@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { procedureAPI } from './services/procedureAPI';
 import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
@@ -8,7 +7,6 @@ import './Procedures.css';
 
 const Procedures = () => {
   const { currentUser } = useAuth();
-  const { currentBusinessUnit } = useBusinessUnit();
   const [procedures, setProcedures] = useState([]);
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -26,16 +24,14 @@ const Procedures = () => {
   });
 
   const loadData = useCallback(async () => {
-    if (!currentBusinessUnit?._id) return;
-    
     try {
       setLoading(true);
       
       // Load all required data in parallel
       const [proceduresRes, paymentTypesRes, categoriesRes] = await Promise.all([
-        procedureAPI.getAll(currentBusinessUnit._id),
-        paymentTypeAPI.getAll(currentBusinessUnit._id),
-        categoryAPI.getAll(currentBusinessUnit._id)
+        procedureAPI.getAll(),
+        paymentTypeAPI.getAll(),
+        categoryAPI.getAll()
       ]);
 
       if (proceduresRes.success) setProcedures(proceduresRes.data);
@@ -48,7 +44,7 @@ const Procedures = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -60,7 +56,6 @@ const Procedures = () => {
       const procedureData = {
         ...formData,
         amount: parseFloat(formData.amount),
-        businessUnitId: currentBusinessUnit._id,
         createdBy: currentUser.id,
         updatedBy: currentUser.id
       };
@@ -77,6 +72,7 @@ const Procedures = () => {
       setFormData({
         code: '',
         name: '',
+        categoryId: '',
         paymentTypeId: '',
         amount: '',
         currency: 'INR'
@@ -136,11 +132,7 @@ const Procedures = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading procedures and related data...</div>;
-  }
-
-  if (!currentBusinessUnit) {
-    return <div className="loading">Loading business unit context...</div>;
+    return <div className="loading">Loading medical procedures...</div>;
   }
 
   return (
@@ -288,119 +280,40 @@ const Procedures = () => {
             <p>No procedures found. Create your first procedure to get started.</p>
           </div>
         ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="table-container">
-              <table className="procedures-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Payment Type</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {procedures.map((procedure) => (
-                    <tr key={procedure._id}>
-                      <td className="code-cell">
-                        <span className="procedure-code">{procedure.code}</span>
-                      </td>
-                      <td className="name-cell">
-                        <span className="procedure-name">{procedure.name}</span>
-                      </td>
-                      <td className="category-cell">
-                        <span className="category-code">{procedure.categoryId?.code}</span>
-                        <span className="category-desc">{procedure.categoryId?.description}</span>
-                      </td>
-                      <td className="payment-type-cell">
-                        <span className="payment-type-code">{procedure.paymentTypeId?.code}</span>
-                        <span className="payment-type-desc">{procedure.paymentTypeId?.description}</span>
-                      </td>
-                      <td className="amount-cell">
-                        {formatCurrency(procedure.amount, procedure.currency)}
-                      </td>
-                      <td className="status-cell">
-                        <span className={`status-badge ${procedure.isActive ? 'active' : 'inactive'}`}>
-                          {procedure.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="actions-cell">
-                        <button
-                          className="btn btn-sm btn-outline"
-                          onClick={() => handleEdit(procedure)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(procedure)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="procedures-mobile-cards">
-              {procedures.map((procedure) => (
-                <div key={procedure._id} className="procedure-card">
-                  <div className="procedure-card-header">
-                    <div className="procedure-card-title">
-                      <span className="procedure-code">{procedure.code}</span>
-                      <span className="procedure-name">{procedure.name}</span>
-                    </div>
-                    <span className={`procedure-card-status ${procedure.isActive ? 'active' : 'inactive'}`}>
+          <div className="procedures-grid">
+            {procedures.map((procedure) => (
+              <div key={procedure._id} className="procedure-card">
+                <div className="procedure-header">
+                  <h3>{procedure.name}</h3>
+                  <span className="procedure-code">Code: {procedure.code}</span>
+                </div>
+                <div className="procedure-details">
+                  <p><strong>Category:</strong> {procedure.categoryId?.code} - {procedure.categoryId?.description}</p>
+                  <p><strong>Payment Type:</strong> {procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</p>
+                  <p><strong>Amount:</strong> <span className="amount">{formatCurrency(procedure.amount, procedure.currency)}</span></p>
+                  <div className="status-section">
+                    <span className={`status-badge ${procedure.isActive ? 'active' : 'inactive'}`}>
                       {procedure.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="procedure-card-content">
-                    <div className="procedure-card-row">
-                      <span className="label">Code:</span>
-                      <span className="value">{procedure.code}</span>
-                    </div>
-                    <div className="procedure-card-row">
-                      <span className="label">Name:</span>
-                      <span className="value">{procedure.name}</span>
-                    </div>
-                    <div className="procedure-card-row">
-                      <span className="label">Category:</span>
-                      <span className="value">{procedure.categoryId?.code} - {procedure.categoryId?.description}</span>
-                    </div>
-                    <div className="procedure-card-row">
-                      <span className="label">Payment Type:</span>
-                      <span className="value">{procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</span>
-                    </div>
-                    <div className="procedure-card-row">
-                      <span className="label">Amount:</span>
-                      <span className="value amount">{formatCurrency(procedure.amount, procedure.currency)}</span>
-                    </div>
-                  </div>
-                  <div className="procedure-card-actions">
-                    <button
-                      className="btn btn-sm btn-outline"
-                      onClick={() => handleEdit(procedure)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(procedure)}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </>
+                <div className="procedure-actions">
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEdit(procedure)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(procedure)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import './Navigation.css';
 
 const Navigation = ({ currentView, onViewChange }) => {
   const { currentUser, logout } = useAuth();
-  const { currentBusinessUnit, userBusinessUnits, switchBusinessUnit, loading } = useBusinessUnit();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -25,11 +23,6 @@ const Navigation = ({ currentView, onViewChange }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUserMenuOpen]);
-
-  const handleBusinessUnitSwitch = (businessUnit) => {
-    switchBusinessUnit(businessUnit);
-    setIsUserMenuOpen(false);
-  };
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
@@ -76,39 +69,14 @@ const Navigation = ({ currentView, onViewChange }) => {
               
               <div className="menu-divider"></div>
               
-              <div className="menu-section">
-                <div className="menu-section-title">
-                  🏢 Business Unit
-                </div>
-                {loading ? (
-                  <div className="menu-item disabled">
-                    <span>Loading business units...</span>
-                  </div>
-                ) : userBusinessUnits && userBusinessUnits.length > 0 ? (
-                  userBusinessUnits.map((bu) => (
-                    <div 
-                      key={bu._id || bu.id} 
-                      className={`menu-item bu-item ${currentBusinessUnit?._id === bu._id ? 'active' : ''}`}
-                      onClick={() => handleBusinessUnitSwitch(bu)}
-                    >
-                      <div className="bu-item-info">
-                        <span className="bu-item-code">{bu.code}</span>
-                        <span className="bu-item-name">{bu.name}</span>
-                      </div>
-                      {currentBusinessUnit?._id === bu._id && <span className="current-indicator">✓</span>}
-                    </div>
-                  ))
-                ) : (
-                  <div className="menu-item disabled">
-                    <span>No business units assigned</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="menu-divider"></div>
-              
               <div className="menu-item" onClick={() => setIsUserMenuOpen(false)}>
                 <span>⚙️ Settings</span>
+              </div>
+              <div className="menu-item" onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}>
+                <span>🔄 Refresh Data</span>
               </div>
               <div className="menu-item logout" onClick={handleLogout}>
                 <span>🔓 Logout</span>

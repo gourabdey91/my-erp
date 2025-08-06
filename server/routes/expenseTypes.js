@@ -2,19 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ExpenseType = require('../models/ExpenseType');
 
-// Get all expense types for a business unit
+// Get all expense types
 router.get('/', async (req, res) => {
   try {
-    const { businessUnitId } = req.query;
-    
-    if (!businessUnitId) {
-      return res.status(400).json({ message: 'Business unit ID is required' });
-    }
-
-    const expenseTypes = await ExpenseType.find({ 
-      businessUnit: businessUnitId,
-      isActive: true 
-    })
+    const expenseTypes = await ExpenseType.find({ isActive: true })
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ name: 1 });
@@ -47,12 +38,12 @@ router.get('/:id', async (req, res) => {
 // Create new expense type
 router.post('/', async (req, res) => {
   try {
-    const { code, name, businessUnit, createdBy } = req.body;
+    const { code, name, createdBy } = req.body;
 
     // Validation
-    if (!code || !name || !businessUnit || !createdBy) {
+    if (!code || !name || !createdBy) {
       return res.status(400).json({ 
-        message: 'Code, name, business unit, and created by are required' 
+        message: 'Code, name, and created by are required' 
       });
     }
 
@@ -68,36 +59,33 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check if expense type with same code already exists in this business unit
+    // Check if expense type with same code already exists
     const existingByCode = await ExpenseType.findOne({ 
-      code: code.trim().toUpperCase(), 
-      businessUnit,
+      code: code.trim().toUpperCase(),
       isActive: true 
     });
 
     if (existingByCode) {
       return res.status(400).json({ 
-        message: 'Expense type with this code already exists in this business unit' 
+        message: 'Expense type with this code already exists' 
       });
     }
 
-    // Check if expense type with same name already exists in this business unit
+    // Check if expense type with same name already exists
     const existingByName = await ExpenseType.findOne({ 
-      name: name.trim(), 
-      businessUnit,
+      name: name.trim(),
       isActive: true 
     });
 
     if (existingByName) {
       return res.status(400).json({ 
-        message: 'Expense type with this name already exists in this business unit' 
+        message: 'Expense type with this name already exists' 
       });
     }
 
     const expenseType = new ExpenseType({
       code: code.trim().toUpperCase(),
       name: name.trim(),
-      businessUnit,
       createdBy,
       updatedBy: createdBy
     });

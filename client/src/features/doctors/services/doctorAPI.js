@@ -1,9 +1,9 @@
 import { apiRequest } from '../../../services/api';
 
 export const doctorAPI = {
-  // Get all doctors for a business unit
-  getAll: async (businessUnitId) => {
-    return await apiRequest(`/api/doctors?businessUnitId=${businessUnitId}`);
+  // Get all doctors
+  getAll: async () => {
+    return await apiRequest('/api/doctors');
   },
 
   // Get doctor by ID
@@ -12,8 +12,8 @@ export const doctorAPI = {
   },
 
   // Get surgical categories for dropdown
-  getCategories: async (businessUnitId) => {
-    return await apiRequest(`/api/doctors/categories/${businessUnitId}`);
+  getCategories: async () => {
+    return await apiRequest('/api/doctors/categories');
   },
 
   // Create new doctor

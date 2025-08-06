@@ -44,6 +44,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('currentUser', JSON.stringify(user));
   };
 
+  const refreshUser = async () => {
+    if (currentUser && currentUser.email) {
+      try {
+        console.log('🔄 Refreshing user data from server...');
+        const response = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: currentUser.email }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            console.log('✅ User data refreshed successfully');
+            setCurrentUser(data.user);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            return data.user;
+          }
+        }
+        console.log('⚠️ Failed to refresh user data');
+      } catch (error) {
+        console.error('❌ Error refreshing user data:', error);
+      }
+    }
+    return null;
+  };
+
   const logout = () => {
     console.log('🚪 Logging out user...');
     
@@ -64,7 +93,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     login,
-    logout
+    logout,
+    refreshUser
   };
 
   return (

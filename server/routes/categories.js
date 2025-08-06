@@ -2,22 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/Category');
 
-// Get all categories for a business unit
+// Get all categories
 router.get('/', async (req, res) => {
   try {
-    const { businessUnitId } = req.query;
-    
-    if (!businessUnitId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Business Unit ID is required'
-      });
-    }
-
-    const categories = await Category.find({ 
-      businessUnitId,
-      isActive: true 
-    })
+    const categories = await Category.find({ isActive: true })
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ code: 1 });
@@ -69,34 +57,32 @@ router.post('/', async (req, res) => {
   try {
     console.log('Received category data:', JSON.stringify(req.body, null, 2));
     
-    const { code, description, businessUnitId, createdBy } = req.body;
+    const { code, description, createdBy } = req.body;
 
     // Validate required fields
-    if (!code || !description || !businessUnitId || !createdBy) {
+    if (!code || !description || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: code, description, businessUnitId, or createdBy'
+        message: 'Missing required fields: code, description, or createdBy'
       });
     }
 
-    // Check if code already exists in this business unit
+    // Check if code already exists
     const existingCategory = await Category.findOne({ 
       code: code.toUpperCase(),
-      businessUnitId,
       isActive: true
     });
     
     if (existingCategory) {
       return res.status(400).json({
         success: false,
-        message: 'Category code already exists in this business unit'
+        message: 'Category code already exists'
       });
     }
 
     const category = new Category({
       code: code.toUpperCase(),
       description,
-      businessUnitId,
       createdBy
     });
 

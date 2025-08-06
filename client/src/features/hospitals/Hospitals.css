@@ -1,0 +1,471 @@
+/* Hospital Master Styles - SAP Fiori Inspired */
+.hospitals-container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: "SAP 72", "72", "Helvetica Neue", Arial, sans-serif;
+}
+
+.hospitals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.hospitals-header h2 {
+  margin: 0;
+  color: #32363a;
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.add-button {
+  background-color: #0070f2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: background-color 0.2s ease;
+}
+
+.add-button:hover {
+  background-color: #005fcc;
+}
+
+.add-button:disabled {
+  background-color: #8696a0;
+  cursor: not-allowed;
+}
+
+/* Business Unit Selector */
+.business-unit-selector {
+  background-color: #f7f7f7;
+  border: 1px solid #d5dadd;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.business-unit-selector .form-group {
+  margin-bottom: 0;
+  max-width: 300px;
+}
+
+/* Form Overlay */
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.form-container {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.form-header h3 {
+  margin: 0;
+  color: #32363a;
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6a6d70;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.close-button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Form Styles */
+.hospital-form {
+  padding: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #32363a;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #89919a;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0070f2;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+/* Categories Grid */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.category-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.category-checkbox:hover {
+  background-color: #f8f9fa;
+}
+
+.category-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.category-checkbox span {
+  font-size: 0.875rem;
+  color: #32363a;
+}
+
+.no-categories {
+  color: #6a6d70;
+  font-style: italic;
+  margin: 0.5rem 0;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.cancel-button {
+  background: none;
+  border: 1px solid #89919a;
+  color: #32363a;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #f5f5f5;
+}
+
+.submit-button {
+  background-color: #0070f2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+}
+
+.submit-button:hover {
+  background-color: #005fcc;
+}
+
+/* Hospital List */
+.hospitals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.hospital-card {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.hospital-card:hover {
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.hospital-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hospital-header h3 {
+  margin: 0;
+  color: #0070f2;
+  font-size: 1.125rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.hospital-id {
+  background-color: #f5f5f5;
+  color: #6a6d70;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.hospital-details p {
+  margin: 0.5rem 0;
+  color: #32363a;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.hospital-details strong {
+  color: #6a6d70;
+  font-weight: 500;
+}
+
+.categories {
+  margin-top: 1rem;
+}
+
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.category-tag {
+  background-color: #e8f4fd;
+  color: #0070f2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.hospital-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.edit-button {
+  background-color: #107e3e;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.edit-button:hover {
+  background-color: #0d5f2f;
+}
+
+.delete-button {
+  background-color: #bb0000;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.delete-button:hover {
+  background-color: #a20000;
+}
+
+/* Messages */
+.error-message {
+  background-color: #fef7f7;
+  color: #bb0000;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid #f4c2c2;
+  font-size: 0.875rem;
+}
+
+.success-message {
+  background-color: #f1f8f3;
+  color: #107e3e;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid #a7e6c7;
+  font-size: 0.875rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6a6d70;
+  font-size: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6a6d70;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .hospitals-container {
+    padding: 0.5rem;
+  }
+  
+  .hospitals-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .form-overlay {
+    padding: 1rem 0.5rem;
+  }
+  
+  .form-container {
+    max-height: 95vh;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .hospitals-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .hospital-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .hospital-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .hospitals-container {
+    padding: 0.25rem;
+  }
+  
+  .hospital-card {
+    padding: 1rem;
+  }
+  
+  .form-container {
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+  
+  .form-header,
+  .hospital-form {
+    padding: 1rem;
+  }
+}

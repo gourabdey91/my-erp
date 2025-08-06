@@ -2,22 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Procedure = require('../models/Procedure');
 
-// Get all procedures for a business unit
+// Get all procedures
 router.get('/', async (req, res) => {
   try {
-    const { businessUnitId } = req.query;
-    
-    if (!businessUnitId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Business Unit ID is required'
-      });
-    }
-
-    const procedures = await Procedure.find({ 
-      businessUnitId,
-      isActive: true 
-    })
+    const procedures = await Procedure.find({ isActive: true })
     .populate('paymentTypeId', 'code description')
     .populate('categoryId', 'code description')
     .populate('createdBy', 'firstName lastName')
@@ -78,15 +66,14 @@ router.post('/', async (req, res) => {
       paymentTypeId, 
       amount, 
       currency,
-      businessUnitId, 
       createdBy 
     } = req.body;
     
     // Validation
-    if (!code || !name || !categoryId || !paymentTypeId || !amount || !businessUnitId || !createdBy) {
+    if (!code || !name || !categoryId || !paymentTypeId || !amount || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: 'Code, name, category, payment type, amount, business unit ID, and created by are required'
+        message: 'Code, name, category, payment type, amount, and created by are required'
       });
     }
 
@@ -125,7 +112,6 @@ router.post('/', async (req, res) => {
       paymentTypeId,
       amount,
       currency: currency || 'INR',
-      businessUnitId,
       createdBy,
       updatedBy: createdBy
     });

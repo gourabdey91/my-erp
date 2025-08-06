@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { doctorAPI } from './services/doctorAPI';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { useAuth } from '../../contexts/AuthContext';
 import './Doctors.css';
 
@@ -18,13 +17,12 @@ const Doctors = () => {
     email: ''
   });
 
-  const { currentBusinessUnit } = useBusinessUnit();
   const { currentUser } = useAuth();
 
   const fetchDoctors = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await doctorAPI.getAll(currentBusinessUnit._id);
+      const response = await doctorAPI.getAll();
       setDoctors(response);
       setError('');
     } catch (err) {
@@ -33,24 +31,22 @@ const Doctors = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await doctorAPI.getCategories(currentBusinessUnit._id);
+      const response = await doctorAPI.getCategories();
       setCategories(response);
     } catch (err) {
       console.error('Error fetching categories:', err);
       setError('Failed to fetch surgical categories');
     }
-  }, [currentBusinessUnit]);
+  }, []);
 
   useEffect(() => {
-    if (currentBusinessUnit?._id) {
-      fetchDoctors();
-      fetchCategories();
-    }
-  }, [currentBusinessUnit, fetchDoctors, fetchCategories]);
+    fetchDoctors();
+    fetchCategories();
+  }, [fetchDoctors, fetchCategories]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,13 +67,13 @@ const Doctors = () => {
     }
 
     // Validate phone number only if provided
-    if (formData.phoneNumber && formData.phoneNumber.trim() && !/^\+?[\d\s\-\(\)]{10,15}$/.test(formData.phoneNumber)) {
+    if (formData.phoneNumber && formData.phoneNumber.trim() && !/^\+?[\d\s\-()]{10,15}$/.test(formData.phoneNumber)) {
       setError('Please enter a valid phone number');
       return;
     }
 
     // Validate email only if provided
-    if (formData.email && formData.email.trim() && !/^[\w\.-]+@[\w\.-]+\.\w+$/.test(formData.email)) {
+    if (formData.email && formData.email.trim() && !/^[\w.-]+@[\w.-]+\.\w+$/.test(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
@@ -87,7 +83,6 @@ const Doctors = () => {
       const doctorData = {
         name: formData.name.trim(),
         surgicalCategories: formData.surgicalCategories,
-        businessUnit: currentBusinessUnit._id,
         createdBy: currentUser._id,
         updatedBy: currentUser._id
       };
@@ -173,20 +168,14 @@ const Doctors = () => {
     return doctorCategories.map(cat => cat.description).join(', ');
   };
 
-  if (!currentBusinessUnit) {
-    return (
-      <div className="doctors-container">
-        <div className="no-business-unit">
-          <p>Please select a business unit to manage doctors.</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <div className="loading">Loading doctors...</div>;
   }
 
   return (
     <div className="doctors-container">
       <div className="page-header">
-        <h1>Doctor Management</h1>
+        <h1>Doctor Details</h1>
         <button 
           className="btn btn-primary"
           onClick={() => setShowForm(true)}

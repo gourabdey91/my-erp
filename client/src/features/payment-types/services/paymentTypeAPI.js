@@ -1,9 +1,9 @@
 import { apiRequest } from '../../../services/api';
 
 export const paymentTypeAPI = {
-  // Get all payment types for a business unit
-  getAll: async (businessUnitId) => {
-    return await apiRequest(`/api/payment-types?businessUnitId=${businessUnitId}`);
+  // Get all payment types
+  getAll: async () => {
+    return await apiRequest('/api/payment-types');
   },
 
   // Get payment type by ID

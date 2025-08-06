@@ -7,6 +7,7 @@ const PaymentType = require('../models/PaymentType');
 const ExpenseType = require('../models/ExpenseType');
 const Procedure = require('../models/Procedure');
 const Doctor = require('../models/Doctor');
+const Hospital = require('../models/Hospital');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -34,6 +35,10 @@ router.get('/stats', async (req, res) => {
     // Get doctors statistics
     const totalDoctors = await Doctor.countDocuments();
     const activeDoctors = await Doctor.countDocuments({ isActive: true });
+
+    // Get hospitals statistics
+    const totalHospitals = await Hospital.countDocuments();
+    const activeHospitals = await Hospital.countDocuments({ isActive: true });
 
     // Get procedures statistics
     const totalProcedures = await Procedure.countDocuments();
@@ -77,6 +82,12 @@ router.get('/stats', async (req, res) => {
         active: activeDoctors,
         count: activeDoctors,
         label: 'Doctors'
+      },
+      hospitals: {
+        total: totalHospitals,
+        active: activeHospitals,
+        count: activeHospitals,
+        label: 'Hospitals'
       },
       procedures: {
         total: totalProcedures,
