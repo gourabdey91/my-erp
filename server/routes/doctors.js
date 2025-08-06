@@ -89,17 +89,16 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check if email already exists in this business unit (only if email is provided)
+    // Check if email already exists (only if email is provided)
     if (email) {
       const existingByEmail = await Doctor.findOne({ 
-        email: email.toLowerCase().trim(), 
-        businessUnit,
+        email: email.toLowerCase().trim(),
         isActive: true 
       });
 
       if (existingByEmail) {
         return res.status(400).json({ 
-          message: 'Doctor with this email already exists in this business unit' 
+          message: 'Doctor with this email already exists' 
         });
       }
     }
@@ -107,7 +106,6 @@ router.post('/', async (req, res) => {
     // Verify surgical categories exist
     const validCategories = await Category.find({
       _id: { $in: surgicalCategories },
-      businessUnitId: businessUnit,
       isActive: true
     });
 
@@ -122,7 +120,6 @@ router.post('/', async (req, res) => {
       surgicalCategories,
       phoneNumber: phoneNumber ? phoneNumber.trim() : undefined,
       email: email ? email.toLowerCase().trim() : undefined,
-      businessUnit,
       createdBy,
       updatedBy: createdBy
     });
@@ -194,18 +191,17 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Doctor not found' });
     }
 
-    // Check if email conflicts with another doctor in the same business unit (only if email is provided)
+    // Check if email conflicts with another doctor (only if email is provided)
     if (email && email.toLowerCase().trim() !== doctor.email) {
       const existingByEmail = await Doctor.findOne({ 
-        email: email.toLowerCase().trim(), 
-        businessUnit: doctor.businessUnit,
+        email: email.toLowerCase().trim(),
         isActive: true,
         _id: { $ne: req.params.id }
       });
 
       if (existingByEmail) {
         return res.status(400).json({ 
-          message: 'Doctor with this email already exists in this business unit' 
+          message: 'Doctor with this email already exists' 
         });
       }
     }
@@ -213,7 +209,6 @@ router.put('/:id', async (req, res) => {
     // Verify surgical categories exist
     const validCategories = await Category.find({
       _id: { $in: surgicalCategories },
-      businessUnitId: doctor.businessUnit,
       isActive: true
     });
 

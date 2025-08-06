@@ -101,6 +101,15 @@ const Dashboard = ({ onViewChange }) => {
             count: stats?.procedures?.count || '...',
             onClick: () => onViewChange('procedures'),
             enabled: true
+          },
+          {
+            id: 'expense-types',
+            title: 'Expense Types',
+            subtitle: 'Manage Expense Types',
+            icon: '💸',
+            count: stats?.expenseTypes?.count || '...',
+            onClick: () => onViewChange('expense-types'),
+            enabled: true
           }
         ]
       },
@@ -130,15 +139,6 @@ const Dashboard = ({ onViewChange }) => {
       transactional: {
         title: 'Transactional Data',
         tiles: [
-          {
-            id: 'expense-types',
-            title: 'Expense Types',
-            subtitle: 'Manage Expense Types',
-            icon: '💸',
-            count: stats?.expenseTypes?.count || '...',
-            onClick: () => onViewChange('expense-types'),
-            enabled: true
-          },
           {
             id: 'templates',
             title: 'Templates',

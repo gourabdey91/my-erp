@@ -41,11 +41,6 @@ const doctorSchema = new mongoose.Schema({
       message: 'Please enter a valid email address'
     }
   },
-  businessUnit: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'BusinessUnit',
-    required: [true, 'Business unit is required']
-  },
   isActive: {
     type: Boolean,
     default: true
@@ -70,7 +65,7 @@ const doctorSchema = new mongoose.Schema({
 doctorSchema.pre('save', async function(next) {
   if (this.isNew && !this.doctorId) {
     const lastDoctor = await this.constructor
-      .findOne({ businessUnit: this.businessUnit })
+      .findOne({})
       .sort({ doctorId: -1 })
       .select('doctorId');
     
@@ -85,7 +80,7 @@ doctorSchema.pre('save', async function(next) {
     
     // Generate 5 character alphanumeric sequence (zero-padded)
     const sequence = nextNumber.toString().padStart(5, '0');
-    this.doctorId = `1${sequence}`;
+    this.doctorId = `D${sequence}`;
   }
   next();
 });
