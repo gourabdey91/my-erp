@@ -49,7 +49,7 @@ const procedureSchema = new mongoose.Schema({
   businessUnitId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',
-    required: true
+    required: false  // Made optional since procedures are independent entities
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

@@ -21,7 +21,7 @@ const paymentTypeSchema = new mongoose.Schema({
   businessUnitId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',
-    required: true
+    required: false  // Made optional since payment types are independent entities
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -37,10 +37,10 @@ const paymentTypeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to ensure unique codes within each business unit
-paymentTypeSchema.index({ code: 1, businessUnitId: 1 }, { unique: true });
+// Unique index to ensure globally unique codes (since payment types are independent)
+paymentTypeSchema.index({ code: 1 }, { unique: true });
 
-// Index for efficient queries
+// Index for efficient queries (keeping this for backward compatibility)
 paymentTypeSchema.index({ businessUnitId: 1, isActive: 1 });
 
 module.exports = mongoose.model('PaymentType', paymentTypeSchema);

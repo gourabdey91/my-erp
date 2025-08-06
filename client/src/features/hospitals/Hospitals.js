@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { hospitalAPI } from './services/hospitalAPI';
+import CreditNotes from './components/CreditNotes';
 import './Hospitals.css';
 
 const Hospitals = () => {
@@ -15,6 +16,8 @@ const Hospitals = () => {
   // Form states
   const [showForm, setShowForm] = useState(false);
   const [editingHospital, setEditingHospital] = useState(null);
+  const [showCreditNotes, setShowCreditNotes] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState(null);
   const [formData, setFormData] = useState({
     shortName: '',
     legalName: '',
@@ -217,6 +220,16 @@ const Hospitals = () => {
         console.error('Error deleting hospital:', err);
       }
     }
+  };
+
+  const handleCreditNotes = (hospital) => {
+    setSelectedHospital(hospital);
+    setShowCreditNotes(true);
+  };
+
+  const handleCloseCreditNotes = () => {
+    setShowCreditNotes(false);
+    setSelectedHospital(null);
   };
 
   if (loading) {
@@ -433,6 +446,12 @@ const Hospitals = () => {
                     Edit
                   </button>
                   <button 
+                    className="credit-notes-button"
+                    onClick={() => handleCreditNotes(hospital)}
+                  >
+                    Credit Notes
+                  </button>
+                  <button 
                     className="delete-button"
                     onClick={() => handleDelete(hospital)}
                   >
@@ -444,6 +463,15 @@ const Hospitals = () => {
           </div>
         )}
       </div>
+
+      {/* Credit Notes Modal */}
+      {showCreditNotes && selectedHospital && (
+        <CreditNotes
+          hospital={selectedHospital}
+          currentUser={currentUser}
+          onClose={handleCloseCreditNotes}
+        />
+      )}
     </div>
   );
 };

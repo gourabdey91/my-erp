@@ -347,6 +347,22 @@
   background-color: #0d5f2f;
 }
 
+.credit-notes-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+  flex: 1;
+}
+
+.credit-notes-button:hover {
+  background-color: #0056b3;
+}
+
 .delete-button {
   background-color: #bb0000;
   color: white;
