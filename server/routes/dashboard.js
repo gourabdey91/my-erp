@@ -4,7 +4,9 @@ const User = require('../models/User');
 const BusinessUnit = require('../models/BusinessUnit');
 const Category = require('../models/Category');
 const PaymentType = require('../models/PaymentType');
+const ExpenseType = require('../models/ExpenseType');
 const Procedure = require('../models/Procedure');
+const Doctor = require('../models/Doctor');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -24,6 +26,14 @@ router.get('/stats', async (req, res) => {
     // Get payment types statistics
     const totalPaymentTypes = await PaymentType.countDocuments();
     const activePaymentTypes = await PaymentType.countDocuments({ isActive: true });
+
+    // Get expense types statistics
+    const totalExpenseTypes = await ExpenseType.countDocuments();
+    const activeExpenseTypes = await ExpenseType.countDocuments({ isActive: true });
+
+    // Get doctors statistics
+    const totalDoctors = await Doctor.countDocuments();
+    const activeDoctors = await Doctor.countDocuments({ isActive: true });
 
     // Get procedures statistics
     const totalProcedures = await Procedure.countDocuments();
@@ -55,6 +65,18 @@ router.get('/stats', async (req, res) => {
         active: activePaymentTypes,
         count: activePaymentTypes,
         label: 'Payment Types'
+      },
+      expenseTypes: {
+        total: totalExpenseTypes,
+        active: activeExpenseTypes,
+        count: activeExpenseTypes,
+        label: 'Expense Types'
+      },
+      doctors: {
+        total: totalDoctors,
+        active: activeDoctors,
+        count: activeDoctors,
+        label: 'Doctors'
       },
       procedures: {
         total: totalProcedures,

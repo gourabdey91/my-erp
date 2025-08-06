@@ -94,6 +94,24 @@ const Dashboard = ({ onViewChange }) => {
             enabled: true
           },
           {
+            id: 'expense-types',
+            title: 'Expense Types',
+            subtitle: 'Manage Expense Types',
+            icon: '💸',
+            count: stats?.expenseTypes?.count || '...',
+            onClick: () => onViewChange('expense-types'),
+            enabled: true
+          },
+          {
+            id: 'doctors',
+            title: 'Doctor Management',
+            subtitle: 'Manage Doctors',
+            icon: '👨‍⚕️',
+            count: stats?.doctors?.count || '...',
+            onClick: () => onViewChange('doctors'),
+            enabled: true
+          },
+          {
             id: 'procedures',
             title: 'Procedures',
             subtitle: 'Medical Procedures',
