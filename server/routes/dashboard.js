@@ -4,7 +4,7 @@ const User = require('../models/User');
 const BusinessUnit = require('../models/BusinessUnit');
 const Category = require('../models/Category');
 const PaymentType = require('../models/PaymentType');
-const Limit = require('../models/Limit');
+const Procedure = require('../models/Procedure');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -25,9 +25,9 @@ router.get('/stats', async (req, res) => {
     const totalPaymentTypes = await PaymentType.countDocuments();
     const activePaymentTypes = await PaymentType.countDocuments({ isActive: true });
 
-    // Get limits statistics
-    const totalLimits = await Limit.countDocuments();
-    const activeLimits = await Limit.countDocuments({ isActive: true });
+    // Get procedures statistics
+    const totalProcedures = await Procedure.countDocuments();
+    const activeProcedures = await Procedure.countDocuments({ isActive: true });
 
     // For now, we'll use placeholder data for other modules
     // These can be replaced with real models when those modules are implemented
@@ -56,11 +56,11 @@ router.get('/stats', async (req, res) => {
         count: activePaymentTypes,
         label: 'Payment Types'
       },
-      limits: {
-        total: totalLimits,
-        active: activeLimits,
-        count: activeLimits,
-        label: 'Limits'
+      procedures: {
+        total: totalProcedures,
+        active: activeProcedures,
+        count: activeProcedures,
+        label: 'Procedures'
       },
       billing: {
         total: 45,

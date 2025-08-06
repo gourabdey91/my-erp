@@ -1,27 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
-import { limitAPI } from './services/limitAPI';
+import { procedureAPI } from './services/procedureAPI';
 import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
-import './Limits.css';
+import './Procedures.css';
 
-const Limits = () => {
+const Procedures = () => {
   const { currentUser } = useAuth();
   const { currentBusinessUnit } = useBusinessUnit();
-  const [limits, setLimits] = useState([]);
+  const [procedures, setProcedures] = useState([]);
   const [paymentTypes, setPaymentTypes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingLimit, setEditingLimit] = useState(null);
+  const [editingProcedure, setEditingProcedure] = useState(null);
   const [formData, setFormData] = useState({
-    paymentTypeId: '',
+    code: '',
+    name: '',
     categoryId: '',
+    paymentTypeId: '',
     amount: '',
-    currency: 'USD',
-    description: ''
+    currency: 'INR'
   });
 
   const loadData = useCallback(async () => {
@@ -31,13 +32,13 @@ const Limits = () => {
       setLoading(true);
       
       // Load all required data in parallel
-      const [limitsRes, paymentTypesRes, categoriesRes] = await Promise.all([
-        limitAPI.getAll(currentBusinessUnit._id),
+      const [proceduresRes, paymentTypesRes, categoriesRes] = await Promise.all([
+        procedureAPI.getAll(currentBusinessUnit._id),
         paymentTypeAPI.getAll(currentBusinessUnit._id),
         categoryAPI.getAll(currentBusinessUnit._id)
       ]);
 
-      if (limitsRes.success) setLimits(limitsRes.data);
+      if (proceduresRes.success) setProcedures(proceduresRes.data);
       if (paymentTypesRes.success) setPaymentTypes(paymentTypesRes.data);
       if (categoriesRes.success) setCategories(categoriesRes.data);
       
@@ -56,7 +57,7 @@ const Limits = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const limitData = {
+      const procedureData = {
         ...formData,
         amount: parseFloat(formData.amount),
         businessUnitId: currentBusinessUnit._id,
@@ -64,68 +65,67 @@ const Limits = () => {
         updatedBy: currentUser.id
       };
 
-      if (editingLimit) {
-        await limitAPI.update(editingLimit._id, {
-          ...limitData,
-          createdBy: editingLimit.createdBy
+      if (editingProcedure) {
+        await procedureAPI.update(editingProcedure._id, {
+          ...procedureData,
+          createdBy: editingProcedure.createdBy
         });
       } else {
-        await limitAPI.create(limitData);
+        await procedureAPI.create(procedureData);
       }
 
       setFormData({
+        code: '',
+        name: '',
         paymentTypeId: '',
-        categoryId: '',
         amount: '',
-        currency: 'USD',
-        description: ''
+        currency: 'INR'
       });
       setShowForm(false);
-      setEditingLimit(null);
+      setEditingProcedure(null);
       loadData();
     } catch (err) {
-      setError(editingLimit ? 'Failed to update limit' : 'Failed to create limit');
-      console.error('Error saving limit:', err);
+      setError(editingProcedure ? 'Failed to update procedure' : 'Failed to create procedure');
+      console.error('Error saving procedure:', err);
     }
   };
 
-  const handleEdit = (limit) => {
-    setEditingLimit(limit);
+  const handleEdit = (procedure) => {
+    setEditingProcedure(procedure);
     setFormData({
-      paymentTypeId: limit.paymentTypeId._id,
-      categoryId: limit.categoryId._id,
-      amount: limit.amount.toString(),
-      currency: limit.currency,
-      description: limit.description || ''
+      code: procedure.code,
+      name: procedure.name,
+      categoryId: procedure.categoryId._id,
+      paymentTypeId: procedure.paymentTypeId._id,
+      amount: procedure.amount.toString(),
+      currency: procedure.currency
     });
     setShowForm(true);
   };
 
-  const handleDelete = async (limit) => {
-    const categoryCode = limit.categoryId?.code || 'Unknown';
-    const paymentTypeCode = limit.paymentTypeId?.code || 'Unknown';
-    
-    if (window.confirm(`Are you sure you want to delete the limit for "${categoryCode}" - "${paymentTypeCode}"?`)) {
+  const handleDelete = async (procedure) => {
+    if (window.confirm(`Are you sure you want to delete procedure "${procedure.code} - ${procedure.name}"?`)) {
       try {
-        await limitAPI.delete(limit._id, currentUser.id);
+        await procedureAPI.delete(procedure._id, currentUser.id);
         loadData();
       } catch (err) {
-        setError('Failed to delete limit');
-        console.error('Error deleting limit:', err);
+        setError('Failed to delete procedure');
+        console.error('Error deleting procedure:', err);
       }
     }
   };
 
   const handleCancel = () => {
     setFormData({
-      paymentTypeId: '',
+      code: '',
+      name: '',
       categoryId: '',
+      paymentTypeId: '',
       amount: '',
-      currency: 'USD',
-      description: ''
+      currency: 'INR'
     });
     setShowForm(false);
-    setEditingLimit(null);
+    setEditingProcedure(null);
   };
 
   const formatCurrency = (amount, currency) => {
@@ -136,7 +136,7 @@ const Limits = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading limits and related data...</div>;
+    return <div className="loading">Loading procedures and related data...</div>;
   }
 
   if (!currentBusinessUnit) {
@@ -144,15 +144,15 @@ const Limits = () => {
   }
 
   return (
-    <div className="limits-container">
+    <div className="procedures-container">
       <div className="page-header">
-        <h1>Payment Limits</h1>
+        <h1>Medical Procedures</h1>
         <button 
           className="btn btn-primary"
           onClick={() => setShowForm(true)}
           disabled={paymentTypes.length === 0 || categories.length === 0}
         >
-          Add Limit
+          Add Procedure
         </button>
       </div>
 
@@ -160,16 +160,47 @@ const Limits = () => {
 
       {(paymentTypes.length === 0 || categories.length === 0) && (
         <div className="alert alert-warning">
-          <strong>Setup Required:</strong> You need to create payment types and categories before adding limits.
+          <strong>Setup Required:</strong> You need to create payment types and categories before adding procedures.
         </div>
       )}
 
       {showForm && (
         <div className="form-container">
           <div className="form-header">
-            <h2>{editingLimit ? 'Edit Payment Limit' : 'Add New Payment Limit'}</h2>
+            <h2>{editingProcedure ? 'Edit Procedure' : 'Add New Procedure'}</h2>
           </div>
-          <form onSubmit={handleSubmit} className="limit-form">
+          <form onSubmit={handleSubmit} className="procedure-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="code">Procedure Code *</label>
+                <input
+                  type="text"
+                  id="code"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  required
+                  maxLength="6"
+                  pattern="[A-Z]{3}[0-9]{3}"
+                  placeholder="CRA001, MAX001, etc."
+                  disabled={editingProcedure} // Code cannot be changed when editing
+                />
+                <small>Format: 3 letters + 3 digits (e.g., CRA001)</small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="name">Procedure Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  maxLength="30"
+                  placeholder="Cranial Single Procedure"
+                />
+              </div>
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="categoryId">Category *</label>
@@ -204,6 +235,22 @@ const Limits = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="amount">Amount *</label>
+                <input
+                  type="number"
+                  id="amount"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Enter amount"
+                />
+              </div>
 
               <div className="form-group">
                 <label htmlFor="currency">Currency *</label>
@@ -213,44 +260,19 @@ const Limits = () => {
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                   required
                 >
+                  <option value="INR">INR - Indian Rupee</option>
                   <option value="USD">USD - US Dollar</option>
                   <option value="EUR">EUR - Euro</option>
                   <option value="GBP">GBP - British Pound</option>
-                  <option value="INR">INR - Indian Rupee</option>
                   <option value="AUD">AUD - Australian Dollar</option>
                   <option value="CAD">CAD - Canadian Dollar</option>
                 </select>
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="amount">Amount *</label>
-              <input
-                type="number"
-                id="amount"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                required
-                min="0"
-                step="0.01"
-                placeholder="Enter amount"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Optional description or notes"
-                rows="3"
-              />
-            </div>
-
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
-                {editingLimit ? 'Update' : 'Create'}
+                {editingProcedure ? 'Update' : 'Create'}
               </button>
               <button type="button" className="btn btn-secondary" onClick={handleCancel}>
                 Cancel
@@ -260,58 +282,62 @@ const Limits = () => {
         </div>
       )}
 
-      <div className="limits-list">
-        {limits.length === 0 ? (
+      <div className="procedures-list">
+        {procedures.length === 0 ? (
           <div className="empty-state">
-            <p>No payment limits found. Create your first limit to get started.</p>
+            <p>No procedures found. Create your first procedure to get started.</p>
           </div>
         ) : (
           <>
             {/* Desktop Table View */}
             <div className="table-container">
-              <table className="limits-table">
+              <table className="procedures-table">
                 <thead>
                   <tr>
+                    <th>Code</th>
+                    <th>Name</th>
                     <th>Category</th>
                     <th>Payment Type</th>
                     <th>Amount</th>
-                    <th>Description</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {limits.map((limit) => (
-                    <tr key={limit._id}>
+                  {procedures.map((procedure) => (
+                    <tr key={procedure._id}>
+                      <td className="code-cell">
+                        <span className="procedure-code">{procedure.code}</span>
+                      </td>
+                      <td className="name-cell">
+                        <span className="procedure-name">{procedure.name}</span>
+                      </td>
                       <td className="category-cell">
-                        <span className="category-code">{limit.categoryId?.code}</span>
-                        <span className="category-desc">{limit.categoryId?.description}</span>
+                        <span className="category-code">{procedure.categoryId?.code}</span>
+                        <span className="category-desc">{procedure.categoryId?.description}</span>
                       </td>
                       <td className="payment-type-cell">
-                        <span className="payment-type-code">{limit.paymentTypeId?.code}</span>
-                        <span className="payment-type-desc">{limit.paymentTypeId?.description}</span>
+                        <span className="payment-type-code">{procedure.paymentTypeId?.code}</span>
+                        <span className="payment-type-desc">{procedure.paymentTypeId?.description}</span>
                       </td>
                       <td className="amount-cell">
-                        {formatCurrency(limit.amount, limit.currency)}
-                      </td>
-                      <td className="description-cell">
-                        {limit.description || '-'}
+                        {formatCurrency(procedure.amount, procedure.currency)}
                       </td>
                       <td className="status-cell">
-                        <span className={`status-badge ${limit.isActive ? 'active' : 'inactive'}`}>
-                          {limit.isActive ? 'Active' : 'Inactive'}
+                        <span className={`status-badge ${procedure.isActive ? 'active' : 'inactive'}`}>
+                          {procedure.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="actions-cell">
                         <button
                           className="btn btn-sm btn-outline"
-                          onClick={() => handleEdit(limit)}
+                          onClick={() => handleEdit(procedure)}
                         >
                           Edit
                         </button>
                         <button
                           className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(limit)}
+                          onClick={() => handleDelete(procedure)}
                         >
                           Delete
                         </button>
@@ -323,48 +349,50 @@ const Limits = () => {
             </div>
 
             {/* Mobile Card View */}
-            <div className="limits-mobile-cards">
-              {limits.map((limit) => (
-                <div key={limit._id} className="limit-card">
-                  <div className="limit-card-header">
-                    <div className="limit-card-title">
-                      <span className="category-code">{limit.categoryId?.code}</span>
-                      <span className="payment-type-code">{limit.paymentTypeId?.code}</span>
+            <div className="procedures-mobile-cards">
+              {procedures.map((procedure) => (
+                <div key={procedure._id} className="procedure-card">
+                  <div className="procedure-card-header">
+                    <div className="procedure-card-title">
+                      <span className="procedure-code">{procedure.code}</span>
+                      <span className="procedure-name">{procedure.name}</span>
                     </div>
-                    <span className={`limit-card-status ${limit.isActive ? 'active' : 'inactive'}`}>
-                      {limit.isActive ? 'Active' : 'Inactive'}
+                    <span className={`procedure-card-status ${procedure.isActive ? 'active' : 'inactive'}`}>
+                      {procedure.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="limit-card-content">
-                    <div className="limit-card-row">
+                  <div className="procedure-card-content">
+                    <div className="procedure-card-row">
+                      <span className="label">Code:</span>
+                      <span className="value">{procedure.code}</span>
+                    </div>
+                    <div className="procedure-card-row">
+                      <span className="label">Name:</span>
+                      <span className="value">{procedure.name}</span>
+                    </div>
+                    <div className="procedure-card-row">
                       <span className="label">Category:</span>
-                      <span className="value">{limit.categoryId?.code} - {limit.categoryId?.description}</span>
+                      <span className="value">{procedure.categoryId?.code} - {procedure.categoryId?.description}</span>
                     </div>
-                    <div className="limit-card-row">
+                    <div className="procedure-card-row">
                       <span className="label">Payment Type:</span>
-                      <span className="value">{limit.paymentTypeId?.description}</span>
+                      <span className="value">{procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</span>
                     </div>
-                    <div className="limit-card-row">
+                    <div className="procedure-card-row">
                       <span className="label">Amount:</span>
-                      <span className="value amount">{formatCurrency(limit.amount, limit.currency)}</span>
+                      <span className="value amount">{formatCurrency(procedure.amount, procedure.currency)}</span>
                     </div>
-                    {limit.description && (
-                      <div className="limit-card-row">
-                        <span className="label">Description:</span>
-                        <span className="value">{limit.description}</span>
-                      </div>
-                    )}
                   </div>
-                  <div className="limit-card-actions">
+                  <div className="procedure-card-actions">
                     <button
                       className="btn btn-sm btn-outline"
-                      onClick={() => handleEdit(limit)}
+                      onClick={() => handleEdit(procedure)}
                     >
                       Edit
                     </button>
                     <button
                       className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(limit)}
+                      onClick={() => handleDelete(procedure)}
                     >
                       Delete
                     </button>
@@ -379,4 +407,4 @@ const Limits = () => {
   );
 };
 
-export default Limits;
+export default Procedures;

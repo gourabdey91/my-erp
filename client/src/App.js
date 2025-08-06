@@ -8,7 +8,7 @@ import BusinessUnits from './features/business-units/BusinessUnits';
 import CompanyDetails from './features/company/CompanyDetails';
 import Categories from './features/categories/Categories';
 import PaymentTypes from './features/payment-types/PaymentTypes';
-import Limits from './features/limits/Limits';
+import Procedures from './features/procedures/Procedures';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -52,8 +52,8 @@ function AppContent() {
         return <Categories />;
       case 'payment-types':
         return <PaymentTypes />;
-      case 'limits':
-        return <Limits />;
+      case 'procedures':
+        return <Procedures />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':

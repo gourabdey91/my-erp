@@ -1,5 +1,5 @@
-/* Limits Styles */
-.limits-container {
+/* Procedures Styles */
+.procedures-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
@@ -44,7 +44,7 @@
   font-weight: 600;
 }
 
-.limit-form {
+.procedure-form {
   padding: 20px;
 }
 
@@ -167,12 +167,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.limits-table {
+.procedures-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.limits-table th {
+.procedures-table th {
   background: #f8f9fa;
   padding: 12px 16px;
   text-align: left;
@@ -182,18 +182,18 @@
   font-size: 14px;
 }
 
-.limits-table td {
+.procedures-table td {
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
   font-size: 14px;
   vertical-align: middle;
 }
 
-.limits-table tbody tr:hover {
+.procedures-table tbody tr:hover {
   background: #f8f9fa;
 }
 
-.limits-table tbody tr:last-child td {
+.procedures-table tbody tr:last-child td {
   border-bottom: none;
 }
 
@@ -327,7 +327,7 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .limits-container {
+  .procedures-container {
     padding: 16px;
   }
 
@@ -345,7 +345,7 @@
     margin-bottom: 20px;
   }
 
-  .limit-form {
+  .procedure-form {
     padding: 16px;
   }
 
@@ -364,16 +364,16 @@
   }
 
   /* Hide table on mobile and show card layout instead */
-  .limits-table {
+  .procedures-table {
     display: none;
   }
 
   /* Mobile card layout */
-  .limits-mobile-cards {
+  .procedures-mobile-cards {
     display: block;
   }
 
-  .limit-card {
+  .procedure-card {
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -382,7 +382,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .limit-card-header {
+  .procedure-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -391,25 +391,25 @@
     gap: 8px;
   }
 
-  .limit-card-title {
+  .procedure-card-title {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
 
-  .limit-card-title .procedure-name {
+  .procedure-card-title .procedure-name {
     font-weight: 600;
     color: #333;
     font-size: 16px;
   }
 
-  .limit-card-title .payment-type-code {
+  .procedure-card-title .payment-type-code {
     color: #007acc;
     font-weight: 500;
     font-size: 14px;
   }
 
-  .limit-card-status {
+  .procedure-card-status {
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 12px;
@@ -417,21 +417,21 @@
     text-transform: uppercase;
   }
 
-  .limit-card-status.active {
+  .procedure-card-status.active {
     background: #d4edda;
     color: #155724;
   }
 
-  .limit-card-status.inactive {
+  .procedure-card-status.inactive {
     background: #f8d7da;
     color: #721c24;
   }
 
-  .limit-card-content {
+  .procedure-card-content {
     margin-bottom: 16px;
   }
 
-  .limit-card-row {
+  .procedure-card-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -439,17 +439,17 @@
     border-bottom: 1px solid #f0f0f0;
   }
 
-  .limit-card-row:last-child {
+  .procedure-card-row:last-child {
     border-bottom: none;
   }
 
-  .limit-card-row .label {
+  .procedure-card-row .label {
     font-weight: 500;
     color: #555;
     font-size: 13px;
   }
 
-  .limit-card-row .value {
+  .procedure-card-row .value {
     color: #333;
     font-size: 13px;
     text-align: right;
@@ -457,18 +457,18 @@
     word-break: break-word;
   }
 
-  .limit-card-row .value.amount {
+  .procedure-card-row .value.amount {
     font-weight: 600;
     color: #28a745;
     font-size: 14px;
   }
 
-  .limit-card-actions {
+  .procedure-card-actions {
     display: flex;
     gap: 8px;
   }
 
-  .limit-card-actions .btn {
+  .procedure-card-actions .btn {
     flex: 1;
     justify-content: center;
   }
@@ -476,13 +476,13 @@
 
 /* Desktop: Hide mobile cards, show table */
 @media (min-width: 769px) {
-  .limits-mobile-cards {
+  .procedures-mobile-cards {
     display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .limits-container {
+  .procedures-container {
     padding: 12px;
   }
 
@@ -498,24 +498,24 @@
     font-size: 18px;
   }
 
-  .limit-form {
+  .procedure-form {
     padding: 12px;
   }
 
-  .limit-card {
+  .procedure-card {
     padding: 12px;
   }
 
-  .limit-card-title .procedure-name {
+  .procedure-card-title .procedure-name {
     font-size: 15px;
   }
 
-  .limit-card-row .label,
-  .limit-card-row .value {
+  .procedure-card-row .label,
+  .procedure-card-row .value {
     font-size: 12px;
   }
 
-  .limit-card-row .value.amount {
+  .procedure-card-row .value.amount {
     font-size: 13px;
   }
 

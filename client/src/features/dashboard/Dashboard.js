@@ -94,12 +94,12 @@ const Dashboard = ({ onViewChange }) => {
             enabled: true
           },
           {
-            id: 'limits',
-            title: 'Payment Limits',
-            subtitle: 'Category Rate Mapping',
-            icon: '⚖️',
-            count: stats?.limits?.count || '...',
-            onClick: () => onViewChange('limits'),
+            id: 'procedures',
+            title: 'Procedures',
+            subtitle: 'Medical Procedures',
+            icon: '🏥',
+            count: stats?.procedures?.count || '...',
+            onClick: () => onViewChange('procedures'),
             enabled: true
           }
         ]
