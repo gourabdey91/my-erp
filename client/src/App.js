@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BusinessUnitProvider } from './contexts/BusinessUnitContext';
-import TestBusinessUnitInitializer from './components/TestBusinessUnitInitializer';
 import Navigation from './shared/components/Navigation';
 import Dashboard from './features/dashboard/Dashboard';
 import Users from './features/users/Users';
@@ -32,7 +31,6 @@ function AppContent() {
 
   return (
     <BusinessUnitProvider>
-      <TestBusinessUnitInitializer />
       <div className="app">
         <Navigation currentView={currentView} onViewChange={setCurrentView} />
         <main className="app-content">
