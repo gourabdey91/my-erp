@@ -8,8 +8,15 @@ export const creditNoteAPI = {
   },
 
   // Get payment types and categories for dropdowns
-  getOptions: async (hospitalId) => {
-    const response = await apiRequest(`/api/credit-notes/options/${hospitalId}`);
+  getOptions: async (hospitalId, paymentTypeFilter = '', categoryFilter = '') => {
+    const params = new URLSearchParams();
+    if (paymentTypeFilter) params.append('paymentType', paymentTypeFilter);
+    if (categoryFilter) params.append('surgicalCategory', categoryFilter);
+    
+    const queryString = params.toString();
+    const url = `/api/credit-notes/options/${hospitalId}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiRequest(url);
     return response;
   },
 

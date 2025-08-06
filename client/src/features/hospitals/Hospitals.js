@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { hospitalAPI } from './services/hospitalAPI';
 import CreditNotes from './components/CreditNotes';
+import DoctorAssignments from './components/DoctorAssignments';
 import './Hospitals.css';
 
 const Hospitals = () => {
@@ -17,6 +18,7 @@ const Hospitals = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingHospital, setEditingHospital] = useState(null);
   const [showCreditNotes, setShowCreditNotes] = useState(false);
+  const [showDoctorAssignments, setShowDoctorAssignments] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [formData, setFormData] = useState({
     shortName: '',
@@ -229,6 +231,16 @@ const Hospitals = () => {
 
   const handleCloseCreditNotes = () => {
     setShowCreditNotes(false);
+    setSelectedHospital(null);
+  };
+
+  const handleDoctorAssignments = (hospital) => {
+    setSelectedHospital(hospital);
+    setShowDoctorAssignments(true);
+  };
+
+  const handleCloseDoctorAssignments = () => {
+    setShowDoctorAssignments(false);
     setSelectedHospital(null);
   };
 
@@ -452,6 +464,12 @@ const Hospitals = () => {
                     Credit Notes
                   </button>
                   <button 
+                    className="doctor-assignments-button"
+                    onClick={() => handleDoctorAssignments(hospital)}
+                  >
+                    Doctor Assignments
+                  </button>
+                  <button 
                     className="delete-button"
                     onClick={() => handleDelete(hospital)}
                   >
@@ -470,6 +488,15 @@ const Hospitals = () => {
           hospital={selectedHospital}
           currentUser={currentUser}
           onClose={handleCloseCreditNotes}
+        />
+      )}
+
+      {/* Doctor Assignments Modal */}
+      {showDoctorAssignments && selectedHospital && (
+        <DoctorAssignments
+          hospital={selectedHospital}
+          currentUser={currentUser}
+          onClose={handleCloseDoctorAssignments}
         />
       )}
     </div>

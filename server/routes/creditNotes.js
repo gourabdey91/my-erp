@@ -33,6 +33,7 @@ router.get('/hospital/:hospitalId', async (req, res) => {
 router.get('/options/:hospitalId', async (req, res) => {
   try {
     const { hospitalId } = req.params;
+    const { paymentType, surgicalCategory } = req.query; // Get filter parameters
     
     // Get hospital's surgical categories first
     const hospital = await Hospital.findById(hospitalId).populate('surgicalCategories');
@@ -41,6 +42,22 @@ router.get('/options/:hospitalId', async (req, res) => {
     }
     
     const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id);
+    
+    // Build procedure filter based on selected payment type and/or category
+    const procedureFilter = { isActive: true };
+    
+    // Always filter procedures by hospital's categories
+    if (hospitalCategoryIds.length > 0) {
+      procedureFilter.categoryId = { $in: hospitalCategoryIds };
+    }
+    
+    // Apply additional filters if selected
+    if (paymentType && paymentType !== '') {
+      procedureFilter.paymentTypeId = paymentType;
+    }
+    if (surgicalCategory && surgicalCategory !== '') {
+      procedureFilter.categoryId = surgicalCategory;
+    }
     
     const [paymentTypes, categories, procedures] = await Promise.all([
       // All payment types - independent entity (ignore businessUnitId for now)
@@ -54,16 +71,16 @@ router.get('/options/:hospitalId', async (req, res) => {
         isActive: true
       }).select('_id code description').sort({ description: 1 }),
 
-      // All procedures - independent entity (ignore businessUnitId for now)
-      Procedure.find({
-        isActive: true
-      }).select('_id code name').sort({ name: 1 })
+      // Procedures filtered by payment type and/or category if selected
+      Procedure.find(procedureFilter).select('_id code name').sort({ name: 1 })
     ]);
 
     console.log('Fetching options for hospital:', hospitalId);
+    console.log('Filter - Payment Type:', paymentType || 'All');
+    console.log('Filter - Surgical Category:', surgicalCategory || 'All');
     console.log('Payment types found:', paymentTypes.length);
     console.log('Hospital categories found:', categories.length);
-    console.log('Procedures found:', procedures.length);
+    console.log('Procedures found (filtered):', procedures.length);
 
     res.json({
       paymentTypes,

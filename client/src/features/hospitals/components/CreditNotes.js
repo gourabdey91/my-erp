@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { creditNoteAPI } from '../services/creditNoteAPI';
 import './CreditNotes.css';
 
@@ -24,14 +24,7 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
     description: ''
   });
 
-  useEffect(() => {
-    if (hospital) {
-      fetchCreditNotes();
-      fetchOptions();
-    }
-  }, [hospital]);
-
-  const fetchCreditNotes = async () => {
+  const fetchCreditNotes = useCallback(async () => {
     try {
       setLoading(true);
       const data = await creditNoteAPI.getCreditNotesByHospital(hospital._id);
@@ -42,12 +35,13 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hospital._id]);
 
-  const fetchOptions = async () => {
+  const fetchOptions = useCallback(async (paymentTypeFilter = '', categoryFilter = '') => {
     try {
       console.log('Fetching options for hospital:', hospital._id);
-      const options = await creditNoteAPI.getOptions(hospital._id);
+      console.log('Filters - Payment Type:', paymentTypeFilter || 'All', 'Category:', categoryFilter || 'All');
+      const options = await creditNoteAPI.getOptions(hospital._id, paymentTypeFilter, categoryFilter);
       console.log('Options received:', options);
       setPaymentTypes(options.paymentTypes || []);
       setCategories(options.categories || []);
@@ -56,6 +50,24 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
       setError('Failed to fetch options: ' + (err.response?.data?.message || err.message));
       console.error('Error fetching options:', err);
     }
+  }, [hospital._id]);
+
+  useEffect(() => {
+    if (hospital) {
+      fetchCreditNotes();
+      fetchOptions();
+    }
+  }, [hospital, fetchCreditNotes, fetchOptions]);
+
+  // Fetch filtered procedures when payment type or category changes
+  const handlePaymentTypeChange = (paymentTypeId) => {
+    setFormData({ ...formData, paymentType: paymentTypeId, procedure: '' }); // Clear procedure when payment type changes
+    fetchOptions(paymentTypeId, formData.surgicalCategory);
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    setFormData({ ...formData, surgicalCategory: categoryId, procedure: '' }); // Clear procedure when category changes
+    fetchOptions(formData.paymentType, categoryId);
   };
 
   const handleSubmit = async (e) => {
@@ -111,15 +123,21 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
 
   const handleEdit = (creditNote) => {
     setEditingCreditNote(creditNote);
+    const paymentTypeId = creditNote.paymentType?._id || '';
+    const categoryId = creditNote.surgicalCategory?._id || '';
+    
     setFormData({
-      paymentType: creditNote.paymentType?._id || '',
-      surgicalCategory: creditNote.surgicalCategory?._id || '',
+      paymentType: paymentTypeId,
+      surgicalCategory: categoryId,
       procedure: creditNote.procedure?._id || '',
       percentage: creditNote.percentage.toString(),
       validityFrom: creditNote.validityFrom ? new Date(creditNote.validityFrom).toISOString().split('T')[0] : '',
       validityTo: creditNote.validityTo ? new Date(creditNote.validityTo).toISOString().split('T')[0] : '',
       description: creditNote.description || ''
     });
+    
+    // Fetch options with the current filters to populate procedures correctly
+    fetchOptions(paymentTypeId, categoryId);
     setShowForm(true);
   };
 
@@ -149,6 +167,8 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
     });
     setEditingCreditNote(null);
     setShowForm(false);
+    // Fetch all options without filters when form is reset
+    fetchOptions('', '');
   };
 
   const getPaymentTypeName = (paymentType) => {
@@ -221,7 +241,7 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   <label>Payment Type (Optional)</label>
                   <select
                     value={formData.paymentType}
-                    onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
+                    onChange={(e) => handlePaymentTypeChange(e.target.value)}
                     disabled={editingCreditNote} // Can't change payment type when editing
                   >
                     <option value="">All Payment Types</option>
@@ -237,7 +257,7 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   <label>Surgical Category (Optional)</label>
                   <select
                     value={formData.surgicalCategory}
-                    onChange={(e) => setFormData({ ...formData, surgicalCategory: e.target.value })}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     disabled={editingCreditNote} // Can't change category when editing
                   >
                     <option value="">All Categories</option>
