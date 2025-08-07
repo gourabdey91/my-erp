@@ -4,6 +4,7 @@ import { hospitalAPI } from './services/hospitalAPI';
 import CreditNotes from './components/CreditNotes';
 import DoctorAssignments from './components/DoctorAssignments';
 import ExpenseTypeAssignments from './components/ExpenseTypeAssignments';
+import MaterialAssignments from './components/MaterialAssignments';
 import './Hospitals.css';
 
 const Hospitals = () => {
@@ -22,6 +23,7 @@ const Hospitals = () => {
   const [showCreditNotes, setShowCreditNotes] = useState(false);
   const [showDoctorAssignments, setShowDoctorAssignments] = useState(false);
   const [showExpenseTypeAssignments, setShowExpenseTypeAssignments] = useState(false);
+  const [showMaterialAssignments, setShowMaterialAssignments] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [formData, setFormData] = useState({
@@ -32,6 +34,7 @@ const Hospitals = () => {
     stateCode: '',
     surgicalCategories: [],
     paymentTerms: 30,
+    defaultPricing: false,
     businessUnit: ''
   });
 
@@ -99,6 +102,7 @@ const Hospitals = () => {
       stateCode: '',
       surgicalCategories: [],
       paymentTerms: 30,
+      defaultPricing: false,
       businessUnit: ''
     });
     setEditingHospital(null);
@@ -108,10 +112,10 @@ const Hospitals = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -219,6 +223,7 @@ const Hospitals = () => {
       stateCode: hospital.stateCode,
       surgicalCategories: hospital.surgicalCategories.map(cat => cat._id),
       paymentTerms: hospital.paymentTerms,
+      defaultPricing: hospital.defaultPricing || false,
       businessUnit: hospital.businessUnit._id || hospital.businessUnit
     });
     setEditingHospital(hospital);
@@ -273,6 +278,26 @@ const Hospitals = () => {
   const handleCloseExpenseTypeAssignments = () => {
     setShowExpenseTypeAssignments(false);
     setSelectedHospital(null);
+  };
+
+  const handleMaterialAssignments = (hospital) => {
+    setSelectedHospital(hospital);
+    setShowMaterialAssignments(true);
+  };
+
+  const handleCloseMaterialAssignments = () => {
+    setShowMaterialAssignments(false);
+    setSelectedHospital(null);
+  };
+
+  const handleMaterialAssignmentUpdate = (updatedHospital) => {
+    // Update the hospital in the list
+    setHospitals(prevHospitals => 
+      prevHospitals.map(h => 
+        h._id === updatedHospital._id ? updatedHospital : h
+      )
+    );
+    setSelectedHospital(updatedHospital);
   };
 
   const toggleMenu = (hospitalId) => {
@@ -452,6 +477,23 @@ const Hospitals = () => {
                 </div>
               </div>
 
+              <div className="form-row">
+                <div className="form-group checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="defaultPricing"
+                      checked={formData.defaultPricing}
+                      onChange={handleInputChange}
+                    />
+                    <span>Use default pricing from material master</span>
+                  </label>
+                  <small className="help-text">
+                    When enabled, material prices will be automatically set from the material master and cannot be edited manually.
+                  </small>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Surgical Categories *</label>
                 <div className="debug-info" style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>
@@ -525,6 +567,9 @@ const Hospitals = () => {
                         <button onClick={() => { handleExpenseTypeAssignments(hospital); closeMenu(); }}>
                           <i className="icon-expense"></i> Expenses
                         </button>
+                        <button onClick={() => { handleMaterialAssignments(hospital); closeMenu(); }}>
+                          <i className="icon-material"></i> Materials
+                        </button>
                         <button onClick={() => { handleDelete(hospital); closeMenu(); }} className="delete-action">
                           <i className="icon-delete"></i> Delete
                         </button>
@@ -580,6 +625,16 @@ const Hospitals = () => {
           hospital={selectedHospital}
           currentUser={currentUser}
           onClose={handleCloseExpenseTypeAssignments}
+        />
+      )}
+
+      {/* Material Assignments Modal */}
+      {showMaterialAssignments && selectedHospital && (
+        <MaterialAssignments
+          hospital={selectedHospital}
+          isOpen={showMaterialAssignments}
+          onClose={handleCloseMaterialAssignments}
+          onUpdate={handleMaterialAssignmentUpdate}
         />
       )}
     </div>

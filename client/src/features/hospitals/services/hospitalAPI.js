@@ -62,6 +62,39 @@ const hospitalAPI = {
   getBusinessUnits: async () => {
     const response = await apiRequest('/api/business-units');
     return response.data || response; // Handle both structured and direct response
+  },
+
+  // Get available materials for hospital assignment
+  getAvailableMaterials: async (hospitalId) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/available-materials`);
+    return response;
+  },
+
+  // Add material assignment to hospital
+  addMaterialAssignment: async (hospitalId, assignmentData) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/materials`, {
+      method: 'POST',
+      body: JSON.stringify(assignmentData)
+    });
+    return response;
+  },
+
+  // Update material assignment pricing
+  updateMaterialAssignment: async (hospitalId, assignmentId, pricingData) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/materials/${assignmentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(pricingData)
+    });
+    return response;
+  },
+
+  // Remove material assignment from hospital
+  removeMaterialAssignment: async (hospitalId, assignmentId, updatedBy) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/materials/${assignmentId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ updatedBy })
+    });
+    return response;
   }
 };
 

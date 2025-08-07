@@ -167,6 +167,33 @@
   min-height: 4rem;
 }
 
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.help-text {
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 /* Categories Grid */
 .categories-grid {
   display: grid;
@@ -422,6 +449,7 @@
 .icon-credit::before { content: "💳"; }
 .icon-doctor::before { content: "👨‍⚕️"; }
 .icon-expense::before { content: "💰"; }
+.icon-material::before { content: "📦"; }
 .icon-delete::before { content: "🗑️"; }
 
 .hospital-details p {
