@@ -1,0 +1,327 @@
+const express = require('express');
+const router = express.Router();
+const MaterialMaster = require('../models/MaterialMaster');
+const Category = require('../models/Category');
+const ImplantType = require('../models/ImplantType');
+
+// Get all materials with pagination and filtering
+router.get('/', async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+    const surgicalCategory = req.query.surgicalCategory;
+    const implantType = req.query.implantType;
+    const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : true;
+
+    // Build filter query
+    const filter = { isActive };
+
+    // Search in material number and description
+    if (search) {
+      filter.$or = [
+        { materialNumber: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (surgicalCategory) {
+      filter.surgicalCategory = surgicalCategory;
+    }
+
+    if (implantType) {
+      filter.implantType = implantType;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const materials = await MaterialMaster.find(filter)
+      .populate('surgicalCategory', 'code description')
+      .populate('implantType', 'name')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .sort({ materialNumber: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await MaterialMaster.countDocuments(filter);
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      materials,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching materials:', error);
+    res.status(500).json({ message: 'Server error while fetching materials' });
+  }
+});
+
+// Get dropdown data for filters
+router.get('/dropdown-data', async (req, res) => {
+  try {
+    const [categories, implantTypes] = await Promise.all([
+      Category.find({ isActive: true }).select('_id code description').sort({ description: 1 }),
+      ImplantType.find({ isActive: true }).select('_id name subcategories').sort({ name: 1 })
+    ]);
+
+    res.json({
+      categories,
+      implantTypes
+    });
+  } catch (error) {
+    console.error('Error fetching dropdown data:', error);
+    res.status(500).json({ message: 'Server error while fetching dropdown data' });
+  }
+});
+
+// Get subcategories by implant type
+router.get('/subcategories/:implantTypeId', async (req, res) => {
+  try {
+    const implantType = await ImplantType.findById(req.params.implantTypeId)
+      .populate('subcategories.surgicalCategory', 'code description');
+    
+    if (!implantType) {
+      return res.status(404).json({ message: 'Implant type not found' });
+    }
+
+    res.json(implantType.subcategories);
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+    res.status(500).json({ message: 'Server error while fetching subcategories' });
+  }
+});
+
+// Create new material
+router.post('/', async (req, res) => {
+  try {
+    const {
+      materialNumber,
+      description,
+      hsnCode,
+      gstPercentage,
+      currency = 'INR',
+      mrp,
+      institutionalPrice,
+      distributionPrice,
+      surgicalCategory,
+      implantType,
+      subCategory,
+      lengthMm
+    } = req.body;
+
+    // Validate required fields
+    if (!materialNumber || !materialNumber.trim()) {
+      return res.status(400).json({ message: 'Material number is required' });
+    }
+    
+    if (!description || !description.trim()) {
+      return res.status(400).json({ message: 'Description is required' });
+    }
+
+    if (!hsnCode || !hsnCode.trim()) {
+      return res.status(400).json({ message: 'HSN code is required' });
+    }
+
+    if (gstPercentage === undefined || gstPercentage < 0 || gstPercentage > 100) {
+      return res.status(400).json({ message: 'Valid GST percentage is required (0-100)' });
+    }
+
+    if (!mrp || mrp <= 0) {
+      return res.status(400).json({ message: 'Valid MRP is required' });
+    }
+
+    if (!institutionalPrice || institutionalPrice <= 0) {
+      return res.status(400).json({ message: 'Valid institutional price is required' });
+    }
+
+    if (!distributionPrice || distributionPrice <= 0) {
+      return res.status(400).json({ message: 'Valid distribution price is required' });
+    }
+
+    if (!surgicalCategory) {
+      return res.status(400).json({ message: 'Surgical category is required' });
+    }
+
+    if (!implantType) {
+      return res.status(400).json({ message: 'Implant type is required' });
+    }
+
+    if (!subCategory || !subCategory.trim()) {
+      return res.status(400).json({ message: 'Subcategory is required' });
+    }
+
+    if (!lengthMm || lengthMm <= 0) {
+      return res.status(400).json({ message: 'Valid length is required' });
+    }
+
+    // Check if material number already exists
+    const existingMaterial = await MaterialMaster.findOne({ 
+      materialNumber: materialNumber.trim().toUpperCase() 
+    });
+    
+    if (existingMaterial) {
+      return res.status(400).json({ message: 'Material number already exists' });
+    }
+
+    // Verify surgical category and implant type exist
+    const [categoryExists, implantTypeExists] = await Promise.all([
+      Category.findById(surgicalCategory),
+      ImplantType.findById(implantType)
+    ]);
+
+    if (!categoryExists) {
+      return res.status(400).json({ message: 'Invalid surgical category' });
+    }
+
+    if (!implantTypeExists) {
+      return res.status(400).json({ message: 'Invalid implant type' });
+    }
+
+    const material = new MaterialMaster({
+      materialNumber: materialNumber.trim().toUpperCase(),
+      description: description.trim(),
+      hsnCode: hsnCode.trim(),
+      gstPercentage,
+      currency,
+      mrp,
+      institutionalPrice,
+      distributionPrice,
+      surgicalCategory,
+      implantType,
+      subCategory: subCategory.trim(),
+      lengthMm,
+      createdBy: req.user?.id,
+      updatedBy: req.user?.id
+    });
+
+    const savedMaterial = await material.save();
+    const populatedMaterial = await MaterialMaster.findById(savedMaterial._id)
+      .populate('surgicalCategory', 'code description')
+      .populate('implantType', 'name')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName');
+
+    res.status(201).json(populatedMaterial);
+  } catch (error) {
+    console.error('Error creating material:', error);
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Material number already exists' });
+    } else {
+      res.status(500).json({ message: 'Server error while creating material' });
+    }
+  }
+});
+
+// Update material
+router.put('/:id', async (req, res) => {
+  try {
+    const materialId = req.params.id;
+    const {
+      materialNumber,
+      description,
+      hsnCode,
+      gstPercentage,
+      currency = 'INR',
+      mrp,
+      institutionalPrice,
+      distributionPrice,
+      surgicalCategory,
+      implantType,
+      subCategory,
+      lengthMm
+    } = req.body;
+
+    // Validate required fields (same as create)
+    if (!materialNumber || !materialNumber.trim()) {
+      return res.status(400).json({ message: 'Material number is required' });
+    }
+    
+    if (!description || !description.trim()) {
+      return res.status(400).json({ message: 'Description is required' });
+    }
+
+    // Check if material exists
+    const existingMaterial = await MaterialMaster.findById(materialId);
+    if (!existingMaterial) {
+      return res.status(404).json({ message: 'Material not found' });
+    }
+
+    // Check if material number is being changed and if it conflicts
+    const upperMaterialNumber = materialNumber.trim().toUpperCase();
+    if (upperMaterialNumber !== existingMaterial.materialNumber) {
+      const duplicateMaterial = await MaterialMaster.findOne({
+        _id: { $ne: materialId },
+        materialNumber: upperMaterialNumber
+      });
+      
+      if (duplicateMaterial) {
+        return res.status(400).json({ message: 'Material number already exists' });
+      }
+    }
+
+    // Update material
+    const updatedMaterial = await MaterialMaster.findByIdAndUpdate(
+      materialId,
+      {
+        materialNumber: upperMaterialNumber,
+        description: description.trim(),
+        hsnCode: hsnCode.trim(),
+        gstPercentage,
+        currency,
+        mrp,
+        institutionalPrice,
+        distributionPrice,
+        surgicalCategory,
+        implantType,
+        subCategory: subCategory.trim(),
+        lengthMm,
+        updatedBy: req.user?.id
+      },
+      { new: true }
+    )
+    .populate('surgicalCategory', 'code description')
+    .populate('implantType', 'name')
+    .populate('createdBy', 'firstName lastName')
+    .populate('updatedBy', 'firstName lastName');
+
+    res.json(updatedMaterial);
+  } catch (error) {
+    console.error('Error updating material:', error);
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Material number already exists' });
+    } else {
+      res.status(500).json({ message: 'Server error while updating material' });
+    }
+  }
+});
+
+// Delete material (soft delete)
+router.delete('/:id', async (req, res) => {
+  try {
+    const material = await MaterialMaster.findById(req.params.id);
+    
+    if (!material) {
+      return res.status(404).json({ message: 'Material not found' });
+    }
+
+    // Soft delete by setting isActive to false
+    material.isActive = false;
+    material.updatedBy = req.user?.id;
+    await material.save();
+
+    res.json({ message: 'Material deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting material:', error);
+    res.status(500).json({ message: 'Server error while deleting material' });
+  }
+});
+
+module.exports = router;

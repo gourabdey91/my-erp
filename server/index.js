@@ -44,6 +44,7 @@ const creditNoteRoutes = require('./routes/creditNotes');
 const doctorAssignmentRoutes = require('./routes/doctorAssignments');
 const expenseTypeAssignmentRoutes = require('./routes/expenseTypeAssignments');
 const implantTypeRoutes = require('./routes/implantTypes');
+const materialMasterRoutes = require('./routes/materialMaster');
 
 app.get('/', (req, res) => {
   res.send('ERP Billing App Backend');
@@ -65,6 +66,7 @@ app.use('/api/credit-notes', creditNoteRoutes);
 app.use('/api/doctor-assignments', doctorAssignmentRoutes);
 app.use('/api/expense-type-assignments', expenseTypeAssignmentRoutes);
 app.use('/api/implant-types', implantTypeRoutes);
+app.use('/api/material-master', materialMasterRoutes);
 
 // MongoDB connection with environment awareness
 mongoose.connect(mongoUri);

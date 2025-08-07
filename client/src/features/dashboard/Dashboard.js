@@ -142,6 +142,15 @@ const Dashboard = ({ onViewChange }) => {
             count: stats?.hospitals?.count || '...',
             onClick: () => onViewChange('hospitals'),
             enabled: true
+          },
+          {
+            id: 'material-master',
+            title: 'Material Master',
+            subtitle: 'Manage Materials',
+            icon: '📦',
+            count: stats?.materialMaster?.count || '...',
+            onClick: () => onViewChange('material-master'),
+            enabled: true
           }
         ]
       },

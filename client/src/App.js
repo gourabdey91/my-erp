@@ -14,6 +14,7 @@ import Doctors from './features/doctors/Doctors';
 import Hospitals from './features/hospitals/Hospitals';
 import Procedures from './features/procedures/Procedures';
 import ImplantTypes from './features/implant-types/ImplantTypes';
+import MaterialMaster from './features/material-master/MaterialMaster';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -68,6 +69,8 @@ function AppContent() {
         return <Procedures />;
       case 'implant-types':
         return <ImplantTypes />;
+      case 'material-master':
+        return <MaterialMaster />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':
