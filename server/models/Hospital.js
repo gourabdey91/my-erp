@@ -55,6 +55,35 @@ const hospitalSchema = new mongoose.Schema({
     enum: [15, 30, 45, 60, 90],
     default: 30
   },
+  defaultPricing: {
+    type: Boolean,
+    default: false
+  },
+  materialAssignments: [{
+    material: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MaterialMaster',
+      required: true
+    },
+    mrp: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    institutionalPrice: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    assignedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   businessUnit: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',

@@ -162,13 +162,40 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Valid length is required' });
     }
 
-    // Check if material number already exists
+    // Check if material number already exists (including inactive ones)
     const existingMaterial = await MaterialMaster.findOne({ 
       materialNumber: materialNumber.trim().toUpperCase() 
     });
     
     if (existingMaterial) {
-      return res.status(400).json({ message: 'Material number already exists' });
+      if (existingMaterial.isActive) {
+        return res.status(400).json({ message: 'Material number already exists' });
+      } else {
+        // Reactivate the existing material with new data
+        existingMaterial.description = description.trim();
+        existingMaterial.hsnCode = hsnCode.trim();
+        existingMaterial.gstPercentage = gstPercentage;
+        existingMaterial.currency = currency;
+        existingMaterial.mrp = mrp;
+        existingMaterial.institutionalPrice = institutionalPrice;
+        existingMaterial.distributionPrice = distributionPrice;
+        existingMaterial.surgicalCategory = surgicalCategory;
+        existingMaterial.implantType = implantType;
+        existingMaterial.subCategory = subCategory.trim();
+        existingMaterial.lengthMm = lengthMm;
+        existingMaterial.isActive = true;
+        existingMaterial.updatedBy = req.user?.id;
+        
+        await existingMaterial.save();
+        
+        const populatedMaterial = await MaterialMaster.findById(existingMaterial._id)
+          .populate('surgicalCategory', 'code description')
+          .populate('implantType', 'name')
+          .populate('createdBy', 'firstName lastName')
+          .populate('updatedBy', 'firstName lastName');
+        
+        return res.status(201).json(populatedMaterial);
+      }
     }
 
     // Verify surgical category and implant type exist
