@@ -110,6 +110,15 @@ const Dashboard = ({ onViewChange }) => {
             count: stats?.expenseTypes?.count || '...',
             onClick: () => onViewChange('expense-types'),
             enabled: true
+          },
+          {
+            id: 'implant-types',
+            title: 'Implant Types',
+            subtitle: 'Manage Implant Types',
+            icon: '🦴',
+            count: stats?.implantTypes?.count || '...',
+            onClick: () => onViewChange('implant-types'),
+            enabled: true
           }
         ]
       },

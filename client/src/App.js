@@ -13,6 +13,7 @@ import ExpenseTypes from './features/expense-types/ExpenseTypes';
 import Doctors from './features/doctors/Doctors';
 import Hospitals from './features/hospitals/Hospitals';
 import Procedures from './features/procedures/Procedures';
+import ImplantTypes from './features/implant-types/ImplantTypes';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -65,6 +66,8 @@ function AppContent() {
         return <Hospitals />;
       case 'procedures':
         return <Procedures />;
+      case 'implant-types':
+        return <ImplantTypes />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':

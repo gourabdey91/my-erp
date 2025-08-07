@@ -8,6 +8,7 @@ const ExpenseType = require('../models/ExpenseType');
 const Procedure = require('../models/Procedure');
 const Doctor = require('../models/Doctor');
 const Hospital = require('../models/Hospital');
+const ImplantType = require('../models/ImplantType');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -43,6 +44,10 @@ router.get('/stats', async (req, res) => {
     // Get procedures statistics
     const totalProcedures = await Procedure.countDocuments();
     const activeProcedures = await Procedure.countDocuments({ isActive: true });
+
+    // Get implant types statistics
+    const totalImplantTypes = await ImplantType.countDocuments();
+    const activeImplantTypes = await ImplantType.countDocuments({ isActive: true });
 
     // For now, we'll use placeholder data for other modules
     // These can be replaced with real models when those modules are implemented
@@ -94,6 +99,12 @@ router.get('/stats', async (req, res) => {
         active: activeProcedures,
         count: activeProcedures,
         label: 'Procedures'
+      },
+      implantTypes: {
+        total: totalImplantTypes,
+        active: activeImplantTypes,
+        count: activeImplantTypes,
+        label: 'Implant Types'
       },
       billing: {
         total: 45,
