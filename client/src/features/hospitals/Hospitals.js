@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { hospitalAPI } from './services/hospitalAPI';
 import CreditNotes from './components/CreditNotes';
 import DoctorAssignments from './components/DoctorAssignments';
+import ExpenseTypeAssignments from './components/ExpenseTypeAssignments';
 import './Hospitals.css';
 
 const Hospitals = () => {
   const { currentUser } = useAuth();
+  const menuRef = useRef(null);
   
   const [hospitals, setHospitals] = useState([]);
   const [surgicalCategories, setSurgicalCategories] = useState([]);
@@ -19,7 +21,9 @@ const Hospitals = () => {
   const [editingHospital, setEditingHospital] = useState(null);
   const [showCreditNotes, setShowCreditNotes] = useState(false);
   const [showDoctorAssignments, setShowDoctorAssignments] = useState(false);
+  const [showExpenseTypeAssignments, setShowExpenseTypeAssignments] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [formData, setFormData] = useState({
     shortName: '',
     legalName: '',
@@ -43,6 +47,23 @@ const Hospitals = () => {
     fetchAllHospitals();
     fetchAllSurgicalCategories();
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId]);
 
   const fetchAllHospitals = async () => {
     try {
@@ -244,6 +265,53 @@ const Hospitals = () => {
     setSelectedHospital(null);
   };
 
+  const handleExpenseTypeAssignments = (hospital) => {
+    setSelectedHospital(hospital);
+    setShowExpenseTypeAssignments(true);
+  };
+
+  const handleCloseExpenseTypeAssignments = () => {
+    setShowExpenseTypeAssignments(false);
+    setSelectedHospital(null);
+  };
+
+  const toggleMenu = (hospitalId) => {
+    const newOpenMenuId = openMenuId === hospitalId ? null : hospitalId;
+    setOpenMenuId(newOpenMenuId);
+    
+    // Add positioning logic after state update
+    if (newOpenMenuId) {
+      setTimeout(() => {
+        const menuElement = menuRef.current;
+        if (menuElement) {
+          const dropdown = menuElement.querySelector('.menu-dropdown');
+          if (dropdown) {
+            const rect = dropdown.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            
+            // If dropdown goes off the right edge of viewport
+            if (rect.right > viewportWidth - 10) {
+              dropdown.style.right = '0';
+              dropdown.style.left = 'auto';
+              dropdown.style.transform = 'translateX(0)';
+            }
+            
+            // On very small screens, ensure it doesn't go off screen
+            if (viewportWidth < 480) {
+              const maxWidth = Math.min(180, viewportWidth - 20);
+              dropdown.style.minWidth = `${maxWidth}px`;
+              dropdown.style.maxWidth = `${maxWidth}px`;
+            }
+          }
+        }
+      }, 0);
+    }
+  };
+
+  const closeMenu = () => {
+    setOpenMenuId(null);
+  };
+
   if (loading) {
     return <div className="loading">Loading hospitals...</div>;
   }
@@ -429,8 +497,40 @@ const Hospitals = () => {
             {hospitals.map(hospital => (
               <div key={hospital._id} className="hospital-card">
                 <div className="hospital-header">
-                  <h3>{hospital.shortName}</h3>
-                  <span className="hospital-id">ID: {hospital.hospitalId}</span>
+                  <div className="hospital-title">
+                    <h3>{hospital.shortName}</h3>
+                    <span className="hospital-id">ID: {hospital.hospitalId}</span>
+                  </div>
+                  <div className="hospital-menu" ref={openMenuId === hospital._id ? menuRef : null}>
+                    <button 
+                      className="menu-trigger"
+                      onClick={() => toggleMenu(hospital._id)}
+                      aria-label="More actions"
+                    >
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </button>
+                    {openMenuId === hospital._id && (
+                      <div className="menu-dropdown">
+                        <button onClick={() => { handleEdit(hospital); closeMenu(); }}>
+                          <i className="icon-edit"></i> Edit
+                        </button>
+                        <button onClick={() => { handleCreditNotes(hospital); closeMenu(); }}>
+                          <i className="icon-credit"></i> Credit Notes
+                        </button>
+                        <button onClick={() => { handleDoctorAssignments(hospital); closeMenu(); }}>
+                          <i className="icon-doctor"></i> Doctors
+                        </button>
+                        <button onClick={() => { handleExpenseTypeAssignments(hospital); closeMenu(); }}>
+                          <i className="icon-expense"></i> Expenses
+                        </button>
+                        <button onClick={() => { handleDelete(hospital); closeMenu(); }} className="delete-action">
+                          <i className="icon-delete"></i> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="hospital-details">
                   <p><strong>Legal Name:</strong> {hospital.legalName}</p>
@@ -449,32 +549,6 @@ const Hospitals = () => {
                       ))}
                     </div>
                   </div>
-                </div>
-                <div className="hospital-actions">
-                  <button 
-                    className="edit-button"
-                    onClick={() => handleEdit(hospital)}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="credit-notes-button"
-                    onClick={() => handleCreditNotes(hospital)}
-                  >
-                    Credit Notes
-                  </button>
-                  <button 
-                    className="doctor-assignments-button"
-                    onClick={() => handleDoctorAssignments(hospital)}
-                  >
-                    Doctor Assignments
-                  </button>
-                  <button 
-                    className="delete-button"
-                    onClick={() => handleDelete(hospital)}
-                  >
-                    Delete
-                  </button>
                 </div>
               </div>
             ))}
@@ -497,6 +571,15 @@ const Hospitals = () => {
           hospital={selectedHospital}
           currentUser={currentUser}
           onClose={handleCloseDoctorAssignments}
+        />
+      )}
+
+      {/* Expense Type Assignments Modal */}
+      {showExpenseTypeAssignments && selectedHospital && (
+        <ExpenseTypeAssignments
+          hospital={selectedHospital}
+          currentUser={currentUser}
+          onClose={handleCloseExpenseTypeAssignments}
         />
       )}
     </div>

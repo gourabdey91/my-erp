@@ -16,6 +16,19 @@ const expenseTypeAssignmentSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  valueType: {
+    type: String,
+    enum: ['amount', 'percentage'],
+    required: true,
+    default: 'amount'
+  },
+  taxBasis: {
+    type: String,
+    enum: ['pre-gst', 'post-gst'],
+    required: function() {
+      return this.valueType === 'percentage';
+    }
+  },
   paymentType: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PaymentType',

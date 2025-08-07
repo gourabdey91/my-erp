@@ -45,8 +45,11 @@ router.get('/options/:hospitalId', async (req, res) => {
     if (paymentType && paymentType !== '') procedureFilter.paymentTypeId = paymentType;
     if (category && category !== '') procedureFilter.categoryId = category;
     const [expenseTypes, paymentTypes, categories, procedures] = await Promise.all([
-      ExpenseType.find({ isActive: true, name: { $ne: 'Clinical Charges' } })
-        .select('_id code name').sort({ name: 1 }),
+      ExpenseType.find({ 
+        isActive: true, 
+        name: { $ne: 'Clinical Charges' },
+        code: { $ne: 'CLINICAL' }
+      }).select('_id code name').sort({ name: 1 }),
       PaymentType.find({ isActive: true }).select('_id code description').sort({ description: 1 }),
       Category.find(categoryQuery).select('_id code description').sort({ description: 1 }),
       Procedure.find(procedureFilter).select('_id code name').sort({ name: 1 })
@@ -61,19 +64,28 @@ router.get('/options/:hospitalId', async (req, res) => {
 // Create new assignment
 router.post('/', async (req, res) => {
   try {
-    const { hospital, expenseType, value, paymentType, category, procedure, validityFrom, validityTo, createdBy } = req.body;
-    if (!hospital || !expenseType || value === undefined || !validityFrom || !validityTo || !createdBy) {
-      return res.status(400).json({ message: 'Hospital, expense type, value, validity dates, and created by are required' });
+    const { hospital, expenseType, value, valueType, taxBasis, paymentType, category, procedure, validityFrom, validityTo, createdBy } = req.body;
+    if (!hospital || !expenseType || value === undefined || !valueType || !validityFrom || !validityTo || !createdBy) {
+      return res.status(400).json({ message: 'Hospital, expense type, value, value type, validity dates, and created by are required' });
     }
+    
+    // Validate taxBasis is required for percentage type
+    if (valueType === 'percentage' && !taxBasis) {
+      return res.status(400).json({ message: 'Tax basis (pre-GST or post-GST) is required for percentage values' });
+    }
+    
     const fromDate = new Date(validityFrom);
     const toDate = new Date(validityTo);
     if (toDate <= fromDate) {
       return res.status(400).json({ message: 'Validity to date must be after validity from date' });
     }
+    
     const assignment = new ExpenseTypeAssignment({
       hospital,
       expenseType,
       value: parseFloat(value),
+      valueType,
+      taxBasis: valueType === 'percentage' ? taxBasis : undefined,
       paymentType: paymentType || undefined,
       category: category || undefined,
       procedure: procedure || undefined,
@@ -100,10 +112,16 @@ router.post('/', async (req, res) => {
 // Update assignment
 router.put('/:id', async (req, res) => {
   try {
-    const { value, validityFrom, validityTo, updatedBy } = req.body;
-    if (value === undefined || !validityFrom || !validityTo || !updatedBy) {
-      return res.status(400).json({ message: 'Value, validity dates, and updated by are required' });
+    const { value, valueType, taxBasis, validityFrom, validityTo, updatedBy } = req.body;
+    if (value === undefined || !valueType || !validityFrom || !validityTo || !updatedBy) {
+      return res.status(400).json({ message: 'Value, value type, validity dates, and updated by are required' });
     }
+    
+    // Validate taxBasis is required for percentage type
+    if (valueType === 'percentage' && !taxBasis) {
+      return res.status(400).json({ message: 'Tax basis (pre-GST or post-GST) is required for percentage values' });
+    }
+    
     const fromDate = new Date(validityFrom);
     const toDate = new Date(validityTo);
     if (toDate <= fromDate) {
@@ -111,7 +129,10 @@ router.put('/:id', async (req, res) => {
     }
     const assignment = await ExpenseTypeAssignment.findById(req.params.id);
     if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+    
     assignment.value = parseFloat(value);
+    assignment.valueType = valueType;
+    assignment.taxBasis = valueType === 'percentage' ? taxBasis : undefined;
     assignment.validityFrom = fromDate;
     assignment.validityTo = toDate;
     assignment.updatedBy = updatedBy;
