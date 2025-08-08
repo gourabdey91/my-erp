@@ -139,6 +139,13 @@
   margin-bottom: 4px;
 }
 
+.optional-field {
+  color: #999;
+  font-weight: normal;
+  text-transform: none;
+  font-size: 10px;
+}
+
 .subcategory-form-group input,
 .subcategory-form-group select {
   padding: 8px 10px;

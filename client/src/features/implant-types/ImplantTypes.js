@@ -205,15 +205,14 @@ const ImplantTypes = () => {
                     />
                   </div>
                   <div className="subcategory-form-group">
-                    <label>Length (mm)</label>
+                    <label>Length (mm) <span className="optional-field">(Optional)</span></label>
                     <input
                       type="number"
                       value={subcat.length}
                       onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
-                      placeholder="Length in mm"
+                      placeholder="Length in mm (optional)"
                       min="0"
                       step="0.1"
-                      required
                     />
                   </div>
                   <div className="subcategory-form-group">
@@ -300,7 +299,7 @@ const ImplantTypes = () => {
                               <div key={index} className="subcategory-item">
                                 <span className="subcategory-name">{subcat.subCategory}</span>
                                 <span className="subcategory-details">
-                                  {subcat.length}mm - {subcat.surgicalCategory.code}
+                                  {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
                                 </span>
                               </div>
                             ))}
@@ -349,7 +348,7 @@ const ImplantTypes = () => {
                             <div key={index} className="mobile-subcategory-item">
                               <span className="mobile-subcategory-name">{subcat.subCategory}</span>
                               <span className="mobile-subcategory-details">
-                                {subcat.length}mm - {subcat.surgicalCategory.code}
+                                {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
                               </span>
                             </div>
                           ))}

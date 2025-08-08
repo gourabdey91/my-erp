@@ -17,6 +17,7 @@ import ImplantTypes from './features/implant-types/ImplantTypes';
 import MaterialMaster from './features/material-master/MaterialMaster';
 import DeliveryChallanDetails from './features/delivery-challan-details/DeliveryChallanDetails';
 import FileUpload from './features/file-upload/FileUpload';
+import MaterialMasterUpload from './features/file-upload/MaterialMasterUpload';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -77,6 +78,8 @@ function AppContent() {
         return <DeliveryChallanDetails />;
       case 'file-upload':
         return <FileUpload />;
+      case 'material-master-upload':
+        return <MaterialMasterUpload />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':

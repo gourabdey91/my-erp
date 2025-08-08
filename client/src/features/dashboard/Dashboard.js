@@ -165,6 +165,15 @@ const Dashboard = ({ onViewChange }) => {
             count: 'XLSX',
             onClick: () => onViewChange('file-upload'),
             enabled: true
+          },
+          {
+            id: 'material-master-upload',
+            title: 'Material Master',
+            subtitle: 'Import Material Data',
+            icon: '📦',
+            count: 'XLSX',
+            onClick: () => onViewChange('material-master-upload'),
+            enabled: true
           }
         ]
       },

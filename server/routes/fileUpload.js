@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const ImplantType = require('../models/ImplantType');
 const Category = require('../models/Category');
+const MaterialMaster = require('../models/MaterialMaster');
 
 const router = express.Router();
 
@@ -247,6 +248,252 @@ router.post('/save-implant-subcategories', async (req, res) => {
 
   } catch (error) {
     console.error('Error saving data:', error);
+    res.status(500).json({ message: 'Error saving data to database', error: error.message });
+  }
+});
+
+// Upload and process Material Master Excel file
+router.post('/material-master', upload.single('excelFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Read Excel file
+    const workbook = xlsx.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+
+    // Process and validate data
+    const processedData = [];
+    const errors = [];
+
+    // Get existing categories and implant types for validation
+    const existingCategories = await Category.find({ isActive: true }).lean();
+    const existingImplantTypes = await ImplantType.find({ isActive: true }).lean();
+
+    // Create lookup maps for faster validation
+    const categoryMap = new Map(existingCategories.map(cat => [cat.code.toLowerCase().trim(), cat]));
+    const implantTypeMap = new Map(existingImplantTypes.map(it => [it.name.toLowerCase().trim(), it]));
+
+    for (let i = 0; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      const rowIndex = i + 2; // Excel rows start from 2 (after header)
+      const validationErrors = [];
+
+      // Clean and extract data
+      const materialNumber = row['Material Number'] || row['materialNumber'] || '';
+      const description = row['Description'] || row['description'] || '';
+      const hsnCode = row['HSN Code'] || row['hsnCode'] || '';
+      const gstPercentage = row['GST %'] || row['gstPercentage'] || '';
+      const currency = row['Currency'] || row['currency'] || 'INR';
+      const mrp = row['MRP'] || row['mrp'] || '';
+      const institutionalPrice = row['Institutional Price'] || row['institutionalPrice'] || '';
+      const distributionPrice = row['Distribution Price'] || row['distributionPrice'] || '';
+      const surgicalCategory = row['Surgical Category'] || row['surgicalCategory'] || '';
+      const implantType = row['Implant Type'] || row['implantType'] || '';
+      const subCategory = row['Sub Category'] || row['subCategory'] || '';
+      const lengthMm = row['Length (mm)'] || row['lengthMm'] || '';
+
+      // Validate required fields
+      if (!materialNumber.toString().trim()) {
+        validationErrors.push('Material Number is required');
+      }
+      if (!description.toString().trim()) {
+        validationErrors.push('Description is required');
+      }
+      if (!hsnCode.toString().trim()) {
+        validationErrors.push('HSN Code is required');
+      }
+      if (!surgicalCategory.toString().trim()) {
+        validationErrors.push('Surgical Category is required');
+      }
+
+      let categoryObj = null;
+      let implantTypeObj = null;
+      let mrpValue = null;
+      let institutionalPriceValue = null;
+      let distributionPriceValue = null;
+      let gstValue = null;
+      let lengthValue = null;
+
+      // Validate surgical category exists
+      if (surgicalCategory.toString().trim()) {
+        categoryObj = categoryMap.get(surgicalCategory.toString().toLowerCase().trim());
+        if (!categoryObj) {
+          validationErrors.push(`Surgical category "${surgicalCategory}" not found`);
+        }
+      }
+
+      // Validate implant type exists (if provided)
+      if (implantType.toString().trim()) {
+        implantTypeObj = implantTypeMap.get(implantType.toString().toLowerCase().trim());
+        if (!implantTypeObj) {
+          validationErrors.push(`Implant type "${implantType}" not found`);
+        }
+      }
+
+      // Validate numeric fields
+      if (mrp.toString().trim()) {
+        mrpValue = parseFloat(mrp.toString().trim());
+        if (isNaN(mrpValue) || mrpValue < 0) {
+          validationErrors.push('MRP must be a valid positive number');
+        }
+      }
+
+      if (institutionalPrice.toString().trim()) {
+        institutionalPriceValue = parseFloat(institutionalPrice.toString().trim());
+        if (isNaN(institutionalPriceValue) || institutionalPriceValue < 0) {
+          validationErrors.push('Institutional Price must be a valid positive number');
+        }
+      }
+
+      if (distributionPrice.toString().trim()) {
+        distributionPriceValue = parseFloat(distributionPrice.toString().trim());
+        if (isNaN(distributionPriceValue) || distributionPriceValue < 0) {
+          validationErrors.push('Distribution Price must be a valid positive number');
+        }
+      }
+
+      if (gstPercentage.toString().trim()) {
+        gstValue = parseFloat(gstPercentage.toString().trim());
+        if (isNaN(gstValue) || gstValue < 0 || gstValue > 100) {
+          validationErrors.push('GST % must be a valid number between 0 and 100');
+        }
+      }
+
+      if (lengthMm.toString().trim()) {
+        lengthValue = parseFloat(lengthMm.toString().trim());
+        if (isNaN(lengthValue) || lengthValue < 0) {
+          validationErrors.push('Length must be a valid positive number');
+        }
+      }
+
+      // Check for duplicate material numbers within uploaded data
+      const duplicateInUpload = processedData.find(item => 
+        item.materialNumber.toLowerCase() === materialNumber.toString().toLowerCase().trim()
+      );
+
+      if (duplicateInUpload) {
+        validationErrors.push('Duplicate material number found in uploaded data');
+      }
+
+      // Check for existing material numbers in database
+      if (materialNumber.toString().trim()) {
+        const existingMaterial = await MaterialMaster.findOne({
+          materialNumber: materialNumber.toString().trim(),
+          isActive: true
+        });
+
+        if (existingMaterial) {
+          validationErrors.push('Material number already exists in database');
+        }
+      }
+
+      const processedRow = {
+        rowIndex,
+        materialNumber: materialNumber.toString().trim(),
+        description: description.toString().trim(),
+        hsnCode: hsnCode.toString().trim(),
+        gstPercentage: gstValue,
+        currency: currency.toString().trim() || 'INR',
+        mrp: mrpValue,
+        institutionalPrice: institutionalPriceValue,
+        distributionPrice: distributionPriceValue,
+        surgicalCategory: surgicalCategory.toString().trim(),
+        implantType: implantType.toString().trim(),
+        subCategory: subCategory.toString().trim(),
+        lengthMm: lengthValue,
+        surgicalCategoryId: categoryObj?._id,
+        implantTypeId: implantTypeObj?._id,
+        validationErrors,
+        isValid: validationErrors.length === 0
+      };
+
+      processedData.push(processedRow);
+    }
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      data: processedData,
+      totalRows: processedData.length,
+      validRows: processedData.filter(row => row.isValid).length,
+      invalidRows: processedData.filter(row => !row.isValid).length
+    });
+
+  } catch (error) {
+    console.error('Error processing material master file:', error);
+    // Clean up file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ message: 'Error processing file', error: error.message });
+  }
+});
+
+// Save Material Master data to database
+router.post('/save-material-master', async (req, res) => {
+  try {
+    const { data, updatedBy } = req.body;
+
+    if (!data || !Array.isArray(data)) {
+      return res.status(400).json({ message: 'Invalid data provided' });
+    }
+
+    if (!updatedBy) {
+      return res.status(400).json({ message: 'Updated by user is required' });
+    }
+
+    // Filter only valid rows
+    const validRows = data.filter(row => row.isValid);
+
+    if (validRows.length === 0) {
+      return res.status(400).json({ message: 'No valid rows to save' });
+    }
+
+    let savedCount = 0;
+    const errors = [];
+
+    for (const row of validRows) {
+      try {
+        const materialData = {
+          materialNumber: row.materialNumber,
+          description: row.description,
+          hsnCode: row.hsnCode,
+          gstPercentage: row.gstPercentage || 0,
+          currency: row.currency,
+          mrp: row.mrp || 0,
+          institutionalPrice: row.institutionalPrice || 0,
+          distributionPrice: row.distributionPrice || 0,
+          surgicalCategory: row.surgicalCategoryId,
+          implantType: row.implantTypeId || null,
+          subCategory: row.subCategory || null,
+          lengthMm: row.lengthMm || null,
+          createdBy: updatedBy,
+          updatedBy: updatedBy
+        };
+
+        const material = new MaterialMaster(materialData);
+        await material.save();
+        savedCount++;
+
+      } catch (error) {
+        console.error(`Error saving material ${row.materialNumber}:`, error);
+        errors.push(`Error saving material ${row.materialNumber}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      message: `Successfully saved ${savedCount} material records`,
+      savedCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+
+  } catch (error) {
+    console.error('Error saving material data:', error);
     res.status(500).json({ message: 'Error saving data to database', error: error.message });
   }
 });
