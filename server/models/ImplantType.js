@@ -8,8 +8,9 @@ const implantSubcategorySchema = new mongoose.Schema({
   },
   length: {
     type: Number,
-    required: true,
-    min: 0
+    required: false, // Length is optional
+    min: 0,
+    default: null
   },
   surgicalCategory: {
     type: mongoose.Schema.Types.ObjectId,

@@ -151,10 +151,15 @@ const Dashboard = ({ onViewChange }) => {
             count: stats?.materialMaster?.count || '...',
             onClick: () => onViewChange('material-master'),
             enabled: true
-          },
+          }
+        ]
+      },
+      dataImport: {
+        title: 'Data Import',
+        tiles: [
           {
             id: 'file-upload',
-            title: 'Data Import',
+            title: 'Implant Subcategory',
             subtitle: 'Import Excel Data',
             icon: '📤',
             count: 'XLSX',

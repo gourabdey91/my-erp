@@ -83,9 +83,7 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
       if (!subCategory.toString().trim()) {
         validationErrors.push('Subcategory is required');
       }
-      if (!length.toString().trim()) {
-        validationErrors.push('Length is required');
-      }
+      // Length is optional, no required validation
 
       let implantTypeObj = null;
       let categoryObj = null;
@@ -107,12 +105,15 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
         }
       }
 
-      // Validate length is a valid number
+      // Validate length is a valid number (if provided)
       if (length.toString().trim()) {
         lengthValue = parseFloat(length.toString().trim());
         if (isNaN(lengthValue) || lengthValue < 0) {
           validationErrors.push('Length must be a valid positive number');
         }
+      } else {
+        // Length is optional, set to null if not provided
+        lengthValue = null;
       }
 
       // Check for duplicate entries within the uploaded data
@@ -120,7 +121,7 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
         item.implantTypeName.toLowerCase() === implantTypeName.toString().toLowerCase().trim() &&
         item.surgicalCategory.toLowerCase() === surgicalCategory.toString().toLowerCase().trim() &&
         item.subCategory.toLowerCase() === subCategory.toString().toLowerCase().trim() &&
-        item.length === lengthValue
+        ((item.length === null && lengthValue === null) || (item.length === lengthValue))
       );
 
       if (duplicateInUpload) {
@@ -128,11 +129,11 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
       }
 
       // Check for existing entries in database
-      if (implantTypeObj && categoryObj && lengthValue !== null && subCategory.toString().trim()) {
+      if (implantTypeObj && categoryObj && subCategory.toString().trim()) {
         const existingSubcategory = implantTypeObj.subcategories?.find(sub =>
           sub.subCategory.toLowerCase() === subCategory.toString().toLowerCase().trim() &&
           sub.surgicalCategory.toString() === categoryObj._id.toString() &&
-          sub.length === lengthValue
+          ((sub.length === null && lengthValue === null) || (sub.length === lengthValue))
         );
 
         if (existingSubcategory) {

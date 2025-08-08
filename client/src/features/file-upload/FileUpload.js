@@ -146,7 +146,7 @@ const FileUpload = () => {
       <div className="file-upload-header">
         <h2>Implant Subcategory Data Import</h2>
         <p className="file-upload-description">
-          Upload Excel file with Implant Type, Surgical Category, Subcategory, and Length data
+          Upload Excel file with Implant Type, Surgical Category, Subcategory, and Length data (Length is optional)
         </p>
       </div>
 
@@ -251,7 +251,7 @@ const FileUpload = () => {
                     <td>{row.implantTypeName}</td>
                     <td>{row.surgicalCategory}</td>
                     <td>{row.subCategory}</td>
-                    <td>{row.length !== null ? row.length : 'Invalid'}</td>
+                    <td>{row.length !== null && row.length !== undefined ? row.length : 'N/A'}</td>
                     <td>
                       <span className={`status-badge ${row.isValid ? 'valid' : 'invalid'}`}>
                         {row.isValid ? '✓ Valid' : '✗ Invalid'}
