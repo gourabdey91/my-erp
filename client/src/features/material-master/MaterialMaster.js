@@ -5,10 +5,13 @@ import { materialMasterAPI } from './services/materialMasterAPI';
 const MaterialMaster = () => {
   const [materials, setMaterials] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [implantTypes, setImplantTypes] = useState([]);
   const [filteredImplantTypes, setFilteredImplantTypes] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [lengths, setLengths] = useState([]);
+  // Filter-specific state
+  const [filterImplantTypes, setFilterImplantTypes] = useState([]);
+  const [filterSubcategories, setFilterSubcategories] = useState([]);
+  const [filterLengths, setFilterLengths] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -25,6 +28,8 @@ const MaterialMaster = () => {
     search: '',
     surgicalCategory: '',
     implantType: '',
+    subCategory: '',
+    lengthMm: '',
     isActive: true
   });
 
@@ -83,7 +88,7 @@ const MaterialMaster = () => {
     try {
       const response = await materialMasterAPI.getDropdownData();
       setCategories(response.categories);
-      setImplantTypes(response.implantTypes);
+      // We no longer need to store all implantTypes since we fetch them dynamically
     } catch (err) {
       console.error('Error fetching dropdown data:', err);
     }
@@ -190,6 +195,85 @@ const MaterialMaster = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Handle surgical category filter change
+  const handleFilterSurgicalCategoryChange = async (e) => {
+    const surgicalCategoryId = e.target.value;
+    setFilters(prev => ({
+      ...prev,
+      surgicalCategory: surgicalCategoryId,
+      implantType: '',
+      subCategory: '',
+      lengthMm: ''
+    }));
+    
+    // Reset dependent filter dropdowns
+    setFilterImplantTypes([]);
+    setFilterSubcategories([]);
+    setFilterLengths([]);
+    
+    if (surgicalCategoryId) {
+      try {
+        const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
+        setFilterImplantTypes(filteredTypes);
+      } catch (err) {
+        console.error('Error fetching filtered implant types for filter:', err);
+        setFilterImplantTypes([]);
+      }
+    }
+  };
+
+  // Handle implant type filter change
+  const handleFilterImplantTypeChange = async (e) => {
+    const implantTypeId = e.target.value;
+    setFilters(prev => ({
+      ...prev,
+      implantType: implantTypeId,
+      subCategory: '',
+      lengthMm: ''
+    }));
+    
+    // Reset dependent filter dropdowns
+    setFilterSubcategories([]);
+    setFilterLengths([]);
+    
+    if (implantTypeId && filters.surgicalCategory) {
+      try {
+        const filteredSubs = await materialMasterAPI.getFilteredSubcategories(filters.surgicalCategory, implantTypeId);
+        setFilterSubcategories(filteredSubs);
+      } catch (err) {
+        console.error('Error fetching filtered subcategories for filter:', err);
+        setFilterSubcategories([]);
+      }
+    }
+  };
+
+  // Handle subcategory filter change
+  const handleFilterSubcategoryChange = async (e) => {
+    const subCategoryValue = e.target.value;
+    setFilters(prev => ({
+      ...prev,
+      subCategory: subCategoryValue,
+      lengthMm: ''
+    }));
+    
+    // Reset dependent filter dropdowns
+    setFilterLengths([]);
+    
+    if (subCategoryValue && filters.surgicalCategory && filters.implantType) {
+      try {
+        const filteredLengths = await materialMasterAPI.getFilteredLengths(
+          filters.surgicalCategory, 
+          filters.implantType, 
+          subCategoryValue
+        );
+        setFilterLengths(filteredLengths);
+      } catch (err) {
+        console.error('Error fetching filtered lengths for filter:', err);
+        setFilterLengths([]);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -342,7 +426,7 @@ const MaterialMaster = () => {
             <select
               name="surgicalCategory"
               value={filters.surgicalCategory}
-              onChange={handleFilterChange}
+              onChange={handleFilterSurgicalCategoryChange}
               className="filter-select"
             >
               <option value="">All Categories</option>
@@ -357,15 +441,61 @@ const MaterialMaster = () => {
             <select
               name="implantType"
               value={filters.implantType}
-              onChange={handleFilterChange}
+              onChange={handleFilterImplantTypeChange}
               className="filter-select"
+              disabled={!filters.surgicalCategory}
             >
               <option value="">All Implant Types</option>
-              {implantTypes.map(implantType => (
+              {filterImplantTypes.map(implantType => (
                 <option key={implantType._id} value={implantType._id}>
                   {implantType.name}
                 </option>
               ))}
+            </select>
+          </div>
+        </div>
+        <div className="filters-row">
+          <div className="filter-group">
+            <select
+              name="subCategory"
+              value={filters.subCategory}
+              onChange={handleFilterSubcategoryChange}
+              className="filter-select"
+              disabled={!filters.implantType}
+            >
+              <option value="">All Sub Categories</option>
+              {filterSubcategories.map((subcat, index) => (
+                <option key={index} value={subcat.subCategory}>
+                  {subcat.subCategory}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              name="lengthMm"
+              value={filters.lengthMm}
+              onChange={handleFilterChange}
+              className="filter-select"
+              disabled={!filters.subCategory}
+            >
+              <option value="">All Lengths</option>
+              {filterLengths.map((length, index) => (
+                <option key={index} value={length}>
+                  {length} mm
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              name="isActive"
+              value={filters.isActive}
+              onChange={handleFilterChange}
+              className="filter-select"
+            >
+              <option value={true}>Active</option>
+              <option value={false}>Inactive</option>
             </select>
           </div>
         </div>

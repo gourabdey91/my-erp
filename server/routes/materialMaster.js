@@ -12,6 +12,8 @@ router.get('/', async (req, res) => {
     const search = req.query.search || '';
     const surgicalCategory = req.query.surgicalCategory;
     const implantType = req.query.implantType;
+    const subCategory = req.query.subCategory;
+    const lengthMm = req.query.lengthMm;
     const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : true;
 
     // Build filter query
@@ -31,6 +33,14 @@ router.get('/', async (req, res) => {
 
     if (implantType) {
       filter.implantType = implantType;
+    }
+
+    if (subCategory) {
+      filter.subCategory = { $regex: subCategory, $options: 'i' };
+    }
+
+    if (lengthMm) {
+      filter.lengthMm = parseFloat(lengthMm);
     }
 
     const skip = (page - 1) * limit;

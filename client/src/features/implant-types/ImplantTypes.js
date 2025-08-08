@@ -83,10 +83,19 @@ const ImplantTypes = () => {
     setError('');
 
     try {
+      // Clean up the data before sending - convert empty length strings to null
+      const cleanedFormData = {
+        ...formData,
+        subcategories: formData.subcategories.map(subcat => ({
+          ...subcat,
+          length: subcat.length === '' || subcat.length === undefined ? null : parseFloat(subcat.length)
+        }))
+      };
+
       if (editingImplantType) {
-        await implantTypesAPI.update(editingImplantType._id, formData);
+        await implantTypesAPI.update(editingImplantType._id, cleanedFormData);
       } else {
-        await implantTypesAPI.create(formData);
+        await implantTypesAPI.create(cleanedFormData);
       }
       
       await fetchImplantTypes();

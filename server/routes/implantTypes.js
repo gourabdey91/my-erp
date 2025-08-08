@@ -59,8 +59,9 @@ router.post('/', async (req, res) => {
         if (!subcat.subCategory || !subcat.subCategory.trim()) {
           return res.status(400).json({ message: 'Subcategory name is required' });
         }
-        if (!subcat.length || subcat.length <= 0) {
-          return res.status(400).json({ message: 'Subcategory length must be greater than 0' });
+        // Length is optional, but if provided must be greater than 0
+        if (subcat.length !== undefined && subcat.length !== null && subcat.length !== '' && subcat.length <= 0) {
+          return res.status(400).json({ message: 'Subcategory length must be greater than 0 if provided' });
         }
         if (!subcat.surgicalCategory) {
           return res.status(400).json({ message: 'Surgical category is required for subcategory' });
@@ -124,8 +125,9 @@ router.put('/:id', async (req, res) => {
         if (!subcat.subCategory || !subcat.subCategory.trim()) {
           return res.status(400).json({ message: 'Subcategory name is required' });
         }
-        if (!subcat.length || subcat.length <= 0) {
-          return res.status(400).json({ message: 'Subcategory length must be greater than 0' });
+        // Length is optional, but if provided must be greater than 0
+        if (subcat.length !== undefined && subcat.length !== null && subcat.length !== '' && subcat.length <= 0) {
+          return res.status(400).json({ message: 'Subcategory length must be greater than 0 if provided' });
         }
         if (!subcat.surgicalCategory) {
           return res.status(400).json({ message: 'Surgical category is required for subcategory' });
