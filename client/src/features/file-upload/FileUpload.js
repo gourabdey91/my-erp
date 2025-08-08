@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
-import apiService from '../../services/api';
+import { apiRequest } from '../../services/api';
 import './FileUpload.css';
 
 const FileUpload = () => {
@@ -45,10 +45,9 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append('excelFile', file);
 
-      const response = await apiService.post('/file-upload/implant-subcategories', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const response = await apiRequest('/api/file-upload/implant-subcategories', {
+        method: 'POST',
+        body: formData
       });
 
       setUploadedData(response.data.data);
@@ -107,9 +106,12 @@ const FileUpload = () => {
     setMessage('');
 
     try {
-      const response = await apiService.post('/file-upload/save-implant-subcategories', {
-        data: validRows,
-        updatedBy: currentUser._id
+      const response = await apiRequest('/api/file-upload/save-implant-subcategories', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: validRows,
+          updatedBy: currentUser._id
+        })
       });
 
       setMessage(response.data.message);

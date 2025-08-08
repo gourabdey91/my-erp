@@ -13,11 +13,14 @@ export const apiRequest = async (endpoint, options = {}) => {
     },
   };
 
+  // Don't set Content-Type for FormData - let browser handle it
+  const isFormData = options.body instanceof FormData;
+  
   const config = {
     ...defaultOptions,
     ...options,
     headers: {
-      ...defaultOptions.headers,
+      ...(isFormData ? {} : defaultOptions.headers),
       ...options.headers,
     },
   };
