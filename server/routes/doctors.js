@@ -8,6 +8,7 @@ router.get('/', async (req, res) => {
   try {
     const doctors = await Doctor.find({ isActive: true })
     .populate('surgicalCategories', 'code description')
+    .populate('consultingDoctor', 'name email')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ name: 1 });
@@ -32,11 +33,26 @@ router.get('/categories', async (req, res) => {
   }
 });
 
+// Get doctors for dropdown (consulting doctor selection)
+router.get('/dropdown', async (req, res) => {
+  try {
+    const doctors = await Doctor.find({ isActive: true })
+      .select('_id name email')
+      .sort({ name: 1 });
+
+    res.json(doctors);
+  } catch (error) {
+    console.error('Error fetching doctors for dropdown:', error);
+    res.status(500).json({ message: 'Server error while fetching doctors' });
+  }
+});
+
 // Get doctor by ID
 router.get('/:id', async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
       .populate('surgicalCategories', 'code description')
+      .populate('consultingDoctor', 'name email')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -54,7 +70,7 @@ router.get('/:id', async (req, res) => {
 // Create new doctor
 router.post('/', async (req, res) => {
   try {
-    const { name, surgicalCategories, phoneNumber, email, createdBy } = req.body;
+    const { name, surgicalCategories, phoneNumber, email, consultingDoctor, createdBy } = req.body;
 
     // Validation
     if (!name || !surgicalCategories || !createdBy) {
@@ -89,6 +105,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validate consulting doctor exists if provided
+    if (consultingDoctor) {
+      const consultingDoctorExists = await Doctor.findById(consultingDoctor);
+      if (!consultingDoctorExists) {
+        return res.status(400).json({ 
+          message: 'Consulting doctor not found' 
+        });
+      }
+    }
+
     // Check if email already exists (only if email is provided)
     if (email) {
       const existingByEmail = await Doctor.findOne({ 
@@ -120,6 +146,7 @@ router.post('/', async (req, res) => {
       surgicalCategories,
       phoneNumber: phoneNumber ? phoneNumber.trim() : undefined,
       email: email ? email.toLowerCase().trim() : undefined,
+      consultingDoctor: consultingDoctor || undefined,
       createdBy,
       updatedBy: createdBy
     });
@@ -128,6 +155,7 @@ router.post('/', async (req, res) => {
     
     const populatedDoctor = await Doctor.findById(doctor._id)
       .populate('surgicalCategories', 'code description')
+      .populate('consultingDoctor', 'name email')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -152,7 +180,7 @@ router.post('/', async (req, res) => {
 // Update doctor
 router.put('/:id', async (req, res) => {
   try {
-    const { name, surgicalCategories, phoneNumber, email, updatedBy } = req.body;
+    const { name, surgicalCategories, phoneNumber, email, consultingDoctor, updatedBy } = req.body;
 
     if (!name || !surgicalCategories || !updatedBy) {
       return res.status(400).json({ 
@@ -184,6 +212,16 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ 
         message: 'Please enter a valid email address' 
       });
+    }
+
+    // Validate consulting doctor exists if provided
+    if (consultingDoctor) {
+      const consultingDoctorExists = await Doctor.findById(consultingDoctor);
+      if (!consultingDoctorExists) {
+        return res.status(400).json({ 
+          message: 'Consulting doctor not found' 
+        });
+      }
     }
 
     const doctor = await Doctor.findById(req.params.id);
@@ -222,12 +260,14 @@ router.put('/:id', async (req, res) => {
     doctor.surgicalCategories = surgicalCategories;
     doctor.phoneNumber = phoneNumber ? phoneNumber.trim() : undefined;
     doctor.email = email ? email.toLowerCase().trim() : undefined;
+    doctor.consultingDoctor = consultingDoctor || undefined;
     doctor.updatedBy = updatedBy;
 
     await doctor.save();
 
     const populatedDoctor = await Doctor.findById(doctor._id)
       .populate('surgicalCategories', 'code description')
+      .populate('consultingDoctor', 'name email')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 

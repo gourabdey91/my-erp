@@ -59,6 +59,14 @@ const hospitalSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  discountAllowed: {
+    type: Boolean,
+    default: false
+  },
+  customerIsHospital: {
+    type: Boolean,
+    default: true
+  },
   materialAssignments: [{
     material: {
       type: mongoose.Schema.Types.ObjectId,
@@ -74,6 +82,14 @@ const hospitalSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 0
+    },
+    flaggedBilled: {
+      type: Boolean,
+      default: false
+    },
+    stickerAvailable: {
+      type: Boolean,
+      default: false
     },
     isActive: {
       type: Boolean,

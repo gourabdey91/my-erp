@@ -16,6 +16,11 @@ export const doctorAPI = {
     return await apiRequest('/api/doctors/categories');
   },
 
+  // Get doctors for dropdown (consulting doctor selection)
+  getDropdownDoctors: async () => {
+    return await apiRequest('/api/doctors/dropdown');
+  },
+
   // Create new doctor
   create: async (doctorData) => {
     return await apiRequest('/api/doctors', {

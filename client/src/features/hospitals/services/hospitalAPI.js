@@ -88,6 +88,15 @@ const hospitalAPI = {
     return response;
   },
 
+  // Update material assignment field (for checkboxes and other fields)
+  updateMaterialAssignmentField: async (hospitalId, assignmentId, fieldData) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/materials/${assignmentId}/field`, {
+      method: 'PATCH',
+      body: JSON.stringify(fieldData)
+    });
+    return response;
+  },
+
   // Remove material assignment from hospital
   removeMaterialAssignment: async (hospitalId, assignmentId, updatedBy) => {
     const response = await apiRequest(`/api/hospitals/${hospitalId}/materials/${assignmentId}`, {

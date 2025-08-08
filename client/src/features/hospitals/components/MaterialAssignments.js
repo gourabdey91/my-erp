@@ -201,6 +201,45 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
     }
   };
 
+  const handleCheckboxUpdate = async (assignmentId, fieldName, value) => {
+    try {
+      setLoading(true);
+      
+      const updateData = {
+        [fieldName]: value,
+        updatedBy: currentUser._id
+      };
+      
+      await hospitalAPI.updateMaterialAssignmentField(hospital._id, assignmentId, updateData);
+      
+      setSuccess(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} updated successfully`);
+      
+      // Update local state
+      setMaterials(prevMaterials => 
+        prevMaterials.map(material => 
+          material._id === assignmentId 
+            ? { ...material, [fieldName]: value }
+            : material
+        )
+      );
+      
+      // Also update filtered materials
+      setFilteredMaterials(prevFiltered => 
+        prevFiltered.map(material => 
+          material._id === assignmentId 
+            ? { ...material, [fieldName]: value }
+            : material
+        )
+      );
+      
+    } catch (err) {
+      setError(err.response?.data?.message || `Failed to update ${fieldName}`);
+      console.error(`Error updating ${fieldName}:`, err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -352,6 +391,8 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                         <th>Sub Category</th>
                         <th>MRP</th>
                         <th>Institutional Price</th>
+                        <th>Flagged Billed</th>
+                        <th>Sticker Available</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -398,6 +439,24 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                             ) : (
                               <span className="price">{formatCurrency(assignment.institutionalPrice)}</span>
                             )}
+                          </td>
+                          <td data-label="Flagged Billed">
+                            <input
+                              type="checkbox"
+                              checked={assignment.flaggedBilled || false}
+                              onChange={(e) => handleCheckboxUpdate(assignment._id, 'flaggedBilled', e.target.checked)}
+                              className="checkbox-input"
+                              title="Flagged Billed"
+                            />
+                          </td>
+                          <td data-label="Sticker Available">
+                            <input
+                              type="checkbox"
+                              checked={assignment.stickerAvailable || false}
+                              onChange={(e) => handleCheckboxUpdate(assignment._id, 'stickerAvailable', e.target.checked)}
+                              className="checkbox-input"
+                              title="Sticker Available"
+                            />
                           </td>
                           <td data-label="Actions">
                             <div className="action-buttons">

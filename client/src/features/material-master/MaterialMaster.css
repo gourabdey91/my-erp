@@ -78,12 +78,16 @@
   border-radius: 8px;
   margin-bottom: 24px;
   overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-header {
   background: #f8f9fa;
   padding: 16px 24px;
   border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
 }
 
 .form-header h2 {
@@ -95,6 +99,8 @@
 
 .material-form {
   padding: 24px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .form-row {
@@ -142,8 +148,12 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding-top: 20px;
+  padding: 20px 24px;
   border-top: 1px solid #e9ecef;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+  margin: 0 -24px -24px -24px;
 }
 
 /* Buttons */
@@ -508,5 +518,38 @@
 
   .description-cell {
     max-width: 250px;
+  }
+}
+
+/* Mobile form adjustments */
+@media (max-width: 768px) {
+  .form-container {
+    max-height: 85vh;
+  }
+  
+  .material-form {
+    padding: 16px;
+  }
+}
+
+/* Small mobile screens */
+@media (max-width: 480px) {
+  .form-container {
+    max-height: 90vh;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .btn {
+    width: 100%;
   }
 }

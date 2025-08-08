@@ -41,6 +41,11 @@ const doctorSchema = new mongoose.Schema({
       message: 'Please enter a valid email address'
     }
   },
+  consultingDoctor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false
+  },
   isActive: {
     type: Boolean,
     default: true

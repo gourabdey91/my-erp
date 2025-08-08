@@ -136,8 +136,8 @@ const Dashboard = ({ onViewChange }) => {
           },
           {
             id: 'hospitals',
-            title: 'Hospital Details',
-            subtitle: 'Manage Hospitals',
+            title: 'Customer Details',
+            subtitle: 'Manage Customers',
             icon: '🏥',
             count: stats?.hospitals?.count || '...',
             onClick: () => onViewChange('hospitals'),
@@ -151,12 +151,30 @@ const Dashboard = ({ onViewChange }) => {
             count: stats?.materialMaster?.count || '...',
             onClick: () => onViewChange('material-master'),
             enabled: true
+          },
+          {
+            id: 'file-upload',
+            title: 'Data Import',
+            subtitle: 'Import Excel Data',
+            icon: '📤',
+            count: 'XLSX',
+            onClick: () => onViewChange('file-upload'),
+            enabled: true
           }
         ]
       },
       transactional: {
         title: 'Transactional Data',
         tiles: [
+          {
+            id: 'delivery-challan-details',
+            title: 'Challan Details',
+            subtitle: 'Track Challans',
+            icon: '📦',
+            count: stats?.deliveryChallanDetails?.count || '...',
+            onClick: () => onViewChange('delivery-challan-details'),
+            enabled: true
+          },
           {
             id: 'templates',
             title: 'Templates',

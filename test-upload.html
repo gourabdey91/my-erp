@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test File Upload</title>
+</head>
+<body>
+    <h2>Test File Upload API</h2>
+    <form action="http://localhost:5000/api/file-upload/implant-subcategories" method="post" enctype="multipart/form-data">
+        <input type="file" name="excelFile" accept=".xlsx,.xls" required>
+        <button type="submit">Upload Test</button>
+    </form>
+</body>
+</html>

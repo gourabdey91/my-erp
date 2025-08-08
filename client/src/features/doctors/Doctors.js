@@ -6,6 +6,7 @@ import './Doctors.css';
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [consultingDoctors, setConsultingDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -14,7 +15,8 @@ const Doctors = () => {
     name: '',
     surgicalCategories: [],
     phoneNumber: '',
-    email: ''
+    email: '',
+    consultingDoctor: ''
   });
 
   const { currentUser } = useAuth();
@@ -43,10 +45,20 @@ const Doctors = () => {
     }
   }, []);
 
+  const fetchConsultingDoctors = useCallback(async () => {
+    try {
+      const response = await doctorAPI.getDropdownDoctors();
+      setConsultingDoctors(response);
+    } catch (err) {
+      console.error('Error fetching consulting doctors:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDoctors();
     fetchCategories();
-  }, [fetchDoctors, fetchCategories]);
+    fetchConsultingDoctors();
+  }, [fetchDoctors, fetchCategories, fetchConsultingDoctors]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,6 +108,11 @@ const Doctors = () => {
         doctorData.email = formData.email.trim();
       }
 
+      // Only include consultingDoctor if selected
+      if (formData.consultingDoctor) {
+        doctorData.consultingDoctor = formData.consultingDoctor;
+      }
+
       if (editingDoctor) {
         await doctorAPI.update(editingDoctor._id, doctorData);
       } else {
@@ -104,7 +121,7 @@ const Doctors = () => {
 
       setShowForm(false);
       setEditingDoctor(null);
-      setFormData({ name: '', surgicalCategories: [], phoneNumber: '', email: '' });
+      setFormData({ name: '', surgicalCategories: [], phoneNumber: '', email: '', consultingDoctor: '' });
       setError('');
       await fetchDoctors();
     } catch (err) {
@@ -121,7 +138,8 @@ const Doctors = () => {
       name: doctor.name,
       surgicalCategories: doctor.surgicalCategories.map(cat => cat._id),
       phoneNumber: doctor.phoneNumber || '',
-      email: doctor.email || ''
+      email: doctor.email || '',
+      consultingDoctor: doctor.consultingDoctor?._id || ''
     });
     setShowForm(true);
     setError('');
@@ -160,7 +178,7 @@ const Doctors = () => {
   const resetForm = () => {
     setShowForm(false);
     setEditingDoctor(null);
-    setFormData({ name: '', surgicalCategories: [], phoneNumber: '', email: '' });
+    setFormData({ name: '', surgicalCategories: [], phoneNumber: '', email: '', consultingDoctor: '' });
     setError('');
   };
 
@@ -229,6 +247,22 @@ const Doctors = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                   placeholder="+1 (555) 123-4567"
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="consultingDoctor">Consulting Doctor (Optional)</label>
+                <select
+                  id="consultingDoctor"
+                  value={formData.consultingDoctor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, consultingDoctor: e.target.value }))}
+                >
+                  <option value="">Select Consulting Doctor</option>
+                  {consultingDoctors.map(doctor => (
+                    <option key={doctor._id} value={doctor._id}>
+                      {doctor.name} {doctor.email && `(${doctor.email})`}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

@@ -35,6 +35,8 @@ const Hospitals = () => {
     surgicalCategories: [],
     paymentTerms: 30,
     defaultPricing: false,
+    discountAllowed: false,
+    customerIsHospital: true,
     businessUnit: ''
   });
 
@@ -103,6 +105,8 @@ const Hospitals = () => {
       surgicalCategories: [],
       paymentTerms: 30,
       defaultPricing: false,
+      discountAllowed: false,
+      customerIsHospital: true,
       businessUnit: ''
     });
     setEditingHospital(null);
@@ -186,6 +190,11 @@ const Hospitals = () => {
         gstNumber: formData.gstNumber.toUpperCase().trim(),
         stateCode: formData.stateCode.trim(),
         businessUnit: formData.businessUnit,
+        paymentTerms: formData.paymentTerms,
+        defaultPricing: formData.defaultPricing,
+        discountAllowed: formData.discountAllowed,
+        customerIsHospital: formData.customerIsHospital,
+        surgicalCategories: formData.surgicalCategories,
         createdBy: currentUser._id,
         updatedBy: currentUser._id
       };
@@ -198,12 +207,12 @@ const Hospitals = () => {
           ...hospitalData,
           updatedBy: currentUser._id
         });
-        setSuccess('Hospital updated successfully');
+        setSuccess('Customer updated successfully');
       } else {
-        console.log('Creating new hospital');
+        console.log('Creating new customer');
         const result = await hospitalAPI.createHospital(hospitalData);
-        console.log('Create hospital result:', result);
-        setSuccess('Hospital created successfully');
+        console.log('Create customer result:', result);
+        setSuccess('Customer created successfully');
       }
       
       await fetchAllHospitals();
@@ -224,6 +233,8 @@ const Hospitals = () => {
       surgicalCategories: hospital.surgicalCategories.map(cat => cat._id),
       paymentTerms: hospital.paymentTerms,
       defaultPricing: hospital.defaultPricing || false,
+      discountAllowed: hospital.discountAllowed || false,
+      customerIsHospital: hospital.customerIsHospital !== false,
       businessUnit: hospital.businessUnit._id || hospital.businessUnit
     });
     setEditingHospital(hospital);
@@ -241,11 +252,11 @@ const Hospitals = () => {
     if (window.confirm(`Are you sure you want to delete ${hospital.shortName}?`)) {
       try {
         await hospitalAPI.deleteHospital(hospital._id, currentUser._id);
-        setSuccess('Hospital deleted successfully');
+        setSuccess('Customer deleted successfully');
         await fetchAllHospitals();
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete hospital');
-        console.error('Error deleting hospital:', err);
+        setError(err.response?.data?.message || 'Failed to delete customer');
+        console.error('Error deleting customer:', err);
       }
     }
   };
@@ -342,18 +353,18 @@ const Hospitals = () => {
   }
 
   if (!currentUser) {
-    return <div className="loading">Please log in to access Hospital Details.</div>;
+    return <div className="loading">Please log in to access Customer Details.</div>;
   }
 
   return (
     <div className="hospitals-container">
       <div className="hospitals-header">
-        <h2>Hospital Details</h2>
+        <h2>Customer Details</h2>
         <button 
           className="add-button"
           onClick={() => setShowForm(true)}
         >
-          + Add Hospital
+          + Add Customer
         </button>
       </div>
 
@@ -364,11 +375,12 @@ const Hospitals = () => {
         <div className="form-overlay">
           <div className="form-container">
             <div className="form-header">
-              <h3>{editingHospital ? 'Edit Hospital' : 'Add New Hospital'}</h3>
+              <h3>{editingHospital ? 'Edit Customer' : 'Add New Customer'}</h3>
               <button className="close-button" onClick={resetForm}>×</button>
             </div>
             
-            <form onSubmit={handleSubmit} className="hospital-form">
+            <div className="form-content">
+              <form id="hospital-form" onSubmit={handleSubmit} className="hospital-form">
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="shortName">Short Name *</label>
@@ -494,6 +506,40 @@ const Hospitals = () => {
                 </div>
               </div>
 
+              <div className="form-row">
+                <div className="form-group checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="discountAllowed"
+                      checked={formData.discountAllowed}
+                      onChange={handleInputChange}
+                    />
+                    <span>Discount Allowed</span>
+                  </label>
+                  <small className="help-text">
+                    When enabled, discounts can be applied to this hospital's transactions.
+                  </small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="customerIsHospital"
+                      checked={formData.customerIsHospital}
+                      onChange={handleInputChange}
+                    />
+                    <span>Customer is Hospital</span>
+                  </label>
+                  <small className="help-text">
+                    Indicates that this customer is a hospital entity.
+                  </small>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Surgical Categories *</label>
                 <div className="debug-info" style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>
@@ -515,16 +561,17 @@ const Hospitals = () => {
                   <p className="no-categories">No surgical categories available. Please create categories first.</p>
                 )}
               </div>
+              </form>
+            </div>
 
-              <div className="form-actions">
-                <button type="button" onClick={resetForm} className="cancel-button">
-                  Cancel
-                </button>
-                <button type="submit" className="submit-button">
-                  {editingHospital ? 'Update Hospital' : 'Create Hospital'}
-                </button>
-              </div>
-            </form>
+            <div className="form-actions">
+              <button type="button" onClick={resetForm} className="cancel-button">
+                Cancel
+              </button>
+              <button type="submit" form="hospital-form" className="submit-button">
+                {editingHospital ? 'Update Hospital' : 'Create Hospital'}
+              </button>
+            </div>
           </div>
         </div>
       )}

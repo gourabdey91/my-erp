@@ -89,7 +89,7 @@ router.get('/:id', async (req, res) => {
 // Create new hospital
 router.post('/', async (req, res) => {
   try {
-    const { shortName, legalName, address, gstNumber, stateCode, surgicalCategories, paymentTerms, defaultPricing, businessUnit, createdBy } = req.body;
+    const { shortName, legalName, address, gstNumber, stateCode, surgicalCategories, paymentTerms, defaultPricing, discountAllowed, customerIsHospital, businessUnit, createdBy } = req.body;
 
     console.log('=== HOSPITAL CREATION DEBUG ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
@@ -173,6 +173,8 @@ router.post('/', async (req, res) => {
       surgicalCategories,
       paymentTerms: paymentTerms || 30,
       defaultPricing: defaultPricing !== undefined ? defaultPricing : false,
+      discountAllowed: discountAllowed !== undefined ? discountAllowed : false,
+      customerIsHospital: customerIsHospital !== undefined ? customerIsHospital : true,
       businessUnit,
       createdBy,
       updatedBy: createdBy
@@ -204,7 +206,7 @@ router.post('/', async (req, res) => {
 // Update hospital
 router.put('/:id', async (req, res) => {
   try {
-    const { shortName, legalName, address, gstNumber, stateCode, surgicalCategories, paymentTerms, defaultPricing, updatedBy } = req.body;
+    const { shortName, legalName, address, gstNumber, stateCode, surgicalCategories, paymentTerms, defaultPricing, discountAllowed, customerIsHospital, updatedBy } = req.body;
 
     if (!shortName || !legalName || !address || !gstNumber || !stateCode || !surgicalCategories || !updatedBy) {
       return res.status(400).json({ 
@@ -284,6 +286,8 @@ router.put('/:id', async (req, res) => {
     hospital.surgicalCategories = surgicalCategories;
     hospital.paymentTerms = paymentTerms || 30;
     hospital.defaultPricing = defaultPricing !== undefined ? defaultPricing : false;
+    hospital.discountAllowed = discountAllowed !== undefined ? discountAllowed : false;
+    hospital.customerIsHospital = customerIsHospital !== undefined ? customerIsHospital : true;
     hospital.updatedBy = updatedBy;
 
     await hospital.save();
@@ -506,6 +510,46 @@ router.delete('/:hospitalId/materials/:assignmentId', async (req, res) => {
   } catch (error) {
     console.error('Error removing material assignment:', error);
     res.status(500).json({ message: 'Server error while removing material assignment' });
+  }
+});
+
+// Update specific field of material assignment
+router.patch('/:hospitalId/materials/:assignmentId/field', async (req, res) => {
+  try {
+    const { hospitalId, assignmentId } = req.params;
+    const { updatedBy, ...updateFields } = req.body;
+
+    if (!updatedBy) {
+      return res.status(400).json({ message: 'updatedBy is required' });
+    }
+
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      return res.status(404).json({ message: 'Hospital not found' });
+    }
+
+    const assignment = hospital.materialAssignments.id(assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Material assignment not found' });
+    }
+
+    // Update the specific fields
+    Object.keys(updateFields).forEach(field => {
+      if (field in assignment) {
+        assignment[field] = updateFields[field];
+      }
+    });
+
+    hospital.updatedBy = updatedBy;
+    await hospital.save();
+
+    res.json({ 
+      message: 'Material assignment updated successfully',
+      assignment: assignment
+    });
+  } catch (error) {
+    console.error('Error updating material assignment field:', error);
+    res.status(500).json({ message: 'Server error while updating material assignment' });
   }
 });
 
