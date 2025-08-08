@@ -38,7 +38,8 @@ const MaterialMaster = () => {
     surgicalCategory: '',
     implantType: '',
     subCategory: '',
-    lengthMm: ''
+    lengthMm: '',
+    unit: 'PCS'
   });
 
   useEffect(() => {
@@ -115,7 +116,8 @@ const MaterialMaster = () => {
       ...prev,
       implantType: implantTypeId,
       subCategory: '',
-      lengthMm: ''
+      lengthMm: '',
+      unit: 'PCS'
     }));
     await fetchSubcategories(implantTypeId);
   };
@@ -174,7 +176,8 @@ const MaterialMaster = () => {
       surgicalCategory: material.surgicalCategory._id,
       implantType: material.implantType._id,
       subCategory: material.subCategory,
-      lengthMm: material.lengthMm
+      lengthMm: material.lengthMm,
+      unit: material.unit || 'PCS'
     });
     
     // Fetch subcategories for the selected implant type
@@ -210,7 +213,8 @@ const MaterialMaster = () => {
       surgicalCategory: '',
       implantType: '',
       subCategory: '',
-      lengthMm: ''
+      lengthMm: '',
+      unit: 'PCS'
     });
     setEditingMaterial(null);
     setSubcategories([]);
@@ -485,6 +489,31 @@ const MaterialMaster = () => {
                   readOnly
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="unit">Unit *</label>
+                <select
+                  id="unit"
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select Unit</option>
+                  <option value="PCS">PCS (Pieces)</option>
+                  <option value="KG">KG (Kilograms)</option>
+                  <option value="GM">GM (Grams)</option>
+                  <option value="LTR">LTR (Liters)</option>
+                  <option value="ML">ML (Milliliters)</option>
+                  <option value="MTR">MTR (Meters)</option>
+                  <option value="CM">CM (Centimeters)</option>
+                  <option value="MM">MM (Millimeters)</option>
+                  <option value="SQM">SQM (Square Meters)</option>
+                  <option value="SET">SET (Set)</option>
+                  <option value="PAIR">PAIR (Pair)</option>
+                  <option value="DOZEN">DOZEN (Dozen)</option>
+                  <option value="BOX">BOX (Box)</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-actions">
@@ -532,6 +561,7 @@ const MaterialMaster = () => {
                     <th>Implant Type</th>
                     <th>Sub Category</th>
                     <th>Length</th>
+                    <th>Unit</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -552,6 +582,7 @@ const MaterialMaster = () => {
                       <td>{material.implantType.name}</td>
                       <td>{material.subCategory}</td>
                       <td>{material.lengthMm}mm</td>
+                      <td>{material.unit}</td>
                       <td>
                         <div className="action-buttons">
                           <button
@@ -594,6 +625,7 @@ const MaterialMaster = () => {
                     </div>
                     <p><strong>Implant:</strong> {material.implantType.name}</p>
                     <p><strong>Sub Category:</strong> {material.subCategory} ({material.lengthMm}mm)</p>
+                    <p><strong>Unit:</strong> {material.unit}</p>
                   </div>
                   <div className="mobile-card-actions">
                     <button

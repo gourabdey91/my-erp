@@ -68,6 +68,13 @@ const materialMasterSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  unit: {
+    type: String,
+    required: true,
+    trim: true,
+    maxLength: 10,
+    default: 'PCS'
+  },
   isActive: {
     type: Boolean,
     default: true

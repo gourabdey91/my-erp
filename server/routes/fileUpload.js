@@ -295,6 +295,7 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       const implantType = row['Implant Type'] || row['implantType'] || '';
       const subCategory = row['Sub Category'] || row['subCategory'] || '';
       const lengthMm = row['Length (mm)'] || row['lengthMm'] || '';
+      const unit = row['Unit'] || row['unit'] || 'PCS';
 
       // Validate required fields
       if (!materialNumber.toString().trim()) {
@@ -405,6 +406,7 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         implantType: implantType.toString().trim(),
         subCategory: subCategory.toString().trim(),
         lengthMm: lengthValue,
+        unit: unit.toString().trim() || 'PCS',
         surgicalCategoryId: categoryObj?._id,
         implantTypeId: implantTypeObj?._id,
         validationErrors,
@@ -472,6 +474,7 @@ router.post('/save-material-master', async (req, res) => {
           implantType: row.implantTypeId || null,
           subCategory: row.subCategory || null,
           lengthMm: row.lengthMm || null,
+          unit: row.unit || 'PCS',
           createdBy: updatedBy,
           updatedBy: updatedBy
         };
