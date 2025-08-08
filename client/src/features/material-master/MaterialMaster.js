@@ -232,8 +232,29 @@ const MaterialMaster = () => {
       unit: material.unit || 'NOS'
     });
     
-    // Fetch subcategories for the selected implant type
-    await fetchSubcategories(material.implantType._id);
+    // Fetch filtered data for editing
+    try {
+      // Get filtered implant types for the surgical category
+      const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(material.surgicalCategory._id);
+      setFilteredImplantTypes(filteredTypes);
+      
+      // Get filtered subcategories for the surgical category and implant type
+      const filteredSubs = await materialMasterAPI.getFilteredSubcategories(material.surgicalCategory._id, material.implantType._id);
+      setSubcategories(filteredSubs);
+      
+      // Get filtered lengths if subcategory exists
+      if (material.subCategory) {
+        const filteredLengths = await materialMasterAPI.getFilteredLengths(
+          material.surgicalCategory._id, 
+          material.implantType._id, 
+          material.subCategory
+        );
+        setLengths(filteredLengths);
+      }
+    } catch (err) {
+      console.error('Error fetching filtered data for editing:', err);
+    }
+    
     setShowForm(true);
     setError('');
   };
@@ -269,7 +290,9 @@ const MaterialMaster = () => {
       unit: 'NOS'
     });
     setEditingMaterial(null);
+    setFilteredImplantTypes([]);
     setSubcategories([]);
+    setLengths([]);
     setError('');
   };
 
