@@ -12,7 +12,9 @@ const PaymentTypes = () => {
   const [editingPaymentType, setEditingPaymentType] = useState(null);
   const [formData, setFormData] = useState({
     code: '',
-    description: ''
+    description: '',
+    hasSoftLimit: false,
+    softLimitAmount: 0
   });
 
   const loadPaymentTypes = useCallback(async () => {
@@ -54,7 +56,7 @@ const PaymentTypes = () => {
         await paymentTypeAPI.create(paymentTypeData);
       }
 
-      setFormData({ code: '', description: '' });
+      setFormData({ code: '', description: '', hasSoftLimit: false, softLimitAmount: 0 });
       setShowForm(false);
       setEditingPaymentType(null);
       loadPaymentTypes();
@@ -68,7 +70,9 @@ const PaymentTypes = () => {
     setEditingPaymentType(paymentType);
     setFormData({
       code: paymentType.code,
-      description: paymentType.description
+      description: paymentType.description,
+      hasSoftLimit: paymentType.hasSoftLimit || false,
+      softLimitAmount: paymentType.softLimitAmount || 0
     });
     setShowForm(true);
   };
@@ -86,7 +90,7 @@ const PaymentTypes = () => {
   };
 
   const handleCancel = () => {
-    setFormData({ code: '', description: '' });
+    setFormData({ code: '', description: '', hasSoftLimit: false, softLimitAmount: 0 });
     setShowForm(false);
     setEditingPaymentType(null);
   };
@@ -142,6 +146,40 @@ const PaymentTypes = () => {
               />
             </div>
 
+            <div className="form-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.hasSoftLimit}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    hasSoftLimit: e.target.checked,
+                    softLimitAmount: e.target.checked ? formData.softLimitAmount : 0
+                  })}
+                />
+                {' '}Soft Limit
+              </label>
+              <small className="form-text">
+                If checked, the bill amount should be under defined amount when posting invoice
+              </small>
+            </div>
+
+            {formData.hasSoftLimit && (
+              <div className="form-group">
+                <label htmlFor="softLimitAmount">Soft Limit Amount *</label>
+                <input
+                  type="number"
+                  id="softLimitAmount"
+                  value={formData.softLimitAmount}
+                  onChange={(e) => setFormData({ ...formData, softLimitAmount: parseFloat(e.target.value) || 0 })}
+                  required={formData.hasSoftLimit}
+                  min="0"
+                  step="0.01"
+                  placeholder="Enter maximum amount allowed"
+                />
+              </div>
+            )}
+
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
                 {editingPaymentType ? 'Update' : 'Create'}
@@ -172,6 +210,11 @@ const PaymentTypes = () => {
                     <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
                       {paymentType.isActive ? 'Active' : 'Inactive'}
                     </span>
+                    {paymentType.hasSoftLimit && (
+                      <span className="soft-limit-badge">
+                        Soft Limit: ₹{paymentType.softLimitAmount?.toLocaleString() || '0'}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="payment-type-actions">

@@ -27,7 +27,19 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    
+    // Check if response is actually JSON
+    const contentType = response.headers.get('content-type');
+    const isJsonResponse = contentType && contentType.includes('application/json');
+    
+    let data;
+    if (isJsonResponse) {
+      data = await response.json();
+    } else {
+      // If not JSON, get the text to show in error
+      const text = await response.text();
+      data = { message: `Server returned non-JSON response: ${response.status} ${response.statusText}` };
+    }
     
     if (!response.ok) {
       throw new Error(data.message || `HTTP error! status: ${response.status}`);

@@ -16,6 +16,7 @@ import Procedures from './features/procedures/Procedures';
 import ImplantTypes from './features/implant-types/ImplantTypes';
 import MaterialMaster from './features/material-master/MaterialMaster';
 import DeliveryChallanDetails from './features/delivery-challan-details/DeliveryChallanDetails';
+import SalesOrders from './features/sales-orders/SalesOrders';
 import FileUpload from './features/file-upload/FileUpload';
 import MaterialMasterUpload from './features/file-upload/MaterialMasterUpload';
 import LoginScreen from './features/auth/LoginScreen';
@@ -76,6 +77,8 @@ function AppContent() {
         return <MaterialMaster />;
       case 'delivery-challan-details':
         return <DeliveryChallanDetails />;
+      case 'sales-order':
+        return <SalesOrders />;
       case 'file-upload':
         return <FileUpload />;
       case 'material-master-upload':

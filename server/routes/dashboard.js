@@ -11,6 +11,7 @@ const Hospital = require('../models/Hospital');
 const ImplantType = require('../models/ImplantType');
 const MaterialMaster = require('../models/MaterialMaster');
 const DeliveryChallanDetails = require('../models/DeliveryChallanDetails');
+const SalesOrder = require('../models/SalesOrder');
 
 // GET /api/dashboard/stats - Get dashboard statistics
 router.get('/stats', async (req, res) => {
@@ -58,6 +59,10 @@ router.get('/stats', async (req, res) => {
     // Get delivery challan details statistics
     const totalDeliveryChallans = await DeliveryChallanDetails.countDocuments();
     const activeDeliveryChallans = await DeliveryChallanDetails.countDocuments({ isActive: true });
+
+    // Get sales orders statistics
+    const totalSalesOrders = await SalesOrder.countDocuments();
+    const activeSalesOrders = await SalesOrder.countDocuments({ isActive: true });
 
     // For now, we'll use placeholder data for other modules
     // These can be replaced with real models when those modules are implemented
@@ -127,6 +132,12 @@ router.get('/stats', async (req, res) => {
         active: activeDeliveryChallans,
         count: activeDeliveryChallans,
         label: 'Delivery Challans'
+      },
+      salesOrders: {
+        total: totalSalesOrders,
+        active: activeSalesOrders,
+        count: activeSalesOrders,
+        label: 'Sales Orders'
       },
       billing: {
         total: 45,

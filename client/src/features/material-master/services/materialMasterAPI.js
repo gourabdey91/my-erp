@@ -44,6 +44,39 @@ export const materialMasterAPI = {
     }
   },
 
+  // Get implant types filtered by surgical category
+  getImplantTypesBySurgicalCategory: async (surgicalCategoryId) => {
+    try {
+      const response = await apiRequest(`/api/material-master/implant-types/${surgicalCategoryId}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching filtered implant types:', error);
+      throw error;
+    }
+  },
+
+  // Get subcategories filtered by surgical category and implant type
+  getFilteredSubcategories: async (surgicalCategoryId, implantTypeId) => {
+    try {
+      const response = await apiRequest(`/api/material-master/subcategories/${surgicalCategoryId}/${implantTypeId}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching filtered subcategories:', error);
+      throw error;
+    }
+  },
+
+  // Get lengths filtered by surgical category, implant type, and subcategory
+  getFilteredLengths: async (surgicalCategoryId, implantTypeId, subCategory) => {
+    try {
+      const response = await apiRequest(`/api/material-master/lengths/${surgicalCategoryId}/${implantTypeId}/${encodeURIComponent(subCategory)}`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching filtered lengths:', error);
+      throw error;
+    }
+  },
+
   // Create new material
   create: async (materialData) => {
     try {

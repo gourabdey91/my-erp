@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const salesOrderSchema = new mongoose.Schema({
   salesOrderNumber: {
@@ -20,7 +21,7 @@ const salesOrderSchema = new mongoose.Schema({
   surgeon: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
-    required: true
+    required: false // Only required for hospital customers
   },
   consultingDoctor: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,22 +30,27 @@ const salesOrderSchema = new mongoose.Schema({
   surgicalCategory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: true
+    required: false // Only required for hospital customers
   },
   procedure: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Procedure',
-    required: true
+    required: false // Only required for hospital customers
+  },
+  paymentType: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PaymentType',
+    required: false // Only required for hospital customers
   },
   patientName: {
     type: String,
-    required: true,
+    required: false, // Only required for hospital customers
     trim: true,
     maxLength: 100
   },
   uhid: {
     type: String,
-    required: true,
+    required: false, // Only required for hospital customers
     trim: true,
     maxLength: 50
   },
@@ -84,6 +90,28 @@ const salesOrderSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Pre-save validation for hospital customers
+salesOrderSchema.pre('save', async function(next) {
+  try {
+    // Get customer details to check if it's a hospital
+    const Hospital = require('./Hospital');
+    const customer = await Hospital.findById(this.customer);
+    
+    if (customer && customer.customerIsHospital) {
+      // For hospital customers, validate required fields
+      if (!this.patientName || this.patientName.trim() === '') {
+        return next(new Error('Patient name is required for hospital customers'));
+      }
+      // Note: Surgeon, procedure, etc. can still be optional even for hospitals
+      // as per business requirements
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Indexes
 salesOrderSchema.index({ salesOrderNumber: 1 });
 salesOrderSchema.index({ documentDate: -1 });
@@ -99,5 +127,8 @@ salesOrderSchema.index({
   patientName: 'text',
   uhid: 'text'
 });
+
+// Add pagination plugin
+salesOrderSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('SalesOrder', salesOrderSchema);

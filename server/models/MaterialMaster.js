@@ -65,7 +65,7 @@ const materialMasterSchema = new mongoose.Schema({
   },
   lengthMm: {
     type: Number,
-    required: true,
+    required: false,
     min: 0
   },
   unit: {
@@ -73,7 +73,7 @@ const materialMasterSchema = new mongoose.Schema({
     required: true,
     trim: true,
     maxLength: 10,
-    default: 'PCS'
+    default: 'NOS'
   },
   isActive: {
     type: Boolean,

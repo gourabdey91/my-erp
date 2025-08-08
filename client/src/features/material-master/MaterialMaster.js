@@ -6,7 +6,9 @@ const MaterialMaster = () => {
   const [materials, setMaterials] = useState([]);
   const [categories, setCategories] = useState([]);
   const [implantTypes, setImplantTypes] = useState([]);
+  const [filteredImplantTypes, setFilteredImplantTypes] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [lengths, setLengths] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -39,7 +41,7 @@ const MaterialMaster = () => {
     implantType: '',
     subCategory: '',
     lengthMm: '',
-    unit: 'PCS'
+    unit: 'NOS'
   });
 
   useEffect(() => {
@@ -87,21 +89,6 @@ const MaterialMaster = () => {
     }
   };
 
-  const fetchSubcategories = async (implantTypeId) => {
-    if (!implantTypeId) {
-      setSubcategories([]);
-      return;
-    }
-    
-    try {
-      const response = await materialMasterAPI.getSubcategories(implantTypeId);
-      setSubcategories(response);
-    } catch (err) {
-      console.error('Error fetching subcategories:', err);
-      setSubcategories([]);
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -110,26 +97,91 @@ const MaterialMaster = () => {
     }));
   };
 
+  // Handle Surgical Category change - first in the flow
+  const handleSurgicalCategoryChange = async (e) => {
+    const surgicalCategoryId = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      surgicalCategory: surgicalCategoryId,
+      implantType: '',
+      subCategory: '',
+      lengthMm: ''
+    }));
+    
+    // Reset dependent dropdowns
+    setFilteredImplantTypes([]);
+    setSubcategories([]);
+    setLengths([]);
+    
+    if (surgicalCategoryId) {
+      try {
+        const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
+        setFilteredImplantTypes(filteredTypes);
+      } catch (err) {
+        console.error('Error fetching filtered implant types:', err);
+        setFilteredImplantTypes([]);
+      }
+    }
+  };
+
+  // Handle Implant Type change - second in the flow
   const handleImplantTypeChange = async (e) => {
     const implantTypeId = e.target.value;
     setFormData(prev => ({
       ...prev,
       implantType: implantTypeId,
       subCategory: '',
-      lengthMm: '',
-      unit: 'PCS'
+      lengthMm: ''
     }));
-    await fetchSubcategories(implantTypeId);
+    
+    // Reset dependent dropdowns
+    setSubcategories([]);
+    setLengths([]);
+    
+    if (implantTypeId && formData.surgicalCategory) {
+      try {
+        const filteredSubs = await materialMasterAPI.getFilteredSubcategories(formData.surgicalCategory, implantTypeId);
+        setSubcategories(filteredSubs);
+      } catch (err) {
+        console.error('Error fetching filtered subcategories:', err);
+        setSubcategories([]);
+      }
+    }
   };
 
-  const handleSubcategoryChange = (e) => {
-    const selectedSubcategory = subcategories.find(sub => sub.subCategory === e.target.value);
+  // Handle Sub Category change - third in the flow
+  const handleSubcategoryChange = async (e) => {
+    const subCategoryValue = e.target.value;
     setFormData(prev => ({
       ...prev,
-      subCategory: e.target.value,
-      lengthMm: selectedSubcategory ? selectedSubcategory.length : '',
-      surgicalCategory: selectedSubcategory ? selectedSubcategory.surgicalCategory._id : prev.surgicalCategory
+      subCategory: subCategoryValue,
+      lengthMm: ''
     }));
+    
+    // Reset lengths
+    setLengths([]);
+    
+    if (subCategoryValue && formData.surgicalCategory && formData.implantType) {
+      try {
+        const filteredLengths = await materialMasterAPI.getFilteredLengths(
+          formData.surgicalCategory, 
+          formData.implantType, 
+          subCategoryValue
+        );
+        setLengths(filteredLengths);
+        
+        // If only one length available, auto-select it
+        if (filteredLengths.length === 1) {
+          setFormData(prev => ({
+            ...prev,
+            lengthMm: filteredLengths[0]
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching filtered lengths:', err);
+        setLengths([]);
+      }
+    }
   };
 
   const handleFilterChange = (e) => {
@@ -177,7 +229,7 @@ const MaterialMaster = () => {
       implantType: material.implantType._id,
       subCategory: material.subCategory,
       lengthMm: material.lengthMm,
-      unit: material.unit || 'PCS'
+      unit: material.unit || 'NOS'
     });
     
     // Fetch subcategories for the selected implant type
@@ -214,7 +266,7 @@ const MaterialMaster = () => {
       implantType: '',
       subCategory: '',
       lengthMm: '',
-      unit: 'PCS'
+      unit: 'NOS'
     });
     setEditingMaterial(null);
     setSubcategories([]);
@@ -420,6 +472,23 @@ const MaterialMaster = () => {
 
             <div className="form-row">
               <div className="form-group">
+                <label htmlFor="surgicalCategory">Surgical Category *</label>
+                <select
+                  id="surgicalCategory"
+                  name="surgicalCategory"
+                  value={formData.surgicalCategory}
+                  onChange={handleSurgicalCategoryChange}
+                  required
+                >
+                  <option value="">Select Surgical Category</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.code} - {category.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
                 <label htmlFor="implantType">Implant Type *</label>
                 <select
                   id="implantType"
@@ -427,15 +496,19 @@ const MaterialMaster = () => {
                   value={formData.implantType}
                   onChange={handleImplantTypeChange}
                   required
+                  disabled={!formData.surgicalCategory}
                 >
                   <option value="">Select Implant Type</option>
-                  {implantTypes.map(implantType => (
+                  {filteredImplantTypes.map(implantType => (
                     <option key={implantType._id} value={implantType._id}>
                       {implantType.name}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
                 <label htmlFor="subCategory">Sub Category *</label>
                 <select
@@ -449,7 +522,24 @@ const MaterialMaster = () => {
                   <option value="">Select Sub Category</option>
                   {subcategories.map((subcat, index) => (
                     <option key={index} value={subcat.subCategory}>
-                      {subcat.subCategory} ({subcat.length}mm)
+                      {subcat.subCategory}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="lengthMm">Length (mm)</label>
+                <select
+                  id="lengthMm"
+                  name="lengthMm"
+                  value={formData.lengthMm}
+                  onChange={handleInputChange}
+                  disabled={!formData.subCategory}
+                >
+                  <option value="">Select Length</option>
+                  {lengths.map((length, index) => (
+                    <option key={index} value={length}>
+                      {length} mm
                     </option>
                   ))}
                 </select>
@@ -457,38 +547,6 @@ const MaterialMaster = () => {
             </div>
 
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="surgicalCategory">Surgical Category *</label>
-                <select
-                  id="surgicalCategory"
-                  name="surgicalCategory"
-                  value={formData.surgicalCategory}
-                  onChange={handleInputChange}
-                  required
-                  disabled={!formData.subCategory}
-                >
-                  <option value="">Select Surgical Category</option>
-                  {categories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.code} - {category.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="lengthMm">Length (mm) *</label>
-                <input
-                  type="number"
-                  id="lengthMm"
-                  name="lengthMm"
-                  value={formData.lengthMm}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.1"
-                  required
-                  readOnly
-                />
-              </div>
               <div className="form-group">
                 <label htmlFor="unit">Unit *</label>
                 <select
@@ -498,20 +556,12 @@ const MaterialMaster = () => {
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">Select Unit</option>
-                  <option value="PCS">PCS (Pieces)</option>
-                  <option value="KG">KG (Kilograms)</option>
-                  <option value="GM">GM (Grams)</option>
-                  <option value="LTR">LTR (Liters)</option>
-                  <option value="ML">ML (Milliliters)</option>
-                  <option value="MTR">MTR (Meters)</option>
-                  <option value="CM">CM (Centimeters)</option>
-                  <option value="MM">MM (Millimeters)</option>
-                  <option value="SQM">SQM (Square Meters)</option>
-                  <option value="SET">SET (Set)</option>
-                  <option value="PAIR">PAIR (Pair)</option>
-                  <option value="DOZEN">DOZEN (Dozen)</option>
-                  <option value="BOX">BOX (Box)</option>
+                  <option value="NOS">NOS</option>
+                  <option value="PCS">PCS</option>
+                  <option value="SET">SET</option>
+                  <option value="KIT">KIT</option>
+                  <option value="BOX">BOX</option>
+                  <option value="PAIR">PAIR</option>
                 </select>
               </div>
             </div>

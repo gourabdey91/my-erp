@@ -246,6 +246,7 @@ const MaterialMasterUpload = () => {
                   <th>Implant Type</th>
                   <th>Sub Category</th>
                   <th>Length (mm)</th>
+                  <th>Unit</th>
                   <th>Status</th>
                   <th>Validation Errors</th>
                   <th>Actions</th>
@@ -266,6 +267,7 @@ const MaterialMasterUpload = () => {
                     <td>{row.implantType || 'N/A'}</td>
                     <td>{row.subCategory || 'N/A'}</td>
                     <td>{row.lengthMm !== null && row.lengthMm !== undefined ? `${row.lengthMm}mm` : 'N/A'}</td>
+                    <td>{row.unit || 'N/A'}</td>
                     <td>
                       <span className={`status-badge ${row.isValid ? 'valid' : 'invalid'}`}>
                         {row.isValid ? '✓ Valid' : '✗ Invalid'}

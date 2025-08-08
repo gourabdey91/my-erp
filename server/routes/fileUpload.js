@@ -295,7 +295,7 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       const implantType = row['Implant Type'] || row['implantType'] || '';
       const subCategory = row['Sub Category'] || row['subCategory'] || '';
       const lengthMm = row['Length (mm)'] || row['lengthMm'] || '';
-      const unit = row['Unit'] || row['unit'] || 'PCS';
+      const unit = row['Unit'] || row['unit'] || 'NOS';
 
       // Validate required fields
       if (!materialNumber.toString().trim()) {
@@ -309,6 +309,20 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       }
       if (!surgicalCategory.toString().trim()) {
         validationErrors.push('Surgical Category is required');
+      }
+      
+      // Validate that required pricing fields are present
+      if (!mrp.toString().trim()) {
+        validationErrors.push('MRP is required');
+      }
+      if (!institutionalPrice.toString().trim()) {
+        validationErrors.push('Institutional Price is required');
+      }
+      if (!distributionPrice.toString().trim()) {
+        validationErrors.push('Distribution Price is required');
+      }
+      if (!gstPercentage.toString().trim()) {
+        validationErrors.push('GST Percentage is required');
       }
 
       let categoryObj = null;
@@ -364,11 +378,23 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         }
       }
 
-      if (lengthMm.toString().trim()) {
+      // Parse Length (mm) - handle empty/missing values properly
+      if (lengthMm && lengthMm.toString().trim() !== '' && lengthMm.toString().trim() !== 'N/A') {
         lengthValue = parseFloat(lengthMm.toString().trim());
         if (isNaN(lengthValue) || lengthValue < 0) {
           validationErrors.push('Length must be a valid positive number');
         }
+      } else {
+        // Length is empty/missing - this is allowed
+        lengthValue = null;
+      }
+      
+      // Business logic validation: If Implant Type is provided, Sub Category and Length should be provided
+      if (implantTypeObj) {
+        if (!subCategory.toString().trim()) {
+          validationErrors.push('Sub Category is required when Implant Type is specified');
+        }
+        // Length is optional - removed required validation
       }
 
       // Check for duplicate material numbers within uploaded data
@@ -406,7 +432,7 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         implantType: implantType.toString().trim(),
         subCategory: subCategory.toString().trim(),
         lengthMm: lengthValue,
-        unit: unit.toString().trim() || 'PCS',
+        unit: unit.toString().trim() || 'NOS',
         surgicalCategoryId: categoryObj?._id,
         implantTypeId: implantTypeObj?._id,
         validationErrors,
@@ -474,7 +500,7 @@ router.post('/save-material-master', async (req, res) => {
           implantType: row.implantTypeId || null,
           subCategory: row.subCategory || null,
           lengthMm: row.lengthMm || null,
-          unit: row.unit || 'PCS',
+          unit: row.unit || 'NOS',
           createdBy: updatedBy,
           updatedBy: updatedBy
         };

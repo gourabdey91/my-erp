@@ -26,7 +26,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Import routes
 const userRoutes = require('./routes/users');
@@ -47,6 +48,7 @@ const implantTypeRoutes = require('./routes/implantTypes');
 const materialMasterRoutes = require('./routes/materialMaster');
 const deliveryChallanDetailsRoutes = require('./routes/deliveryChallanDetails');
 const fileUploadRoutes = require('./routes/fileUpload');
+const salesOrderRoutes = require('./routes/salesOrders');
 
 app.get('/', (req, res) => {
   res.send('ERP Billing App Backend');
@@ -71,6 +73,7 @@ app.use('/api/implant-types', implantTypeRoutes);
 app.use('/api/material-master', materialMasterRoutes);
 app.use('/api/delivery-challan-details', deliveryChallanDetailsRoutes);
 app.use('/api/file-upload', fileUploadRoutes);
+app.use('/api/sales-orders', salesOrderRoutes);
 
 // MongoDB connection with environment awareness
 mongoose.connect(mongoUri);

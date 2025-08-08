@@ -205,7 +205,7 @@ const Dashboard = ({ onViewChange }) => {
             icon: '📝',
             count: stats?.salesOrders?.count || '...',
             onClick: () => onViewChange('sales-order'),
-            enabled: false
+            enabled: true
           },
           {
             id: 'delivery',

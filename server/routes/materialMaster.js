@@ -330,6 +330,79 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Get implant types filtered by surgical category
+router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
+  try {
+    const surgicalCategoryId = req.params.surgicalCategoryId;
+    
+    // Find implant types that have subcategories linked to the surgical category
+    const implantTypes = await ImplantType.find({
+      isActive: true,
+      'subcategories.surgicalCategory': surgicalCategoryId
+    }).select('_id name').sort({ name: 1 });
+
+    res.json(implantTypes);
+  } catch (error) {
+    console.error('Error fetching filtered implant types:', error);
+    res.status(500).json({ message: 'Server error while fetching implant types' });
+  }
+});
+
+// Get subcategories filtered by surgical category and implant type
+router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res) => {
+  try {
+    const { surgicalCategoryId, implantTypeId } = req.params;
+    
+    const implantType = await ImplantType.findById(implantTypeId)
+      .populate('subcategories.surgicalCategory', 'code description');
+    
+    if (!implantType) {
+      return res.status(404).json({ message: 'Implant type not found' });
+    }
+
+    // Filter subcategories by surgical category
+    const filteredSubcategories = implantType.subcategories.filter(
+      subcat => subcat.surgicalCategory._id.toString() === surgicalCategoryId
+    );
+
+    res.json(filteredSubcategories);
+  } catch (error) {
+    console.error('Error fetching filtered subcategories:', error);
+    res.status(500).json({ message: 'Server error while fetching subcategories' });
+  }
+});
+
+// Get unique lengths filtered by surgical category, implant type, and subcategory
+router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (req, res) => {
+  try {
+    const { surgicalCategoryId, implantTypeId, subCategory } = req.params;
+    
+    const implantType = await ImplantType.findById(implantTypeId);
+    
+    if (!implantType) {
+      return res.status(404).json({ message: 'Implant type not found' });
+    }
+
+    // Filter subcategories and get unique lengths
+    const matchingSubcategories = implantType.subcategories.filter(
+      subcat => 
+        subcat.surgicalCategory.toString() === surgicalCategoryId && 
+        subcat.subCategory === subCategory
+    );
+
+    const lengths = [...new Set(
+      matchingSubcategories
+        .map(subcat => subcat.length)
+        .filter(length => length != null)
+    )].sort((a, b) => a - b);
+
+    res.json(lengths);
+  } catch (error) {
+    console.error('Error fetching filtered lengths:', error);
+    res.status(500).json({ message: 'Server error while fetching lengths' });
+  }
+});
+
 // Delete material (soft delete)
 router.delete('/:id', async (req, res) => {
   try {

@@ -14,6 +14,17 @@ const paymentTypeSchema = new mongoose.Schema({
     trim: true,
     maxlength: 100
   },
+  hasSoftLimit: {
+    type: Boolean,
+    default: false,
+    comment: 'If checked, the bill amount should be under defined soft limit when posting invoice'
+  },
+  softLimitAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    comment: 'Maximum amount allowed when soft limit is enabled'
+  },
   isActive: {
     type: Boolean,
     default: true
