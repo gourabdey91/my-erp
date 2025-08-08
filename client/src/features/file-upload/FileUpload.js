@@ -50,23 +50,23 @@ const FileUpload = () => {
         body: formData
       });
 
-      setUploadedData(response.data.data);
+      setUploadedData(response.data || []);
       setUploadSummary({
-        totalRows: response.data.totalRows,
-        validRows: response.data.validRows,
-        invalidRows: response.data.invalidRows
+        totalRows: response.totalRows || 0,
+        validRows: response.validRows || 0,
+        invalidRows: response.invalidRows || 0
       });
       
-      if (response.data.validRows === 0) {
+      if ((response.validRows || 0) === 0) {
         setMessage('No valid rows found in the uploaded file');
         setMessageType('warning');
       } else {
-        setMessage(`File processed successfully. ${response.data.validRows} valid rows, ${response.data.invalidRows} invalid rows`);
+        setMessage(`File processed successfully. ${response.validRows || 0} valid rows, ${response.invalidRows || 0} invalid rows`);
         setMessageType('success');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
-      setMessage(error.response?.data?.message || 'Error uploading file');
+      setMessage(error.message || 'Error uploading file');
       setMessageType('error');
     } finally {
       setIsLoading(false);
@@ -74,7 +74,7 @@ const FileUpload = () => {
   };
 
   const handleDeleteRow = (index) => {
-    const updatedData = uploadedData.filter((_, i) => i !== index);
+    const updatedData = (uploadedData || []).filter((_, i) => i !== index);
     setUploadedData(updatedData);
     
     // Update summary
@@ -88,7 +88,7 @@ const FileUpload = () => {
   };
 
   const handleSaveToDatabase = async () => {
-    const validRows = uploadedData.filter(row => row.isValid);
+    const validRows = (uploadedData || []).filter(row => row.isValid);
     
     if (validRows.length === 0) {
       setMessage('No valid rows to save');
@@ -114,7 +114,7 @@ const FileUpload = () => {
         })
       });
 
-      setMessage(response.data.message);
+      setMessage(response.message);
       setMessageType('success');
       
       // Clear the data after successful save
@@ -126,7 +126,7 @@ const FileUpload = () => {
       
     } catch (error) {
       console.error('Error saving data:', error);
-      setMessage(error.response?.data?.message || 'Error saving data to database');
+      setMessage(error.message || 'Error saving data to database');
       setMessageType('error');
     } finally {
       setIsLoading(false);
@@ -179,7 +179,7 @@ const FileUpload = () => {
             {isLoading ? 'Processing...' : 'Upload & Process'}
           </button>
           
-          {(file || uploadedData.length > 0) && (
+          {(file || (uploadedData || []).length > 0) && (
             <button
               onClick={clearData}
               disabled={isLoading}
@@ -227,7 +227,7 @@ const FileUpload = () => {
         </div>
       )}
 
-      {uploadedData.length > 0 && (
+      {(uploadedData || []).length > 0 && (
         <div className="data-preview">
           <h3>Data Preview</h3>
           <div className="table-container">
@@ -245,7 +245,7 @@ const FileUpload = () => {
                 </tr>
               </thead>
               <tbody>
-                {uploadedData.map((row, index) => (
+                {(uploadedData || []).map((row, index) => (
                   <tr key={index} className={row.isValid ? 'valid-row' : 'invalid-row'}>
                     <td>{row.rowIndex}</td>
                     <td>{row.implantTypeName}</td>
@@ -258,9 +258,9 @@ const FileUpload = () => {
                       </span>
                     </td>
                     <td>
-                      {row.validationErrors.length > 0 ? (
+                      {(row.validationErrors || []).length > 0 ? (
                         <ul className="validation-errors">
-                          {row.validationErrors.map((error, errorIndex) => (
+                          {(row.validationErrors || []).map((error, errorIndex) => (
                             <li key={errorIndex}>{error}</li>
                           ))}
                         </ul>
