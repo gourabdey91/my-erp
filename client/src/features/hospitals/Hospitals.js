@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { hospitalAPI } from './services/hospitalAPI';
 import CreditNotes from './components/CreditNotes';
@@ -6,6 +6,10 @@ import DoctorAssignments from './components/DoctorAssignments';
 import ExpenseTypeAssignments from './components/ExpenseTypeAssignments';
 import MaterialAssignments from './components/MaterialAssignments';
 import './Hospitals.css';
+import '../../shared/styles/unified-design.css';
+import MobileCard from '../../shared/components/MobileCard';
+import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const Hospitals = () => {
   const { currentUser } = useAuth();
@@ -25,7 +29,18 @@ const Hospitals = () => {
   const [showExpenseTypeAssignments, setShowExpenseTypeAssignments] = useState(false);
   const [showMaterialAssignments, setShowMaterialAssignments] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    hospitalName: '',
+    stateCode: '',
+    surgicalCategoryId: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Dropdown menu hook
+  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
+  
   const [formData, setFormData] = useState({
     shortName: '',
     legalName: '',
@@ -53,22 +68,45 @@ const Hospitals = () => {
     fetchAllSurgicalCategories();
   }, []);
 
-  // Close menu when clicking outside
+  // Filtered hospitals
+  const filteredHospitals = useMemo(() => {
+    return hospitals.filter(hospital => {
+      const matchesName = !filters.hospitalName || 
+        hospital.shortName.toLowerCase().includes(filters.hospitalName.toLowerCase()) ||
+        hospital.legalName.toLowerCase().includes(filters.hospitalName.toLowerCase());
+      
+      const matchesStateCode = !filters.stateCode || 
+        hospital.stateCode.toLowerCase().includes(filters.stateCode.toLowerCase());
+      
+      const matchesSurgicalCategory = !filters.surgicalCategoryId ||
+        hospital.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId);
+      
+      return matchesName && matchesStateCode && matchesSurgicalCategory;
+    });
+  }, [hospitals, filters]);
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      hospitalName: '',
+      stateCode: '',
+      surgicalCategoryId: ''
+    });
+  };
+
+  // Auto-dismiss success messages
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuId(null);
-      }
-    };
-
-    if (openMenuId) {
-      document.addEventListener('mousedown', handleClickOutside);
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 5000);
+      return () => clearTimeout(timer);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openMenuId]);
+  }, [success]);
 
   const fetchAllHospitals = async () => {
     try {
@@ -241,6 +279,10 @@ const Hospitals = () => {
     setShowForm(true);
     setError('');
     setSuccess('');
+    closeMenu();
+    
+    // Scroll to top
+    scrollToTop();
   };
 
   const handleDelete = async (hospital) => {
@@ -259,6 +301,7 @@ const Hospitals = () => {
         console.error('Error deleting customer:', err);
       }
     }
+    closeMenu();
   };
 
   const handleCreditNotes = (hospital) => {
@@ -311,45 +354,8 @@ const Hospitals = () => {
     setSelectedHospital(updatedHospital);
   };
 
-  const toggleMenu = (hospitalId) => {
-    const newOpenMenuId = openMenuId === hospitalId ? null : hospitalId;
-    setOpenMenuId(newOpenMenuId);
-    
-    // Add positioning logic after state update
-    if (newOpenMenuId) {
-      setTimeout(() => {
-        const menuElement = menuRef.current;
-        if (menuElement) {
-          const dropdown = menuElement.querySelector('.menu-dropdown');
-          if (dropdown) {
-            const rect = dropdown.getBoundingClientRect();
-            const viewportWidth = window.innerWidth;
-            
-            // If dropdown goes off the right edge of viewport
-            if (rect.right > viewportWidth - 10) {
-              dropdown.style.right = '0';
-              dropdown.style.left = 'auto';
-              dropdown.style.transform = 'translateX(0)';
-            }
-            
-            // On very small screens, ensure it doesn't go off screen
-            if (viewportWidth < 480) {
-              const maxWidth = Math.min(180, viewportWidth - 20);
-              dropdown.style.minWidth = `${maxWidth}px`;
-              dropdown.style.maxWidth = `${maxWidth}px`;
-            }
-          }
-        }
-      }, 0);
-    }
-  };
-
-  const closeMenu = () => {
-    setOpenMenuId(null);
-  };
-
   if (loading) {
-    return <div className="loading">Loading hospitals...</div>;
+    return <div className="loading-state">⏳ Loading hospitals...</div>;
   }
 
   if (!currentUser) {
