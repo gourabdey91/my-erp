@@ -699,13 +699,13 @@ const MaterialMaster = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="subCategory">Sub Category *</label>
+                <label htmlFor="subCategory">Sub Category {formData.implantType ? '*' : ''}</label>
                 <select
                   id="subCategory"
                   name="subCategory"
                   value={formData.subCategory}
                   onChange={handleSubcategoryChange}
-                  required
+                  required={!!formData.implantType}
                   disabled={!formData.implantType}
                 >
                   <option value="">Select Sub Category</option>
@@ -724,7 +724,6 @@ const MaterialMaster = () => {
                     name="lengthMm"
                     value={formData.lengthMm}
                     onChange={handleInputChange}
-                    disabled={!formData.subCategory && !editingMaterial}
                   >
                     <option value="">Select Length (Optional)</option>
                     {lengths.map((length, index) => (
@@ -843,15 +842,17 @@ const MaterialMaster = () => {
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => handleEdit(material)}
                             disabled={loading}
+                            title="Edit Material"
                           >
-                            Edit
+                            ✏️
                           </button>
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDelete(material)}
                             disabled={loading}
+                            title="Delete Material"
                           >
-                            Delete
+                            🗑️
                           </button>
                         </div>
                       </td>
