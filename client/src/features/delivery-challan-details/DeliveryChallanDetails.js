@@ -96,6 +96,12 @@ const DeliveryChallanDetails = () => {
     if (!formData.deliveryChallanNumber.trim()) {
       return 'Delivery challan number is required';
     }
+    if (formData.deliveryChallanNumber.trim().length < 5) {
+      return 'Delivery challan number must be at least 5 characters';
+    }
+    if (formData.deliveryChallanNumber.trim().length > 50) {
+      return 'Delivery challan number cannot exceed 50 characters';
+    }
     if (!formData.hospital) {
       return 'Hospital is required';
     }
@@ -151,11 +157,25 @@ const DeliveryChallanDetails = () => {
   };
 
   const handleEdit = (challan) => {
+    // Safe date formatting - handle null/undefined dates
+    let formattedDate = '';
+    if (challan.challanDate) {
+      try {
+        const date = new Date(challan.challanDate);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      } catch (error) {
+        console.warn('Invalid date format for challan:', challan.challanDate);
+        formattedDate = '';
+      }
+    }
+    
     setFormData({
       deliveryChallanNumber: challan.deliveryChallanNumber,
       hospital: challan.hospital._id,
-      challanDate: new Date(challan.challanDate).toISOString().split('T')[0],
-      salesOrderNumber: challan.salesOrderNumber,
+      challanDate: formattedDate,
+      salesOrderNumber: challan.salesOrderNumber || '',
       consumedIndicator: challan.consumedIndicator
     });
     setEditingChallan(challan);
@@ -327,7 +347,6 @@ const DeliveryChallanDetails = () => {
                 <table className="unified-table">
                   <thead>
                     <tr>
-                      <th>Challan ID</th>
                       <th>Challan Number</th>
                       <th>Hospital</th>
                       <th>Challan Date</th>
@@ -339,9 +358,6 @@ const DeliveryChallanDetails = () => {
                   <tbody>
                     {deliveryChallans.map(challan => (
                       <tr key={challan._id}>
-                        <td>
-                          <span className="identifier-text">{challan.challanId}</span>
-                        </td>
                         <td>
                           <span className="name-text">{challan.deliveryChallanNumber}</span>
                         </td>
@@ -385,8 +401,7 @@ const DeliveryChallanDetails = () => {
                   <MobileCard
                     key={challan._id}
                     id={challan._id}
-                    title={challan.challanId}
-                    subtitle={challan.deliveryChallanNumber}
+                    title={challan.deliveryChallanNumber}
                     badge={{
                       text: challan.consumedIndicator ? 'Consumed' : 'Pending',
                       type: challan.consumedIndicator ? 'success' : 'warning'
@@ -455,7 +470,7 @@ const DeliveryChallanDetails = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Delivery Challan Number *
+                  Delivery Challan Number * (5-50 chars)
                 </label>
                 <input
                   type="text"
@@ -464,6 +479,7 @@ const DeliveryChallanDetails = () => {
                   onChange={handleInputChange}
                   placeholder="Enter challan number"
                   required
+                  maxLength="50"
                   className="unified-search-input"
                 />
               </div>
@@ -524,6 +540,11 @@ const DeliveryChallanDetails = () => {
                   name="consumedIndicator"
                   checked={formData.consumedIndicator}
                   onChange={handleInputChange}
+                  style={{ 
+                    width: '16px', 
+                    height: '16px', 
+                    accentColor: 'var(--accent-color)' 
+                  }}
                 />
                 Consumed Indicator
               </label>
