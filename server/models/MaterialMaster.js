@@ -108,7 +108,7 @@ materialMasterSchema.pre('save', function(next) {
 });
 
 // Indexes for efficient queries
-materialMasterSchema.index({ materialNumber: 1 });
+// Note: materialNumber index removed - uniqueness is enforced by composite index below
 materialMasterSchema.index({ description: 1 });
 materialMasterSchema.index({ surgicalCategory: 1 });
 materialMasterSchema.index({ implantType: 1 });
