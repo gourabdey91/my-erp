@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { doctorAPI } from './services/doctorAPI';
 import { useAuth } from '../../contexts/AuthContext';
 import './Doctors.css';
+import '../../shared/styles/unified-design.css';
+import MobileCard from '../../shared/components/MobileCard';
+import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -18,6 +22,16 @@ const Doctors = () => {
     email: '',
     consultingDoctor: ''
   });
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    doctorName: '',
+    surgicalCategoryId: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Dropdown menu hook
+  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
 
   const { currentUser } = useAuth();
 
@@ -59,6 +73,33 @@ const Doctors = () => {
     fetchCategories();
     fetchConsultingDoctors();
   }, [fetchDoctors, fetchCategories, fetchConsultingDoctors]);
+
+  // Filtered doctors
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter(doctor => {
+      const matchesName = !filters.doctorName || 
+        doctor.name.toLowerCase().includes(filters.doctorName.toLowerCase());
+      
+      const matchesSurgicalCategory = !filters.surgicalCategoryId ||
+        doctor.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId);
+      
+      return matchesName && matchesSurgicalCategory;
+    });
+  }, [doctors, filters]);
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      doctorName: '',
+      surgicalCategoryId: ''
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -143,6 +184,10 @@ const Doctors = () => {
     });
     setShowForm(true);
     setError('');
+    closeMenu();
+    
+    // Scroll to top
+    scrollToTop();
   };
 
   const handleDelete = async (doctor) => {
@@ -159,6 +204,7 @@ const Doctors = () => {
         setLoading(false);
       }
     }
+    closeMenu();
   };
 
   const handleCategoryChange = (categoryId, isChecked) => {
@@ -186,32 +232,89 @@ const Doctors = () => {
     return doctorCategories.map(cat => cat.description).join(', ');
   };
 
-  if (loading) {
-    return <div className="loading">Loading doctors...</div>;
+  if (loading && doctors.length === 0) {
+    return <div className="loading-state">⏳ Loading doctors...</div>;
   }
 
   return (
-    <div className="doctors-container">
+    <div className="page-container">
+      {/* Header */}
       <div className="page-header">
-        <h1>Doctor Details</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowForm(true)}
-          disabled={loading}
-        >
-          Add Doctor
-        </button>
+        <div className="page-title-section">
+          <h1 className="page-title">👨‍⚕️ Doctor Details</h1>
+          <p className="page-description">Manage doctor profiles and surgical categories</p>
+        </div>
+        <div className="page-actions">
+          <button 
+            className="btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              scrollToTop();
+            }}
+            disabled={loading}
+          >
+            {showForm ? '✖ Cancel' : '➕ Add Doctor'}
+          </button>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert-error">{error}</div>}
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-header">
-            <h2>{editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</h2>
+      {/* Filters */}
+      <div className="filters-section">
+        <div className="filters-header" onClick={() => setShowFilters(!showFilters)}>
+          <h3>🔍 Filters</h3>
+          <span className={`filter-toggle ${showFilters ? 'open' : ''}`}>▼</span>
+        </div>
+        {showFilters && (
+          <div className="filters-content">
+            <div className="filters-grid">
+              <div className="filter-group">
+                <label>Doctor Name</label>
+                <input
+                  type="text"
+                  placeholder="Search by doctor name..."
+                  value={filters.doctorName}
+                  onChange={(e) => handleFilterChange('doctorName', e.target.value)}
+                />
+              </div>
+              
+              <div className="filter-group">
+                <label>Surgical Category</label>
+                <select
+                  value={filters.surgicalCategoryId}
+                  onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.code} - {category.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="filters-actions">
+              <button className="btn-secondary" onClick={resetFilters}>
+                🔄 Reset Filters
+              </button>
+              <span className="filter-results">
+                {filteredDoctors.length} of {doctors.length} doctors
+              </span>
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="doctor-form">
-            <div className="form-row">
+        )}
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <div className="form-section">
+          <div className="section-header">
+            <h2>✏️ {editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</h2>
+          </div>
+          <form onSubmit={handleSubmit} className="form-container">
+            <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="name">Doctor Name * (2-50 chars)</label>
                 <input
@@ -226,7 +329,7 @@ const Doctors = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email Address (Optional)</label>
+                <label htmlFor="email">Email Address <span className="optional-field">(Optional)</span></label>
                 <input
                   type="email"
                   id="email"
@@ -235,11 +338,9 @@ const Doctors = () => {
                   placeholder="doctor@example.com"
                 />
               </div>
-            </div>
 
-            <div className="form-row">
               <div className="form-group">
-                <label htmlFor="phoneNumber">Phone Number (Optional)</label>
+                <label htmlFor="phoneNumber">Phone Number <span className="optional-field">(Optional)</span></label>
                 <input
                   type="tel"
                   id="phoneNumber"
@@ -250,7 +351,7 @@ const Doctors = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="consultingDoctor">Consulting Doctor (Optional)</label>
+                <label htmlFor="consultingDoctor">Consulting Doctor <span className="optional-field">(Optional)</span></label>
                 <select
                   id="consultingDoctor"
                   value={formData.consultingDoctor}
@@ -268,7 +369,7 @@ const Doctors = () => {
 
             <div className="form-group">
               <label>Surgical Categories * (Select at least one)</label>
-              <div className="checkbox-group">
+              <div className="checkbox-grid">
                 {categories.map(category => (
                   <label key={category._id} className="checkbox-item">
                     <input
@@ -285,45 +386,68 @@ const Doctors = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : (editingDoctor ? 'Update Doctor' : 'Add Doctor')}
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? '⏳ Saving...' : (editingDoctor ? '💾 Update Doctor' : '✅ Add Doctor')}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
-                Cancel
+              <button type="button" className="btn-secondary" onClick={resetForm}>
+                ✖ Cancel
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="data-table-container">
+      {/* Data Section */}
+      <div className="data-section">
+        <div className="section-header">
+          <h2>📊 Doctors ({filteredDoctors.length})</h2>
+        </div>
+
         {loading && !showForm ? (
-          <div className="loading">Loading doctors...</div>
-        ) : doctors.length === 0 ? (
+          <div className="loading-state">⏳ Loading doctors...</div>
+        ) : filteredDoctors.length === 0 ? (
           <div className="empty-state">
-            <p>No doctors found.</p>
-            <p>Click "Add Doctor" to create your first doctor profile.</p>
+            {doctors.length === 0 ? (
+              <>
+                <p>No doctors found.</p>
+                <p>Click "Add Doctor" to create your first doctor profile.</p>
+              </>
+            ) : (
+              <>
+                <p>No doctors match the current filters.</p>
+                <button className="btn-secondary" onClick={resetFilters}>
+                  🔄 Reset Filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
-            {/* Desktop/Tablet Table View */}
-            <div className="table-responsive">
+            {/* Desktop Table View */}
+            <div className="table-container desktop-only">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Doctor ID</th>
                     <th>Name</th>
                     <th>Surgical Categories</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Actions</th>
+                    <th>Contact</th>
+                    <th className="actions-column">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {doctors.map(doctor => (
+                  {filteredDoctors.map(doctor => (
                     <tr key={doctor._id}>
-                      <td className="doctor-id-cell">{doctor.doctorId}</td>
-                      <td className="doctor-name-cell">Dr. {doctor.name}</td>
+                      <td className="doctor-id-cell">
+                        <div className="cell-content">
+                          <code>{doctor.doctorId}</code>
+                        </div>
+                      </td>
+                      <td className="doctor-name-cell">
+                        <div className="cell-content">
+                          <strong>Dr. {doctor.name}</strong>
+                        </div>
+                      </td>
                       <td className="categories-cell">
                         <div className="category-tags">
                           {doctor.surgicalCategories.map(cat => (
@@ -333,23 +457,28 @@ const Doctors = () => {
                           ))}
                         </div>
                       </td>
-                      <td>{doctor.phoneNumber}</td>
-                      <td>{doctor.email}</td>
-                      <td>
+                      <td className="contact-cell">
+                        <div className="contact-info">
+                          {doctor.phoneNumber && <div>📱 {doctor.phoneNumber}</div>}
+                          {doctor.email && <div>✉️ {doctor.email}</div>}
+                          {!doctor.phoneNumber && !doctor.email && <span className="no-data">No contact info</span>}
+                        </div>
+                      </td>
+                      <td className="actions-cell">
                         <div className="action-buttons">
                           <button 
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn-outline-primary btn-sm"
                             onClick={() => handleEdit(doctor)}
                             disabled={loading}
                           >
-                            Edit
+                            ✏️ Edit
                           </button>
                           <button 
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn-outline-danger btn-sm"
                             onClick={() => handleDelete(doctor)}
                             disabled={loading}
                           >
-                            Delete
+                            🗑️ Delete
                           </button>
                         </div>
                       </td>
@@ -360,37 +489,51 @@ const Doctors = () => {
             </div>
             
             {/* Mobile Card View */}
-            <div className="mobile-card-view">
-              {doctors.map(doctor => (
-                <div key={`mobile-${doctor._id}`} className="doctor-mobile-card">
-                  <div className="mobile-card-header">
-                    <h3 className="mobile-card-title">Dr. {doctor.name}</h3>
-                    <span className="mobile-card-id">{doctor.doctorId}</span>
-                  </div>
-                  <div className="mobile-card-content">
-                    <div className="mobile-card-info">
-                      <p><strong>Categories:</strong> {getCategoryNames(doctor.surgicalCategories)}</p>
-                      <p><strong>Phone:</strong> {doctor.phoneNumber}</p>
-                      <p><strong>Email:</strong> {doctor.email}</p>
+            <div className="mobile-only">
+              {filteredDoctors.map(doctor => (
+                <MobileCard
+                  key={doctor._id}
+                  id={doctor._id}
+                  openMenuId={openMenuId}
+                  onToggleMenu={toggleMenu}
+                  onEdit={() => handleEdit(doctor)}
+                  onDelete={() => handleDelete(doctor)}
+                  loading={loading}
+                >
+                  <div className="card-content">
+                    <div className="card-header">
+                      <h3 className="card-title">Dr. {doctor.name}</h3>
+                      <span className="card-id">{doctor.doctorId}</span>
+                    </div>
+                    
+                    <div className="card-body">
+                      <div className="info-section">
+                        <div className="info-row">
+                          <span className="info-label">🩺 Categories:</span>
+                          <span className="info-value">
+                            <div className="category-tags-mobile">
+                              {doctor.surgicalCategories.map(cat => (
+                                <span key={cat._id} className="category-tag">
+                                  {cat.code}
+                                </span>
+                              ))}
+                            </div>
+                          </span>
+                        </div>
+                        
+                        <div className="info-row">
+                          <span className="info-label">📱 Phone:</span>
+                          <span className="info-value">{doctor.phoneNumber || 'Not provided'}</span>
+                        </div>
+                        
+                        <div className="info-row">
+                          <span className="info-label">✉️ Email:</span>
+                          <span className="info-value">{doctor.email || 'Not provided'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mobile-card-actions">
-                    <button 
-                      className="btn btn-outline-primary"
-                      onClick={() => handleEdit(doctor)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDelete(doctor)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                </MobileCard>
               ))}
             </div>
           </>

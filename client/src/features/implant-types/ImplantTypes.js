@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './ImplantTypes.css';
+import '../../shared/styles/unified-design.css';
 import { implantTypesAPI } from './services/implantTypesAPI';
+import MobileCard from '../../shared/components/MobileCard';
+import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const ImplantTypes = () => {
   const [implantTypes, setImplantTypes] = useState([]);
@@ -13,12 +17,49 @@ const ImplantTypes = () => {
     name: '',
     subcategories: []
   });
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    implantTypeName: '',
+    surgicalCategoryId: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Dropdown menu hook
+  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
 
   // Fetch implant types and categories on component mount
   useEffect(() => {
     fetchImplantTypes();
     fetchCategories();
   }, []);
+
+  // Filtered implant types
+  const filteredImplantTypes = useMemo(() => {
+    return implantTypes.filter(implantType => {
+      const matchesName = !filters.implantTypeName || 
+        implantType.name.toLowerCase().includes(filters.implantTypeName.toLowerCase());
+      
+      const matchesSurgicalCategory = !filters.surgicalCategoryId ||
+        implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId);
+      
+      return matchesName && matchesSurgicalCategory;
+    });
+  }, [implantTypes, filters]);
+
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      implantTypeName: '',
+      surgicalCategoryId: ''
+    });
+  };
 
   const fetchImplantTypes = async () => {
     try {
@@ -120,14 +161,10 @@ const ImplantTypes = () => {
     });
     setShowForm(true);
     setError('');
+    closeMenu();
     
-    // Scroll to form after state update
-    setTimeout(() => {
-      const formContainer = document.querySelector('.form-container');
-      if (formContainer) {
-        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    // Scroll to top
+    scrollToTop();
   };
 
   const handleDelete = async (implantType) => {
@@ -142,6 +179,7 @@ const ImplantTypes = () => {
         setLoading(false);
       }
     }
+    closeMenu();
   };
 
   const resetForm = () => {
@@ -154,39 +192,87 @@ const ImplantTypes = () => {
   };
 
   return (
-    <div className="implant-types-container">
+    <div className="page-container">
+      {/* Header */}
       <div className="page-header">
-        <h1>Implant Types</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            resetForm();
-            setShowForm(!showForm);
-            // Scroll to form when opening it
-            if (!showForm) {
-              setTimeout(() => {
-                const formContainer = document.querySelector('.form-container');
-                if (formContainer) {
-                  formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }, 100);
-            }
-          }}
-          disabled={loading}
-        >
-          {showForm ? 'Cancel' : 'Add Implant Type'}
-        </button>
+        <div className="page-title-section">
+          <h1 className="page-title">🔧 Implant Types</h1>
+          <p className="page-description">Manage implant types and their subcategories</p>
+        </div>
+        <div className="page-actions">
+          <button
+            className="btn-primary"
+            onClick={() => {
+              resetForm();
+              setShowForm(!showForm);
+              if (!showForm) {
+                scrollToTop();
+              }
+            }}
+            disabled={loading}
+          >
+            {showForm ? '✖ Cancel' : '➕ Add Implant Type'}
+          </button>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert-error">{error}</div>}
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-header">
-            <h2>{editingImplantType ? 'Edit Implant Type' : 'Add New Implant Type'}</h2>
+      {/* Filters */}
+      <div className="filters-section">
+        <div className="filters-header" onClick={() => setShowFilters(!showFilters)}>
+          <h3>🔍 Filters</h3>
+          <span className={`filter-toggle ${showFilters ? 'open' : ''}`}>▼</span>
+        </div>
+        {showFilters && (
+          <div className="filters-content">
+            <div className="filters-grid">
+              <div className="filter-group">
+                <label>Implant Type Name</label>
+                <input
+                  type="text"
+                  placeholder="Search by implant type name..."
+                  value={filters.implantTypeName}
+                  onChange={(e) => handleFilterChange('implantTypeName', e.target.value)}
+                />
+              </div>
+              
+              <div className="filter-group">
+                <label>Surgical Category</label>
+                <select
+                  value={filters.surgicalCategoryId}
+                  onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.code} - {category.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="filters-actions">
+              <button className="btn-secondary" onClick={resetFilters}>
+                🔄 Reset Filters
+              </button>
+              <span className="filter-results">
+                {filteredImplantTypes.length} of {implantTypes.length} implant types
+              </span>
+            </div>
           </div>
-          <form onSubmit={handleSubmit} className="implant-type-form">
-            <div className="form-row">
+        )}
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <div className="form-section">
+          <div className="section-header">
+            <h2>✏️ {editingImplantType ? 'Edit Implant Type' : 'Add New Implant Type'}</h2>
+          </div>
+          <form onSubmit={handleSubmit} className="form-container">
+            <div className="form-grid">
               <div className="form-group">
                 <label htmlFor="name">Implant Type Name *</label>
                 <input
@@ -202,68 +288,71 @@ const ImplantTypes = () => {
             </div>
 
             <div className="subcategories-section">
-              <div className="subcategories-header">
-                <h3>Subcategories</h3>
+              <div className="section-header">
+                <h3>📝 Subcategories</h3>
                 <button
                   type="button"
-                  className="btn btn-outline-primary btn-sm"
+                  className="btn-secondary"
                   onClick={addSubcategory}
                 >
-                  Add Subcategory
+                  ➕ Add Subcategory
                 </button>
               </div>
 
               <div className="subcategories-container">
                 {formData.subcategories.map((subcat, index) => (
-                  <div key={index} className="subcategory-row">
-                    <div className="subcategory-form-group">
-                      <label>Subcategory</label>
-                      <input
-                        type="text"
-                        value={subcat.subCategory}
-                        onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
-                        placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
-                        required
-                      />
-                    </div>
-                    <div className="subcategory-form-group">
-                      <label>Length (mm) <span className="optional-field">(Optional)</span></label>
-                      <input
-                        type="number"
-                        value={subcat.length}
-                        onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
-                        placeholder="Length in mm (optional)"
-                        min="0"
-                        step="0.1"
-                      />
-                    </div>
-                    <div className="subcategory-form-group">
-                      <label>Surgical Category</label>
-                      <select
-                        value={subcat.surgicalCategory}
-                        onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map(category => (
-                          <option key={category._id} value={category._id}>
-                            {category.code} - {category.description}
-                          </option>
-                        ))}
-                      </select>
+                  <div key={index} className="subcategory-card">
+                    <div className="subcategory-grid">
+                      <div className="form-group">
+                        <label>Subcategory *</label>
+                        <input
+                          type="text"
+                          value={subcat.subCategory}
+                          onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
+                          placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Length (mm) <span className="optional-field">(Optional)</span></label>
+                        <input
+                          type="number"
+                          value={subcat.length}
+                          onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
+                          placeholder="Length in mm"
+                          min="0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Surgical Category *</label>
+                        <select
+                          value={subcat.surgicalCategory}
+                          onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
+                          required
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map(category => (
+                            <option key={category._id} value={category._id}>
+                              {category.code} - {category.description}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <button
                       type="button"
-                      className="btn btn-outline-danger btn-sm remove-subcategory-btn"
+                      className="btn-danger remove-btn"
                       onClick={() => removeSubcategory(index)}
+                      title="Remove Subcategory"
                     >
-                      Remove
+                      🗑️ Remove
                     </button>
                   </div>
                 ))}
 
                 {formData.subcategories.length === 0 && (
-                  <div className="no-subcategories">
+                  <div className="empty-state">
                     <p>No subcategories added yet. Click "Add Subcategory" to add one.</p>
                   </div>
                 )}
@@ -271,49 +360,67 @@ const ImplantTypes = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : (editingImplantType ? 'Update Implant Type' : 'Add Implant Type')}
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? '⏳ Saving...' : (editingImplantType ? '💾 Update Implant Type' : '✅ Add Implant Type')}
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn-secondary"
                 onClick={() => {
                   resetForm();
                   setShowForm(false);
                 }}
               >
-                Cancel
+                ✖ Cancel
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="data-table-container">
+      {/* Data Section */}
+      <div className="data-section">
+        <div className="section-header">
+          <h2>📊 Implant Types ({filteredImplantTypes.length})</h2>
+        </div>
+
         {loading && !showForm ? (
-          <div className="loading">Loading implant types...</div>
-        ) : implantTypes.length === 0 ? (
+          <div className="loading-state">⏳ Loading implant types...</div>
+        ) : filteredImplantTypes.length === 0 ? (
           <div className="empty-state">
-            <p>No implant types found.</p>
-            <p>Click "Add Implant Type" to create your first implant type.</p>
+            {implantTypes.length === 0 ? (
+              <>
+                <p>No implant types found.</p>
+                <p>Click "Add Implant Type" to create your first implant type.</p>
+              </>
+            ) : (
+              <>
+                <p>No implant types match the current filters.</p>
+                <button className="btn-secondary" onClick={resetFilters}>
+                  🔄 Reset Filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="table-responsive">
+            <div className="table-container desktop-only">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th>Implant Type</th>
                     <th>Subcategories</th>
-                    <th>Actions</th>
+                    <th className="actions-column">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {implantTypes.map(implantType => (
+                  {filteredImplantTypes.map(implantType => (
                     <tr key={implantType._id}>
                       <td className="implant-name-cell">
-                        <strong>{implantType.name}</strong>
+                        <div className="cell-content">
+                          <strong>{implantType.name}</strong>
+                        </div>
                       </td>
                       <td className="subcategories-cell">
                         {implantType.subcategories.length > 0 ? (
@@ -328,24 +435,24 @@ const ImplantTypes = () => {
                             ))}
                           </div>
                         ) : (
-                          <span className="no-subcategories-text">No subcategories</span>
+                          <span className="no-data">No subcategories</span>
                         )}
                       </td>
-                      <td>
+                      <td className="actions-cell">
                         <div className="action-buttons">
                           <button
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn-outline-primary btn-sm"
                             onClick={() => handleEdit(implantType)}
                             disabled={loading}
                           >
-                            Edit
+                            ✏️ Edit
                           </button>
                           <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn-outline-danger btn-sm"
                             onClick={() => handleDelete(implantType)}
                             disabled={loading}
                           >
-                            Delete
+                            🗑️ Delete
                           </button>
                         </div>
                       </td>
@@ -356,48 +463,47 @@ const ImplantTypes = () => {
             </div>
 
             {/* Mobile Card View */}
-            <div className="mobile-card-view">
-              {implantTypes.map(implantType => (
-                <div key={`mobile-${implantType._id}`} className="implant-type-mobile-card">
-                  <div className="mobile-card-header">
-                    <h3 className="mobile-card-title">{implantType.name}</h3>
-                  </div>
-                  <div className="mobile-card-content">
-                    <div className="mobile-card-info">
-                      <p><strong>Subcategories:</strong></p>
-                      {implantType.subcategories.length > 0 ? (
-                        <div className="mobile-subcategories-list">
-                          {implantType.subcategories.map((subcat, index) => (
-                            <div key={index} className="mobile-subcategory-item">
-                              <span className="mobile-subcategory-name">{subcat.subCategory}</span>
-                              <span className="mobile-subcategory-details">
-                                {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
-                              </span>
-                            </div>
-                          ))}
+            <div className="mobile-only">
+              {filteredImplantTypes.map(implantType => (
+                <MobileCard
+                  key={implantType._id}
+                  id={implantType._id}
+                  openMenuId={openMenuId}
+                  onToggleMenu={toggleMenu}
+                  onEdit={() => handleEdit(implantType)}
+                  onDelete={() => handleDelete(implantType)}
+                  loading={loading}
+                >
+                  <div className="card-content">
+                    <div className="card-header">
+                      <h3 className="card-title">{implantType.name}</h3>
+                    </div>
+                    
+                    <div className="card-body">
+                      <div className="info-section">
+                        <div className="info-row">
+                          <span className="info-label">📝 Subcategories:</span>
+                          <span className="info-value">
+                            {implantType.subcategories.length > 0 ? (
+                              <div className="subcategories-mobile-list">
+                                {implantType.subcategories.map((subcat, index) => (
+                                  <div key={index} className="subcategory-mobile-item">
+                                    <strong>{subcat.subCategory}</strong>
+                                    <span className="subcategory-mobile-details">
+                                      {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="no-data">No subcategories</span>
+                            )}
+                          </span>
                         </div>
-                      ) : (
-                        <span className="mobile-no-subcategories">No subcategories</span>
-                      )}
+                      </div>
                     </div>
                   </div>
-                  <div className="mobile-card-actions">
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => handleEdit(implantType)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDelete(implantType)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                </MobileCard>
               ))}
             </div>
           </>
