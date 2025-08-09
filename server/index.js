@@ -61,13 +61,23 @@ app.get('/', (req, res) => {
 
 // Health check endpoint for production monitoring
 app.get('/api/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     status: 'healthy',
     version: '1.0.0',
     environment: NODE_ENV,
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
+});
+
+// Basic health check that doesn't require database
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'ERP Server is running', version: '1.0.0' });
 });
 
 // Use routes

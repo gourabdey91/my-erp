@@ -26,5 +26,5 @@
 
 # Health check
 [healthcheck]
-  path = "/api/health"
+  path = "/health"
   interval = 30
