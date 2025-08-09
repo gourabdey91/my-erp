@@ -269,11 +269,14 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
     const processedData = [];
     const errors = [];
 
-    // Get existing categories and implant types for validation
+    // Get existing data for validation
+    const BusinessUnit = require('../models/BusinessUnit');
+    const existingBusinessUnits = await BusinessUnit.find({ isActive: true }).lean();
     const existingCategories = await Category.find({ isActive: true }).lean();
     const existingImplantTypes = await ImplantType.find({ isActive: true }).lean();
 
     // Create lookup maps for faster validation
+    const businessUnitMap = new Map(existingBusinessUnits.map(bu => [bu.code.toLowerCase().trim(), bu]));
     const categoryMap = new Map(existingCategories.map(cat => [cat.code.toLowerCase().trim(), cat]));
     const implantTypeMap = new Map(existingImplantTypes.map(it => [it.name.toLowerCase().trim(), it]));
 
@@ -282,7 +285,8 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       const rowIndex = i + 2; // Excel rows start from 2 (after header)
       const validationErrors = [];
 
-      // Clean and extract data
+      // Clean and extract data - BU is now the first column
+      const businessUnitCode = row['BU'] || row['Business Unit'] || row['businessUnit'] || '';
       const materialNumber = row['Material Number'] || row['materialNumber'] || '';
       const description = row['Description'] || row['description'] || '';
       const hsnCode = row['HSN Code'] || row['hsnCode'] || '';
@@ -298,6 +302,9 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       const unit = row['Unit'] || row['unit'] || 'NOS';
 
       // Validate required fields
+      if (!businessUnitCode.toString().trim()) {
+        validationErrors.push('Business Unit (BU) is required');
+      }
       if (!materialNumber.toString().trim()) {
         validationErrors.push('Material Number is required');
       }
@@ -325,6 +332,7 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         validationErrors.push('GST Percentage is required');
       }
 
+      let businessUnitObj = null;
       let categoryObj = null;
       let implantTypeObj = null;
       let mrpValue = null;
@@ -332,6 +340,14 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       let distributionPriceValue = null;
       let gstValue = null;
       let lengthValue = null;
+
+      // Validate business unit exists
+      if (businessUnitCode.toString().trim()) {
+        businessUnitObj = businessUnitMap.get(businessUnitCode.toString().toLowerCase().trim());
+        if (!businessUnitObj) {
+          validationErrors.push(`Business Unit "${businessUnitCode}" not found`);
+        }
+      }
 
       // Validate surgical category exists
       if (surgicalCategory.toString().trim()) {
@@ -397,29 +413,33 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         // Length is optional - removed required validation
       }
 
-      // Check for duplicate material numbers within uploaded data
+      // Check for duplicate material numbers within uploaded data (considering BU + Material Number combination)
       const duplicateInUpload = processedData.find(item => 
+        item.businessUnitCode.toLowerCase() === businessUnitCode.toString().toLowerCase().trim() &&
         item.materialNumber.toLowerCase() === materialNumber.toString().toLowerCase().trim()
       );
 
       if (duplicateInUpload) {
-        validationErrors.push('Duplicate material number found in uploaded data');
+        validationErrors.push('Duplicate BU + Material Number combination found in uploaded data');
       }
 
-      // Check for existing material numbers in database
-      if (materialNumber.toString().trim()) {
+      // Check for existing material numbers in database (considering BU + Material Number combination)
+      if (businessUnitObj && materialNumber.toString().trim()) {
         const existingMaterial = await MaterialMaster.findOne({
+          businessUnitId: businessUnitObj._id,
           materialNumber: materialNumber.toString().trim(),
           isActive: true
         });
 
         if (existingMaterial) {
-          validationErrors.push('Material number already exists in database');
+          validationErrors.push('BU + Material Number combination already exists in database');
         }
       }
 
       const processedRow = {
         rowIndex,
+        businessUnitCode: businessUnitCode.toString().trim(),
+        businessUnitId: businessUnitObj?._id,
         materialNumber: materialNumber.toString().trim(),
         description: description.toString().trim(),
         hsnCode: hsnCode.toString().trim(),
@@ -488,6 +508,7 @@ router.post('/save-material-master', async (req, res) => {
     for (const row of validRows) {
       try {
         const materialData = {
+          businessUnitId: row.businessUnitId,
           materialNumber: row.materialNumber,
           description: row.description,
           hsnCode: row.hsnCode,

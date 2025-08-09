@@ -107,6 +107,8 @@
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .subcategories-header h3 {
@@ -114,6 +116,34 @@
   color: #333;
   font-size: 18px;
   font-weight: 600;
+}
+
+/* Subcategories scrollable container */
+.subcategories-container {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+}
+
+.subcategories-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.subcategories-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.subcategories-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.subcategories-container::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
 
 .subcategory-row {
@@ -442,14 +472,26 @@
     gap: 16px;
   }
 
-  .subcategory-row {
-    grid-template-columns: 1fr;
+  .subcategories-header {
+    flex-direction: column;
+    align-items: stretch;
     gap: 12px;
   }
 
+  .subcategories-container {
+    max-height: 300px;
+  }
+
+  .subcategory-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
   .remove-subcategory-btn {
-    margin-top: 0;
-    justify-self: end;
+    margin-top: 8px;
+    justify-self: stretch;
+    width: 100%;
   }
 
   .form-actions {

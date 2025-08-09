@@ -5,6 +5,7 @@ import { materialMasterAPI } from './services/materialMasterAPI';
 const MaterialMaster = () => {
   const [materials, setMaterials] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [businessUnits, setBusinessUnits] = useState([]);
   const [filteredImplantTypes, setFilteredImplantTypes] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [lengths, setLengths] = useState([]);
@@ -26,6 +27,7 @@ const MaterialMaster = () => {
   });
   const [filters, setFilters] = useState({
     search: '',
+    businessUnitId: '',
     surgicalCategory: '',
     implantType: '',
     subCategory: '',
@@ -34,6 +36,7 @@ const MaterialMaster = () => {
   });
 
   const [formData, setFormData] = useState({
+    businessUnitId: '',
     materialNumber: '',
     description: '',
     hsnCode: '',
@@ -88,6 +91,7 @@ const MaterialMaster = () => {
     try {
       const response = await materialMasterAPI.getDropdownData();
       setCategories(response.categories);
+      setBusinessUnits(response.businessUnits);
       // We no longer need to store all implantTypes since we fetch them dynamically
     } catch (err) {
       console.error('Error fetching dropdown data:', err);
@@ -424,6 +428,21 @@ const MaterialMaster = () => {
           </div>
           <div className="filter-group">
             <select
+              name="businessUnitId"
+              value={filters.businessUnitId}
+              onChange={handleFilterChange}
+              className="filter-select"
+            >
+              <option value="">All Business Units</option>
+              {businessUnits.map(unit => (
+                <option key={unit._id} value={unit._id}>
+                  {unit.code} - {unit.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
               name="surgicalCategory"
               value={filters.surgicalCategory}
               onChange={handleFilterSurgicalCategoryChange}
@@ -508,6 +527,23 @@ const MaterialMaster = () => {
           </div>
           <form onSubmit={handleSubmit} className="material-form">
             <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="businessUnitId">Business Unit *</label>
+                <select
+                  id="businessUnitId"
+                  name="businessUnitId"
+                  value={formData.businessUnitId}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select Business Unit</option>
+                  {businessUnits.map(unit => (
+                    <option key={unit._id} value={unit._id}>
+                      {unit.code} - {unit.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-group">
                 <label htmlFor="materialNumber">Material Number *</label>
                 <input
@@ -754,6 +790,7 @@ const MaterialMaster = () => {
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th>Business Unit</th>
                     <th>Material Number</th>
                     <th>Description</th>
                     <th>HSN Code</th>
@@ -771,6 +808,7 @@ const MaterialMaster = () => {
                 <tbody>
                   {materials.map(material => (
                     <tr key={material._id}>
+                      <td>{material.businessUnitId?.code || '-'}</td>
                       <td className="material-number-cell">
                         <strong>{material.materialNumber}</strong>
                       </td>

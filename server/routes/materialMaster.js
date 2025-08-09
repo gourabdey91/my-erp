@@ -3,6 +3,7 @@ const router = express.Router();
 const MaterialMaster = require('../models/MaterialMaster');
 const Category = require('../models/Category');
 const ImplantType = require('../models/ImplantType');
+const BusinessUnit = require('../models/BusinessUnit');
 
 // Get all materials with pagination and filtering
 router.get('/', async (req, res) => {
@@ -14,6 +15,7 @@ router.get('/', async (req, res) => {
     const implantType = req.query.implantType;
     const subCategory = req.query.subCategory;
     const lengthMm = req.query.lengthMm;
+    const businessUnitId = req.query.businessUnitId;
     const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : true;
 
     // Build filter query
@@ -43,11 +45,16 @@ router.get('/', async (req, res) => {
       filter.lengthMm = parseFloat(lengthMm);
     }
 
+    if (businessUnitId) {
+      filter.businessUnitId = businessUnitId;
+    }
+
     const skip = (page - 1) * limit;
 
     const materials = await MaterialMaster.find(filter)
       .populate('surgicalCategory', 'code description')
       .populate('implantType', 'name')
+      .populate('businessUnitId', 'code name')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName')
       .sort({ materialNumber: 1 })
@@ -77,14 +84,16 @@ router.get('/', async (req, res) => {
 // Get dropdown data for filters
 router.get('/dropdown-data', async (req, res) => {
   try {
-    const [categories, implantTypes] = await Promise.all([
+    const [categories, implantTypes, businessUnits] = await Promise.all([
       Category.find({ isActive: true }).select('_id code description').sort({ description: 1 }),
-      ImplantType.find({ isActive: true }).select('_id name subcategories').sort({ name: 1 })
+      ImplantType.find({ isActive: true }).select('_id name subcategories').sort({ name: 1 }),
+      BusinessUnit.find({ isActive: true }).select('_id code name').sort({ code: 1 })
     ]);
 
     res.json({
       categories,
-      implantTypes
+      implantTypes,
+      businessUnits
     });
   } catch (error) {
     console.error('Error fetching dropdown data:', error);
@@ -113,6 +122,7 @@ router.get('/subcategories/:implantTypeId', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
+      businessUnitId,
       materialNumber,
       description,
       hsnCode,
@@ -128,6 +138,10 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     // Validate required fields
+    if (!businessUnitId) {
+      return res.status(400).json({ message: 'Business unit is required' });
+    }
+
     if (!materialNumber || !materialNumber.trim()) {
       return res.status(400).json({ message: 'Material number is required' });
     }
@@ -172,14 +186,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Valid length is required' });
     }
 
-    // Check if material number already exists (including inactive ones)
+    // Check if material number already exists within the same business unit
     const existingMaterial = await MaterialMaster.findOne({ 
+      businessUnitId: businessUnitId,
       materialNumber: materialNumber.trim().toUpperCase() 
     });
     
     if (existingMaterial) {
       if (existingMaterial.isActive) {
-        return res.status(400).json({ message: 'Material number already exists' });
+        return res.status(400).json({ message: 'Material number already exists in this business unit' });
       } else {
         // Reactivate the existing material with new data
         existingMaterial.description = description.trim();
@@ -201,6 +216,7 @@ router.post('/', async (req, res) => {
         const populatedMaterial = await MaterialMaster.findById(existingMaterial._id)
           .populate('surgicalCategory', 'code description')
           .populate('implantType', 'name')
+          .populate('businessUnitId', 'code name')
           .populate('createdBy', 'firstName lastName')
           .populate('updatedBy', 'firstName lastName');
         
@@ -223,6 +239,7 @@ router.post('/', async (req, res) => {
     }
 
     const material = new MaterialMaster({
+      businessUnitId,
       materialNumber: materialNumber.trim().toUpperCase(),
       description: description.trim(),
       hsnCode: hsnCode.trim(),
@@ -243,6 +260,7 @@ router.post('/', async (req, res) => {
     const populatedMaterial = await MaterialMaster.findById(savedMaterial._id)
       .populate('surgicalCategory', 'code description')
       .populate('implantType', 'name')
+      .populate('businessUnitId', 'code name')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -250,7 +268,7 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating material:', error);
     if (error.code === 11000) {
-      res.status(400).json({ message: 'Material number already exists' });
+      res.status(400).json({ message: 'Material number already exists in this business unit' });
     } else {
       res.status(500).json({ message: 'Server error while creating material' });
     }
@@ -262,6 +280,7 @@ router.put('/:id', async (req, res) => {
   try {
     const materialId = req.params.id;
     const {
+      businessUnitId,
       materialNumber,
       description,
       hsnCode,
@@ -277,6 +296,10 @@ router.put('/:id', async (req, res) => {
     } = req.body;
 
     // Validate required fields (same as create)
+    if (!businessUnitId) {
+      return res.status(400).json({ message: 'Business unit is required' });
+    }
+
     if (!materialNumber || !materialNumber.trim()) {
       return res.status(400).json({ message: 'Material number is required' });
     }
@@ -291,16 +314,17 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Material not found' });
     }
 
-    // Check if material number is being changed and if it conflicts
+    // Check if material number is being changed and if it conflicts within the business unit
     const upperMaterialNumber = materialNumber.trim().toUpperCase();
-    if (upperMaterialNumber !== existingMaterial.materialNumber) {
+    if (upperMaterialNumber !== existingMaterial.materialNumber || businessUnitId !== existingMaterial.businessUnitId.toString()) {
       const duplicateMaterial = await MaterialMaster.findOne({
         _id: { $ne: materialId },
+        businessUnitId: businessUnitId,
         materialNumber: upperMaterialNumber
       });
       
       if (duplicateMaterial) {
-        return res.status(400).json({ message: 'Material number already exists' });
+        return res.status(400).json({ message: 'Material number already exists in this business unit' });
       }
     }
 
@@ -308,6 +332,7 @@ router.put('/:id', async (req, res) => {
     const updatedMaterial = await MaterialMaster.findByIdAndUpdate(
       materialId,
       {
+        businessUnitId,
         materialNumber: upperMaterialNumber,
         description: description.trim(),
         hsnCode: hsnCode.trim(),
@@ -326,6 +351,7 @@ router.put('/:id', async (req, res) => {
     )
     .populate('surgicalCategory', 'code description')
     .populate('implantType', 'name')
+    .populate('businessUnitId', 'code name')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName');
 
@@ -333,7 +359,7 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating material:', error);
     if (error.code === 11000) {
-      res.status(400).json({ message: 'Material number already exists' });
+      res.status(400).json({ message: 'Material number already exists in this business unit' });
     } else {
       res.status(500).json({ message: 'Server error while updating material' });
     }
@@ -413,7 +439,7 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
   }
 });
 
-// Delete material (soft delete)
+// Delete material (hard delete)
 router.delete('/:id', async (req, res) => {
   try {
     const material = await MaterialMaster.findById(req.params.id);
@@ -422,10 +448,8 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Material not found' });
     }
 
-    // Soft delete by setting isActive to false
-    material.isActive = false;
-    material.updatedBy = req.user?.id;
-    await material.save();
+    // Hard delete - permanently remove the material
+    await MaterialMaster.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Material deleted successfully' });
   } catch (error) {

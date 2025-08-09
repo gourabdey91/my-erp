@@ -111,24 +111,25 @@ router.post('/', async (req, res) => {
       hospital,
       challanDate,
       salesOrderNumber,
-      consumedIndicator
+      consumedIndicator,
+      createdBy,
+      updatedBy
     } = req.body;
     
     // Validate required fields
-    if (!deliveryChallanNumber || !hospital) {
-      return res.status(400).json({ message: 'Delivery challan number and hospital are required' });
+    if (!deliveryChallanNumber || !hospital || !createdBy) {
+      return res.status(400).json({ message: 'Delivery challan number, hospital, and created by are required' });
     }
     
-    // Create new delivery challan details
+    // Create new delivery challan details (business unit will be set automatically from hospital in pre-save middleware)
     const deliveryChallan = new DeliveryChallanDetails({
       deliveryChallanNumber,
       hospital,
-      challanDate: new Date(challanDate),
+      challanDate: challanDate ? new Date(challanDate) : undefined,
       salesOrderNumber,
       consumedIndicator: consumedIndicator || false,
-      businessUnit: req.user.businessUnit,
-      createdBy: req.user._id,
-      updatedBy: req.user._id
+      createdBy,
+      updatedBy: updatedBy || createdBy
     });
     
     await deliveryChallan.save();
@@ -161,7 +162,8 @@ router.put('/:id', async (req, res) => {
       hospital,
       challanDate,
       salesOrderNumber,
-      consumedIndicator
+      consumedIndicator,
+      updatedBy
     } = req.body;
     
     const deliveryChallan = await DeliveryChallanDetails.findById(req.params.id);
@@ -173,11 +175,11 @@ router.put('/:id', async (req, res) => {
     // Update fields
     if (deliveryChallanNumber !== undefined) deliveryChallan.deliveryChallanNumber = deliveryChallanNumber;
     if (hospital !== undefined) deliveryChallan.hospital = hospital;
-    if (challanDate !== undefined) deliveryChallan.challanDate = new Date(challanDate);
+    if (challanDate !== undefined) deliveryChallan.challanDate = challanDate ? new Date(challanDate) : undefined;
     if (salesOrderNumber !== undefined) deliveryChallan.salesOrderNumber = salesOrderNumber;
     if (consumedIndicator !== undefined) deliveryChallan.consumedIndicator = consumedIndicator;
     
-    deliveryChallan.updatedBy = req.user._id;
+    deliveryChallan.updatedBy = updatedBy;
     
     await deliveryChallan.save();
     

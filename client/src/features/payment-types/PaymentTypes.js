@@ -13,8 +13,7 @@ const PaymentTypes = () => {
   const [formData, setFormData] = useState({
     code: '',
     description: '',
-    hasSoftLimit: false,
-    softLimitAmount: 0
+    canBeExceeded: false
   });
 
   const loadPaymentTypes = useCallback(async () => {
@@ -56,7 +55,7 @@ const PaymentTypes = () => {
         await paymentTypeAPI.create(paymentTypeData);
       }
 
-      setFormData({ code: '', description: '', hasSoftLimit: false, softLimitAmount: 0 });
+      setFormData({ code: '', description: '', canBeExceeded: false });
       setShowForm(false);
       setEditingPaymentType(null);
       loadPaymentTypes();
@@ -71,10 +70,17 @@ const PaymentTypes = () => {
     setFormData({
       code: paymentType.code,
       description: paymentType.description,
-      hasSoftLimit: paymentType.hasSoftLimit || false,
-      softLimitAmount: paymentType.softLimitAmount || 0
+      canBeExceeded: paymentType.canBeExceeded || false
     });
     setShowForm(true);
+    
+    // Scroll to form after state update
+    setTimeout(() => {
+      const formContainer = document.querySelector('.form-container');
+      if (formContainer) {
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   const handleDelete = async (paymentType) => {
@@ -90,7 +96,7 @@ const PaymentTypes = () => {
   };
 
   const handleCancel = () => {
-    setFormData({ code: '', description: '', hasSoftLimit: false, softLimitAmount: 0 });
+    setFormData({ code: '', description: '', canBeExceeded: false });
     setShowForm(false);
     setEditingPaymentType(null);
   };
@@ -105,7 +111,16 @@ const PaymentTypes = () => {
         <h1>Payment Types</h1>
         <button 
           className="btn btn-primary"
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setShowForm(true);
+            // Scroll to form after opening
+            setTimeout(() => {
+              const formContainer = document.querySelector('.form-container');
+              if (formContainer) {
+                formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 100);
+          }}
         >
           Add Payment Type
         </button>
@@ -150,35 +165,18 @@ const PaymentTypes = () => {
               <label>
                 <input
                   type="checkbox"
-                  checked={formData.hasSoftLimit}
+                  checked={formData.canBeExceeded}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    hasSoftLimit: e.target.checked,
-                    softLimitAmount: e.target.checked ? formData.softLimitAmount : 0
+                    canBeExceeded: e.target.checked
                   })}
                 />
-                {' '}Soft Limit
+                {' '}Can be exceeded
               </label>
               <small className="form-text">
-                If checked, the bill amount should be under defined amount when posting invoice
+                If checked, this payment type can exceed the normal limits when posting invoices
               </small>
             </div>
-
-            {formData.hasSoftLimit && (
-              <div className="form-group">
-                <label htmlFor="softLimitAmount">Soft Limit Amount *</label>
-                <input
-                  type="number"
-                  id="softLimitAmount"
-                  value={formData.softLimitAmount}
-                  onChange={(e) => setFormData({ ...formData, softLimitAmount: parseFloat(e.target.value) || 0 })}
-                  required={formData.hasSoftLimit}
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter maximum amount allowed"
-                />
-              </div>
-            )}
 
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">
@@ -210,9 +208,9 @@ const PaymentTypes = () => {
                     <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
                       {paymentType.isActive ? 'Active' : 'Inactive'}
                     </span>
-                    {paymentType.hasSoftLimit && (
-                      <span className="soft-limit-badge">
-                        Soft Limit: ₹{paymentType.softLimitAmount?.toLocaleString() || '0'}
+                    {paymentType.canBeExceeded && (
+                      <span className="exceeded-badge">
+                        Can be exceeded
                       </span>
                     )}
                   </div>

@@ -159,6 +159,14 @@ const DeliveryChallanDetails = () => {
     setShowForm(true);
     setError('');
     setSuccess('');
+    
+    // Scroll to form after state update
+    setTimeout(() => {
+      const formContainer = document.querySelector('.form-container');
+      if (formContainer) {
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   const handleDelete = async (challan) => {

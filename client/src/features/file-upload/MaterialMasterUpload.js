@@ -146,7 +146,7 @@ const MaterialMasterUpload = () => {
       <div className="material-upload-header">
         <h2>Material Master Data Import</h2>
         <p className="material-upload-description">
-          Upload Excel file with Material Number, Description, HSN Code, Prices, and Category data
+          Upload Excel file with BU, Material Number, Description, HSN Code, Prices, and Category data
         </p>
       </div>
 
@@ -235,6 +235,7 @@ const MaterialMasterUpload = () => {
               <thead>
                 <tr>
                   <th>Row</th>
+                  <th>BU</th>
                   <th>Material Number</th>
                   <th>Description</th>
                   <th>HSN Code</th>
@@ -256,6 +257,7 @@ const MaterialMasterUpload = () => {
                 {(uploadedData || []).map((row, index) => (
                   <tr key={index} className={row.isValid ? 'valid-row' : 'invalid-row'}>
                     <td>{row.rowIndex}</td>
+                    <td>{row.businessUnitCode || 'N/A'}</td>
                     <td>{row.materialNumber}</td>
                     <td className="description-cell">{row.description}</td>
                     <td>{row.hsnCode}</td>

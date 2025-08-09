@@ -32,7 +32,7 @@ const deliveryChallanDetailsSchema = new mongoose.Schema({
   businessUnit: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',
-    required: [true, 'Business unit is required']
+    required: false  // Will be derived from hospital
   },
   isActive: {
     type: Boolean,
@@ -52,28 +52,43 @@ const deliveryChallanDetailsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Pre-save middleware to generate challan ID
+// Pre-save middleware to generate challan ID and set business unit from hospital
 deliveryChallanDetailsSchema.pre('save', async function(next) {
-  if (this.isNew && !this.challanId) {
-    const lastChallan = await this.constructor
-      .findOne({ businessUnit: this.businessUnit })
-      .sort({ challanId: -1 })
-      .select('challanId');
-    
-    let nextNumber = 1;
-    if (lastChallan && lastChallan.challanId) {
-      // Extract the numeric part (last 5 characters) and increment
-      const lastNumber = parseInt(lastChallan.challanId.substring(2));
-      if (!isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
+  try {
+    // Set business unit from hospital if not already set
+    if (!this.businessUnit && this.hospital) {
+      const Hospital = require('./Hospital');
+      const hospital = await Hospital.findById(this.hospital).select('businessUnit');
+      if (hospital && hospital.businessUnit) {
+        this.businessUnit = hospital.businessUnit;
       }
     }
+
+    // Generate challan ID if new document
+    if (this.isNew && !this.challanId) {
+      const lastChallan = await this.constructor
+        .findOne({ businessUnit: this.businessUnit })
+        .sort({ challanId: -1 })
+        .select('challanId');
+      
+      let nextNumber = 1;
+      if (lastChallan && lastChallan.challanId) {
+        // Extract the numeric part (last 5 characters) and increment
+        const lastNumber = parseInt(lastChallan.challanId.substring(2));
+        if (!isNaN(lastNumber)) {
+          nextNumber = lastNumber + 1;
+        }
+      }
+      
+      // Generate 5 character alphanumeric sequence (zero-padded)
+      const sequence = nextNumber.toString().padStart(5, '0');
+      this.challanId = `DC${sequence}`;
+    }
     
-    // Generate 5 character alphanumeric sequence (zero-padded)
-    const sequence = nextNumber.toString().padStart(5, '0');
-    this.challanId = `DC${sequence}`;
+    next();
+  } catch (error) {
+    next(error);
   }
-  next();
 });
 
 module.exports = mongoose.model('DeliveryChallanDetails', deliveryChallanDetailsSchema);

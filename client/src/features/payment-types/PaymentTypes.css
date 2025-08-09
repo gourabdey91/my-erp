@@ -213,7 +213,7 @@
   color: #721c24;
 }
 
-.soft-limit-badge {
+.exceeded-badge {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 11px;

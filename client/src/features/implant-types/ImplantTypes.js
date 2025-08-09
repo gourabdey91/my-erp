@@ -120,6 +120,14 @@ const ImplantTypes = () => {
     });
     setShowForm(true);
     setError('');
+    
+    // Scroll to form after state update
+    setTimeout(() => {
+      const formContainer = document.querySelector('.form-container');
+      if (formContainer) {
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   const handleDelete = async (implantType) => {
@@ -145,11 +153,6 @@ const ImplantTypes = () => {
     setError('');
   };
 
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat._id === categoryId);
-    return category ? `${category.code} - ${category.description}` : 'Unknown';
-  };
-
   return (
     <div className="implant-types-container">
       <div className="page-header">
@@ -159,6 +162,15 @@ const ImplantTypes = () => {
           onClick={() => {
             resetForm();
             setShowForm(!showForm);
+            // Scroll to form when opening it
+            if (!showForm) {
+              setTimeout(() => {
+                const formContainer = document.querySelector('.form-container');
+                if (formContainer) {
+                  formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 100);
+            }
           }}
           disabled={loading}
         >
@@ -201,59 +213,61 @@ const ImplantTypes = () => {
                 </button>
               </div>
 
-              {formData.subcategories.map((subcat, index) => (
-                <div key={index} className="subcategory-row">
-                  <div className="subcategory-form-group">
-                    <label>Subcategory</label>
-                    <input
-                      type="text"
-                      value={subcat.subCategory}
-                      onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
-                      placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
-                      required
-                    />
-                  </div>
-                  <div className="subcategory-form-group">
-                    <label>Length (mm) <span className="optional-field">(Optional)</span></label>
-                    <input
-                      type="number"
-                      value={subcat.length}
-                      onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
-                      placeholder="Length in mm (optional)"
-                      min="0"
-                      step="0.1"
-                    />
-                  </div>
-                  <div className="subcategory-form-group">
-                    <label>Surgical Category</label>
-                    <select
-                      value={subcat.surgicalCategory}
-                      onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
-                      required
+              <div className="subcategories-container">
+                {formData.subcategories.map((subcat, index) => (
+                  <div key={index} className="subcategory-row">
+                    <div className="subcategory-form-group">
+                      <label>Subcategory</label>
+                      <input
+                        type="text"
+                        value={subcat.subCategory}
+                        onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
+                        placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
+                        required
+                      />
+                    </div>
+                    <div className="subcategory-form-group">
+                      <label>Length (mm) <span className="optional-field">(Optional)</span></label>
+                      <input
+                        type="number"
+                        value={subcat.length}
+                        onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
+                        placeholder="Length in mm (optional)"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="subcategory-form-group">
+                      <label>Surgical Category</label>
+                      <select
+                        value={subcat.surgicalCategory}
+                        onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
+                        required
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.code} - {category.description}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm remove-subcategory-btn"
+                      onClick={() => removeSubcategory(index)}
                     >
-                      <option value="">Select Category</option>
-                      {categories.map(category => (
-                        <option key={category._id} value={category._id}>
-                          {category.code} - {category.description}
-                        </option>
-                      ))}
-                    </select>
+                      Remove
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm remove-subcategory-btn"
-                    onClick={() => removeSubcategory(index)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+                ))}
 
-              {formData.subcategories.length === 0 && (
-                <div className="no-subcategories">
-                  <p>No subcategories added yet. Click "Add Subcategory" to add one.</p>
-                </div>
-              )}
+                {formData.subcategories.length === 0 && (
+                  <div className="no-subcategories">
+                    <p>No subcategories added yet. Click "Add Subcategory" to add one.</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-actions">

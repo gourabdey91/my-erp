@@ -55,7 +55,7 @@ router.get('/:id', async (req, res) => {
 // Create new payment type
 router.post('/', async (req, res) => {
   try {
-    const { code, description, createdBy } = req.body;
+    const { code, description, canBeExceeded, createdBy } = req.body;
     
     // Validation
     if (!code || !description || !createdBy) {
@@ -87,6 +87,7 @@ router.post('/', async (req, res) => {
     const paymentType = new PaymentType({
       code: code.toUpperCase(),
       description,
+      canBeExceeded: canBeExceeded || false,
       createdBy,
       updatedBy: createdBy
     });
@@ -124,7 +125,7 @@ router.post('/', async (req, res) => {
 // Update payment type
 router.put('/:id', async (req, res) => {
   try {
-    const { code, description, updatedBy } = req.body;
+    const { code, description, canBeExceeded, updatedBy } = req.body;
     
     if (!updatedBy) {
       return res.status(400).json({
@@ -168,6 +169,7 @@ router.put('/:id', async (req, res) => {
     // Update fields
     if (code) paymentType.code = code.toUpperCase();
     if (description) paymentType.description = description;
+    if (canBeExceeded !== undefined) paymentType.canBeExceeded = canBeExceeded;
     paymentType.updatedBy = updatedBy;
 
     await paymentType.save();

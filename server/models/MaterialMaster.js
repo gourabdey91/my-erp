@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const materialMasterSchema = new mongoose.Schema({
+  businessUnitId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BusinessUnit',
+    required: true
+  },
   materialNumber: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     maxLength: 20,
     index: true
@@ -56,11 +60,11 @@ const materialMasterSchema = new mongoose.Schema({
   implantType: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ImplantType',
-    required: true
+    required: false
   },
   subCategory: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   lengthMm: {
@@ -109,7 +113,11 @@ materialMasterSchema.index({ description: 1 });
 materialMasterSchema.index({ surgicalCategory: 1 });
 materialMasterSchema.index({ implantType: 1 });
 materialMasterSchema.index({ isActive: 1 });
+materialMasterSchema.index({ businessUnitId: 1 });
 materialMasterSchema.index({ materialNumber: 'text', description: 'text' });
+
+// Composite unique index for businessUnitId + materialNumber
+materialMasterSchema.index({ businessUnitId: 1, materialNumber: 1 }, { unique: true });
 
 const MaterialMaster = mongoose.model('MaterialMaster', materialMasterSchema);
 
