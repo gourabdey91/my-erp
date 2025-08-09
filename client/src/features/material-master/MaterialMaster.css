@@ -49,6 +49,16 @@
   grid-template-columns: 2fr 1fr 1fr;
   gap: 16px;
   align-items: end;
+  margin-bottom: 12px;
+}
+
+.filters-row:last-child {
+  margin-bottom: 0;
+}
+
+.filters-row.compact-filters {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
 }
 
 .filter-group {
@@ -120,6 +130,12 @@
   font-weight: 600;
   color: #333;
   font-size: 14px;
+}
+
+.form-group .optional-text {
+  color: #666;
+  font-weight: 400;
+  font-size: 12px;
 }
 
 .form-group input,
@@ -427,6 +443,11 @@
   .filters-row {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .filters-row.compact-filters {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .form-row {

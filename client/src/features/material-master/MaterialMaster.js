@@ -456,6 +456,8 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
+        </div>
+        <div className="filters-row compact-filters">
           <div className="filter-group">
             <select
               name="implantType"
@@ -472,8 +474,6 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
-        </div>
-        <div className="filters-row">
           <div className="filter-group">
             <select
               name="subCategory"
@@ -717,21 +717,34 @@ const MaterialMaster = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="lengthMm">Length (mm)</label>
-                <select
-                  id="lengthMm"
-                  name="lengthMm"
-                  value={formData.lengthMm}
-                  onChange={handleInputChange}
-                  disabled={!formData.subCategory}
-                >
-                  <option value="">Select Length</option>
-                  {lengths.map((length, index) => (
-                    <option key={index} value={length}>
-                      {length} mm
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="lengthMm">Length (mm) <span className="optional-text">(Optional)</span></label>
+                {lengths.length > 0 ? (
+                  <select
+                    id="lengthMm"
+                    name="lengthMm"
+                    value={formData.lengthMm}
+                    onChange={handleInputChange}
+                    disabled={!formData.subCategory && !editingMaterial}
+                  >
+                    <option value="">Select Length (Optional)</option>
+                    {lengths.map((length, index) => (
+                      <option key={index} value={length}>
+                        {length} mm
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="number"
+                    id="lengthMm"
+                    name="lengthMm"
+                    value={formData.lengthMm}
+                    onChange={handleInputChange}
+                    placeholder="Enter length in mm (optional)"
+                    min="0"
+                    step="0.1"
+                  />
+                )}
               </div>
             </div>
 
