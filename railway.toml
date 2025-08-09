@@ -23,8 +23,3 @@
 # Auto-deploy from main branch
 [triggers]
   branch = "main"
-
-# Health check
-[healthcheck]
-  path = "/health"
-  interval = 30

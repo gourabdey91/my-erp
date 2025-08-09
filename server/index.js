@@ -29,14 +29,15 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Health checks - must be before other routes
+// Immediate health check - must be first
 app.get('/health', (req, res) => {
-  console.log('Health check accessed');
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  console.log(`Health check accessed at ${new Date().toISOString()}`);
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
 });
 
 app.get('/', (req, res) => {
-  console.log('Root endpoint accessed');
+  console.log(`Root endpoint accessed at ${new Date().toISOString()}`);
   res.json({ 
     message: 'ERP Billing App Backend v1.0.0', 
     version: '1.0.0', 
@@ -113,6 +114,12 @@ mongoose.connection.on('error', (error) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
-  console.log(`Health check available at: http://0.0.0.0:${PORT}/health`);
+  console.log(`===============================`);
+  console.log(`🚀 Server started successfully!`);
+  console.log(`📊 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`🔗 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`🏠 Root endpoint: http://0.0.0.0:${PORT}/`);
+  console.log(`📅 Started at: ${new Date().toISOString()}`);
+  console.log(`===============================`);
 });
