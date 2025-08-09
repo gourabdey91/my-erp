@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { companyDetailsAPI } from './services/companyDetailsAPI';
+import '../../shared/styles/unified-design.css';
 import './CompanyDetails.css';
 
 const CompanyDetails = () => {
@@ -136,23 +137,32 @@ const CompanyDetails = () => {
   }
 
   return (
-    <div className="company-details-container">
-      <div className="form-header">
-        <h1>Company Details</h1>
-        <p>Manage your company information and compliance details</p>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Company Details</h1>
+            <p>Manage your company information</p>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="error-message">
-          {error}
-          <button onClick={() => setError('')} className="close-btn">×</button>
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+            <button onClick={() => setError('')} style={{ float: 'right', background: 'none', border: 'none', fontSize: '1.2em', cursor: 'pointer' }}>×</button>
+          </div>
         </div>
       )}
 
       {success && (
-        <div className="success-message">
-          {success}
-          <button onClick={() => setSuccess('')} className="close-btn">×</button>
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#efe', border: '1px solid #cfc', borderRadius: '8px', color: '#3c3' }}>
+            {success}
+            <button onClick={() => setSuccess('')} style={{ float: 'right', background: 'none', border: 'none', fontSize: '1.2em', cursor: 'pointer' }}>×</button>
+          </div>
         </div>
       )}
 
@@ -438,7 +448,7 @@ const CompanyDetails = () => {
         <div className="form-actions">
           <button
             type="submit"
-            className="btn-primary"
+            className="unified-btn unified-btn-primary"
             disabled={saving}
           >
             {saving ? 'Saving...' : 'Save Company Details'}

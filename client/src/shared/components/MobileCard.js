@@ -19,12 +19,27 @@ const MobileCard = ({
     action.onClick();
   };
 
+  const renderBadge = () => {
+    if (!badge) return null;
+    
+    if (typeof badge === 'string') {
+      return <span className="unified-card-badge">{badge}</span>;
+    }
+    
+    if (typeof badge === 'object' && badge.text) {
+      const badgeClass = `unified-card-badge ${badge.type ? `badge-${badge.type}` : ''}`;
+      return <span className={badgeClass}>{badge.text}</span>;
+    }
+    
+    return null;
+  };
+
   return (
     <div className={`unified-mobile-card ${className}`}>
       <div className="unified-card-header">
         <h3 className="unified-card-title">{title}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {badge && <span className="unified-card-badge">{badge}</span>}
+          {renderBadge()}
           {actions.length > 0 && (
             <div className="unified-card-menu" ref={dropdownRef}>
               <button

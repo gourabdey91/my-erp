@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { categoryAPI } from './services/categoryAPI';
+import MobileCard from '../../shared/components/MobileCard';
+import '../../shared/styles/unified-design.css';
 import './Categories.css';
 
 const Categories = () => {
@@ -96,18 +98,30 @@ const Categories = () => {
   }
 
   return (
-    <div className="categories-container">
-      <div className="page-header">
-        <h1>Surgical Categories</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowForm(true)}
-        >
-          Add Surgical Category
-        </button>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Surgical Categories</h1>
+            <p>Manage surgical category types for medical procedures.</p>
+          </div>
+          <button 
+            className="unified-btn unified-btn-primary"
+            onClick={() => setShowForm(true)}
+          >
+            Add Surgical Category
+          </button>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="form-container">
@@ -142,10 +156,10 @@ const Categories = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                {editingCategory ? 'Update' : 'Create'}
+              <button type="submit" className="unified-btn unified-btn-primary">
+                {editingCategory ? 'Update Category' : 'Create Category'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+              <button type="button" className="unified-btn unified-btn-secondary" onClick={handleCancel}>
                 Cancel
               </button>
             </div>
@@ -153,43 +167,95 @@ const Categories = () => {
         </div>
       )}
 
-      <div className="categories-list">
+      <div className="unified-content">
         {categories.length === 0 ? (
           <div className="empty-state">
-            <p>No surgical categories found. Create your first surgical category to get started.</p>
+            <p>No surgical categories created yet. Create your first surgical category to get started.</p>
           </div>
         ) : (
-          <div className="categories-grid">
-            {categories.map((category) => (
-              <div key={category._id} className="category-card">
-                <div className="category-header">
-                  <h3>{category.description}</h3>
-                  <span className="category-code">Code: {category.code}</span>
-                </div>
-                <div className="category-details">
-                  <div className="status-section">
-                    <span className={`status-badge ${category.isActive ? 'active' : 'inactive'}`}>
-                      {category.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-                <div className="category-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(category)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(category)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            {/* Desktop Table View */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((category) => (
+                    <tr key={category._id}>
+                      <td>
+                        <span className="code-badge">{category.code}</span>
+                      </td>
+                      <td>
+                        <span className="name-text">{category.description}</span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${category.isActive ? 'active' : 'inactive'}`}>
+                          {category.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="unified-table-actions">
+                          <button
+                            className="unified-table-action edit"
+                            onClick={() => handleEdit(category)}
+                            title="Edit Category"
+                            disabled={loading}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="unified-table-action delete"
+                            onClick={() => handleDelete(category)}
+                            title="Delete Category"
+                            disabled={loading}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="unified-mobile-cards">
+              {categories.map((category) => (
+                <MobileCard
+                  key={category._id}
+                  id={category._id}
+                  title={category.description}
+                  badge={category.code}
+                  fields={[
+                    { 
+                      label: 'Status', 
+                      value: category.isActive ? 'Active' : 'Inactive' 
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(category)
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(category)
+                    }
+                  ]}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

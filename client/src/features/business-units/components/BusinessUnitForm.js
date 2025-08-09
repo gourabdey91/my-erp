@@ -135,7 +135,7 @@ const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
             <button 
               type="button" 
               onClick={handleAddPartner}
-              className="btn btn-secondary"
+              className="unified-btn unified-btn-secondary"
             >
               Add
             </button>
@@ -159,23 +159,26 @@ const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
         </div>
 
         <div className="form-group">
-          <label className="checkbox-label">
+          <label>
             <input
               type="checkbox"
               name="isActive"
               checked={formData.isActive}
               onChange={handleInputChange}
             />
-            Active
+            {' '}Active
           </label>
+          <small className="form-text">
+            If unchecked, this business unit will be deactivated and hidden from most operations
+          </small>
         </div>
 
         <div className="form-actions">
-          <button type="button" onClick={onCancel} className="btn btn-secondary">
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="unified-btn unified-btn-primary">
             {businessUnit ? 'Update Business Unit' : 'Create Business Unit'}
+          </button>
+          <button type="button" onClick={onCancel} className="unified-btn unified-btn-secondary">
+            Cancel
           </button>
         </div>
       </form>

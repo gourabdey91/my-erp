@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../../shared/styles/unified-design.css';
 import './BusinessUnits.css';
 import BusinessUnitForm from './components/BusinessUnitForm';
 import BusinessUnitList from './components/BusinessUnitList';
@@ -81,21 +82,29 @@ const BusinessUnits = () => {
   }
 
   return (
-    <div className="business-units-container">
-      <div className="business-units-header">
-        <h1>Business Units</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={handleCreateNew}
-          disabled={isFormVisible}
-        >
-          Create New Business Unit
-        </button>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Business Units</h1>
+            <p>Manage business unit categories for your organization.</p>
+          </div>
+          <button 
+            className="unified-btn unified-btn-primary"
+            onClick={handleCreateNew}
+            disabled={isFormVisible}
+          >
+            Create New Business Unit
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="error-message">
-          {error}
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
         </div>
       )}
 

@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { deliveryChallanAPI } from './services/deliveryChallanAPI';
+import '../../shared/styles/unified-design.css';
 import './DeliveryChallanDetails.css';
+import MobileCard from '../../shared/components/MobileCard';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const DeliveryChallanDetails = () => {
   const { currentUser } = useAuth();
@@ -30,12 +33,7 @@ const DeliveryChallanDetails = () => {
   const [filterHospital, setFilterHospital] = useState('');
   const [filterConsumed, setFilterConsumed] = useState('');
 
-  useEffect(() => {
-    fetchDeliveryChallans();
-    fetchDropdownData();
-  }, [currentPage, searchTerm, filterHospital, filterConsumed]);
-
-  const fetchDeliveryChallans = async () => {
+  const fetchDeliveryChallans = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -56,7 +54,12 @@ const DeliveryChallanDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, filterHospital, filterConsumed]);
+
+  useEffect(() => {
+    fetchDeliveryChallans();
+    fetchDropdownData();
+  }, [fetchDeliveryChallans]);
 
   const fetchDropdownData = async () => {
     try {
@@ -160,13 +163,8 @@ const DeliveryChallanDetails = () => {
     setError('');
     setSuccess('');
     
-    // Scroll to form after state update
-    setTimeout(() => {
-      const formContainer = document.querySelector('.form-container');
-      if (formContainer) {
-        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    // Scroll to top to show form
+    scrollToTop();
   };
 
   const handleDelete = async (challan) => {
@@ -194,305 +192,362 @@ const DeliveryChallanDetails = () => {
     setCurrentPage(1);
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
   if (loading && deliveryChallans.length === 0) {
     return <div className="loading">Loading delivery challans...</div>;
   }
 
   return (
-    <div className="delivery-challan-container">
-      <div className="delivery-challan-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1>Challan Details</h1>
-            <p>Manage challan information and track consumption status</p>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Delivery Challan Details</h1>
+            <p>Manage delivery challan information and track consumption status.</p>
           </div>
           <button
-            className="btn btn-primary"
-            onClick={() => setShowForm(true)}
+            className="unified-btn unified-btn-primary"
+            onClick={() => {
+              if (!showForm) {
+                resetForm();
+                setShowForm(true);
+                scrollToTop();
+              } else {
+                resetForm();
+                setShowForm(false);
+              }
+            }}
+            disabled={loading}
           >
-            + Add Challan
+            {showForm ? 'Cancel' : 'Add Challan'}
           </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="search-filter">
-          <input
-            type="text"
-            placeholder="Search by challan number or sales order..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
-        </div>
-        <div className="dropdown-filters">
-          <select
-            value={filterHospital}
-            onChange={(e) => {
-              setFilterHospital(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="filter-select"
-          >
-            <option value="">All Hospitals</option>
-            {hospitals.map(hospital => (
-              <option key={hospital._id} value={hospital._id}>
-                {hospital.shortName}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterConsumed}
-            onChange={(e) => {
-              setFilterConsumed(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="filter-select"
-          >
-            <option value="">All Status</option>
-            <option value="true">Consumed</option>
-            <option value="false">Not Consumed</option>
-          </select>
         </div>
       </div>
 
       {/* Status Messages */}
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      {/* Delivery Challans List */}
-      <div className="delivery-challans-content">
-        {deliveryChallans.length === 0 ? (
-          <div className="empty-state">
-            <p>No delivery challans found.</p>
-            <p>Click "Add Challan" to create your first entry.</p>
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33', marginBottom: '1rem' }}>
+            {error}
           </div>
-        ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="desktop-table-view">
-              <table className="delivery-challans-table">
-                <thead>
-                  <tr>
-                    <th>Challan ID</th>
-                    <th>Challan Number</th>
-                    <th>Hospital</th>
-                    <th>Challan Date</th>
-                    <th>Sales Order</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deliveryChallans.map(challan => (
-                    <tr key={challan._id}>
-                      <td>{challan.challanId}</td>
-                      <td>{challan.deliveryChallanNumber}</td>
-                      <td>{challan.hospital?.shortName}</td>
-                      <td>{formatDate(challan.challanDate)}</td>
-                      <td>{challan.salesOrderNumber}</td>
-                      <td>
-                        <span className={`status-badge ${challan.consumedIndicator ? 'consumed' : 'pending'}`}>
-                          {challan.consumedIndicator ? 'Consumed' : 'Pending'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleEdit(challan)}
-                            disabled={loading}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDelete(challan)}
-                            disabled={loading}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="mobile-card-view">
-              {deliveryChallans.map(challan => (
-                <div key={`mobile-${challan._id}`} className="challan-mobile-card">
-                  <div className="card-header">
-                    <h3>{challan.challanId}</h3>
-                    <span className={`status-badge ${challan.consumedIndicator ? 'consumed' : 'pending'}`}>
-                      {challan.consumedIndicator ? 'Consumed' : 'Pending'}
-                    </span>
-                  </div>
-                  <div className="card-body">
-                    <div className="card-field">
-                      <label>Challan Number:</label>
-                      <span>{challan.deliveryChallanNumber}</span>
-                    </div>
-                    <div className="card-field">
-                      <label>Hospital:</label>
-                      <span>{challan.hospital?.shortName}</span>
-                    </div>
-                    <div className="card-field">
-                      <label>Challan Date:</label>
-                      <span>{formatDate(challan.challanDate)}</span>
-                    </div>
-                    <div className="card-field">
-                      <label>Sales Order:</label>
-                      <span>{challan.salesOrderNumber}</span>
-                    </div>
-                  </div>
-                  <div className="card-actions">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => handleEdit(challan)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDelete(challan)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || loading}
-          >
-            Previous
-          </button>
-          <span className="page-info">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || loading}
-          >
-            Next
-          </button>
+        </div>
+      )}
+      {success && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#efe', border: '1px solid #cfc', borderRadius: '8px', color: '#363', marginBottom: '1rem' }}>
+            {success}
+          </div>
         </div>
       )}
 
-      {/* Form Modal */}
+      {/* Filters */}
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Search</label>
+            <input
+              type="text"
+              placeholder="Search by challan number or sales order..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="unified-search-input"
+            />
+          </div>
+          
+          <div className="unified-filter-group">
+            <label>Hospital</label>
+            <select
+              value={filterHospital}
+              onChange={(e) => {
+                setFilterHospital(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="unified-filter-select"
+            >
+              <option value="">All Hospitals</option>
+              {hospitals.map(hospital => (
+                <option key={hospital._id} value={hospital._id}>
+                  {hospital.shortName}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <label>Status</label>
+            <select
+              value={filterConsumed}
+              onChange={(e) => {
+                setFilterConsumed(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="unified-filter-select"
+            >
+              <option value="">All Status</option>
+              <option value="true">Consumed</option>
+              <option value="false">Not Consumed</option>
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={() => {
+                setSearchTerm('');
+                setFilterHospital('');
+                setFilterConsumed('');
+                setCurrentPage(1);
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      {!showForm && (
+        <div className="unified-content">
+          {deliveryChallans.length === 0 ? (
+            <div className="empty-state">
+              {loading ? (
+                <p>Loading delivery challans...</p>
+              ) : (
+                <>
+                  <p>No delivery challans found.</p>
+                  <p>Click "Add Challan" to create your first entry.</p>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="unified-table-responsive">
+                <table className="unified-table">
+                  <thead>
+                    <tr>
+                      <th>Challan ID</th>
+                      <th>Challan Number</th>
+                      <th>Hospital</th>
+                      <th>Challan Date</th>
+                      <th>Sales Order</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deliveryChallans.map(challan => (
+                      <tr key={challan._id}>
+                        <td>
+                          <span className="identifier-text">{challan.challanId}</span>
+                        </td>
+                        <td>
+                          <span className="name-text">{challan.deliveryChallanNumber}</span>
+                        </td>
+                        <td>{challan.hospital?.shortName}</td>
+                        <td>{formatDate(challan.challanDate)}</td>
+                        <td>{challan.salesOrderNumber}</td>
+                        <td>
+                          <span className={`unified-status-badge ${challan.consumedIndicator ? 'success' : 'warning'}`}>
+                            {challan.consumedIndicator ? 'Consumed' : 'Pending'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="unified-table-actions">
+                            <button
+                              className="unified-table-action edit"
+                              onClick={() => handleEdit(challan)}
+                              disabled={loading}
+                              title="Edit challan"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="unified-table-action delete"
+                              onClick={() => handleDelete(challan)}
+                              disabled={loading}
+                              title="Delete challan"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="unified-mobile-cards">
+                {deliveryChallans.map(challan => (
+                  <MobileCard
+                    key={challan._id}
+                    id={challan._id}
+                    title={challan.challanId}
+                    subtitle={challan.deliveryChallanNumber}
+                    badge={{
+                      text: challan.consumedIndicator ? 'Consumed' : 'Pending',
+                      type: challan.consumedIndicator ? 'success' : 'warning'
+                    }}
+                    fields={[
+                      { label: 'Hospital', value: challan.hospital?.shortName || 'N/A' },
+                      { label: 'Challan Date', value: formatDate(challan.challanDate) },
+                      { label: 'Sales Order', value: challan.salesOrderNumber || 'N/A' }
+                    ]}
+                    actions={[
+                      {
+                        label: 'Edit',
+                        onClick: () => handleEdit(challan),
+                        variant: 'primary',
+                        disabled: loading
+                      },
+                      {
+                        label: 'Delete',
+                        onClick: () => handleDelete(challan),
+                        variant: 'danger',
+                        disabled: loading
+                      }
+                    ]}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="unified-pagination">
+                  <button
+                    className="unified-btn unified-btn-secondary"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="page-info">
+                    <span>Page {currentPage} of {totalPages}</span>
+                  </div>
+                  
+                  <button
+                    className="unified-btn unified-btn-secondary"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Form Section */}
       {showForm && (
-        <div className="modal-overlay" onClick={(e) => e.target.classList.contains('modal-overlay') && resetForm()}>
-          <div className="form-container">
-            <div className="form-header">
-              <h2>{editingChallan ? 'Edit Challan' : 'Add New Challan'}</h2>
-              <button type="button" className="close-btn" onClick={resetForm}>×</button>
-            </div>
-            
-            <div className="form-content">
-              <form onSubmit={handleSubmit} className="delivery-challan-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Delivery Challan Number *</label>
-                    <input
-                      type="text"
-                      name="deliveryChallanNumber"
-                      value={formData.deliveryChallanNumber}
-                      onChange={handleInputChange}
-                      placeholder="Enter challan number"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Hospital *</label>
-                    <select
-                      name="hospital"
-                      value={formData.hospital}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Select Hospital</option>
-                      {hospitals.map(hospital => (
-                        <option key={hospital._id} value={hospital._id}>
-                          {hospital.shortName} - {hospital.legalName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Challan Date (Optional)</label>
-                    <input
-                      type="date"
-                      name="challanDate"
-                      value={formData.challanDate}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Sales Order Number (Optional, Max 10 chars)</label>
-                    <input
-                      type="text"
-                      name="salesOrderNumber"
-                      value={formData.salesOrderNumber}
-                      onChange={handleInputChange}
-                      placeholder="Enter sales order number"
-                      maxLength="10"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group checkbox-group">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="consumedIndicator"
-                        checked={formData.consumedIndicator}
-                        onChange={handleInputChange}
-                      />
-                      <span>Consumed Indicator</span>
-                    </label>
-                    <small className="help-text">
-                      Mark this if the materials have been consumed
-                    </small>
-                  </div>
-                </div>
-              </form>
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingChallan ? 'Edit Delivery Challan' : 'Add New Delivery Challan'}
+            </h2>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Delivery Challan Number *
+                </label>
+                <input
+                  type="text"
+                  name="deliveryChallanNumber"
+                  value={formData.deliveryChallanNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter challan number"
+                  required
+                  className="unified-search-input"
+                />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Hospital *
+                </label>
+                <select
+                  name="hospital"
+                  value={formData.hospital}
+                  onChange={handleInputChange}
+                  required
+                  className="unified-search-input"
+                >
+                  <option value="">Select Hospital</option>
+                  {hospitals.map(hospital => (
+                    <option key={hospital._id} value={hospital._id}>
+                      {hospital.shortName} - {hospital.legalName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Challan Date <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional)</span>
+                </label>
+                <input
+                  type="date"
+                  name="challanDate"
+                  value={formData.challanDate}
+                  onChange={handleInputChange}
+                  className="unified-search-input"
+                />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Sales Order Number <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional, Max 10 chars)</span>
+                </label>
+                <input
+                  type="text"
+                  name="salesOrderNumber"
+                  value={formData.salesOrderNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter sales order number"
+                  maxLength="10"
+                  className="unified-search-input"
+                />
+              </div>
             </div>
 
-            <div className="form-actions">
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500', color: 'var(--gray-700)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  name="consumedIndicator"
+                  checked={formData.consumedIndicator}
+                  onChange={handleInputChange}
+                />
+                Consumed Indicator
+              </label>
+              <small style={{ color: 'var(--gray-500)', marginLeft: '1.5rem' }}>
+                Mark this if the materials have been consumed
+              </small>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingChallan ? 'Update Challan' : 'Add Challan')}
+              </button>
+              <button
+                type="button"
+                className="unified-btn unified-btn-secondary"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
                 Cancel
               </button>
-              <button type="submit" onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : editingChallan ? 'Update Challan' : 'Create Challan'}
-              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

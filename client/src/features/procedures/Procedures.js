@@ -3,6 +3,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { procedureAPI } from './services/procedureAPI';
 import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
+import { FaPlus } from 'react-icons/fa';
+import MobileCard from '../../shared/components/MobileCard';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
+import '../../shared/styles/unified-design.css';
 import './Procedures.css';
 
 const Procedures = () => {
@@ -14,6 +18,16 @@ const Procedures = () => {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingProcedure, setEditingProcedure] = useState(null);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    category: '',
+    paymentType: '',
+    status: ''
+  });
+
+  const [filteredProcedures, setFilteredProcedures] = useState([]);
+  
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -49,6 +63,44 @@ const Procedures = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Filter procedures when filters change
+  useEffect(() => {
+    let filtered = procedures;
+
+    if (filters.category) {
+      filtered = filtered.filter(procedure => procedure.categoryId?._id === filters.category);
+    }
+
+    if (filters.paymentType) {
+      filtered = filtered.filter(procedure => procedure.paymentTypeId?._id === filters.paymentType);
+    }
+
+    if (filters.status) {
+      if (filters.status === 'active') {
+        filtered = filtered.filter(procedure => procedure.isActive);
+      } else if (filters.status === 'inactive') {
+        filtered = filtered.filter(procedure => !procedure.isActive);
+      }
+    }
+
+    setFilteredProcedures(filtered);
+  }, [procedures, filters]);
+
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      category: '',
+      paymentType: '',
+      status: ''
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,12 +149,13 @@ const Procedures = () => {
       currency: procedure.currency
     });
     setShowForm(true);
+    scrollToTop();
   };
 
   const handleDelete = async (procedure) => {
     if (window.confirm(`Are you sure you want to delete procedure "${procedure.code} - ${procedure.name}"?`)) {
       try {
-        await procedureAPI.delete(procedure._id, currentUser.id);
+        await procedureAPI.delete(procedure._id, currentUser._id);
         loadData();
       } catch (err) {
         setError('Failed to delete procedure');
@@ -112,6 +165,12 @@ const Procedures = () => {
   };
 
   const handleCancel = () => {
+    setShowForm(false);
+    setEditingProcedure(null);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setFormData({
       code: '',
       name: '',
@@ -122,85 +181,182 @@ const Procedures = () => {
     });
     setShowForm(false);
     setEditingProcedure(null);
+    setError('');
   };
 
-  const formatCurrency = (amount, currency) => {
+  const formatCurrency = (amount, currency = 'INR') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'USD'
+      currency: currency || 'INR'
     }).format(amount);
   };
 
   if (loading) {
-    return <div className="loading">Loading medical procedures...</div>;
+    return (
+      <div className="unified-container">
+        <div className="unified-loading">Loading medical procedures...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="procedures-container">
-      <div className="page-header">
-        <h1>Medical Procedures</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowForm(true)}
-          disabled={paymentTypes.length === 0 || categories.length === 0}
-        >
-          Add Procedure
-        </button>
+    <div className="unified-container">
+      {/* Header Section */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Medical Procedures</h1>
+            <p>Manage medical procedures and their associated payment types.</p>
+          </div>
+          <div className="header-actions">
+            {!showForm && (
+              <button
+                type="button"
+                className="unified-btn unified-btn-primary"
+                onClick={() => setShowForm(true)}
+                disabled={paymentTypes.length === 0 || categories.length === 0}
+              >
+                <FaPlus />
+                Add Procedure
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {/* Filters Section */}
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Category</label>
+            <select
+              value={filters.category}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.code} - {category.description}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <label>Payment Type</label>
+            <select
+              value={filters.paymentType}
+              onChange={(e) => handleFilterChange('paymentType', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All Payment Types</option>
+              {paymentTypes.map((paymentType) => (
+                <option key={paymentType._id} value={paymentType._id}>
+                  {paymentType.code} - {paymentType.description}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <label>Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={clearFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {(paymentTypes.length === 0 || categories.length === 0) && (
-        <div className="alert alert-warning">
-          <strong>Setup Required:</strong> You need to create payment types and categories before adding procedures.
+      {/* Error Display */}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
         </div>
       )}
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-header">
-            <h2>{editingProcedure ? 'Edit Procedure' : 'Add New Procedure'}</h2>
+      {/* Warning for setup requirements */}
+      {(paymentTypes.length === 0 || categories.length === 0) && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fff3cd', border: '1px solid #ffeaa7', borderRadius: '8px', color: '#856404' }}>
+            <strong>Setup Required:</strong> You need to create payment types and categories before adding procedures.
           </div>
-          <form onSubmit={handleSubmit} className="procedure-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="code">Procedure Code *</label>
+        </div>
+      )}
+
+      {/* Form Section */}
+      {showForm && (
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingProcedure ? 'Edit Procedure' : 'Add New Procedure'}
+            </h2>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Procedure Code * (6 chars)
+                </label>
                 <input
                   type="text"
-                  id="code"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   required
                   maxLength="6"
                   pattern="[A-Z]{3}[0-9]{3}"
                   placeholder="CRA001, MAX001, etc."
-                  disabled={editingProcedure} // Code cannot be changed when editing
+                  disabled={editingProcedure}
+                  className="unified-search-input"
+                  style={{ textTransform: 'uppercase' }}
                 />
-                <small>Format: 3 letters + 3 digits (e.g., CRA001)</small>
+                <small style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>Format: 3 letters + 3 digits (e.g., CRA001)</small>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="name">Procedure Name *</label>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Procedure Name * (max 30 chars)
+                </label>
                 <input
                   type="text"
-                  id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   maxLength="30"
                   placeholder="Cranial Single Procedure"
+                  className="unified-search-input"
                 />
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="categoryId">Category *</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Category *
+                </label>
                 <select
-                  id="categoryId"
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   required
+                  className="unified-search-input"
                 >
                   <option value="">Select Category</option>
                   {categories.map((category) => (
@@ -211,13 +367,15 @@ const Procedures = () => {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="paymentTypeId">Payment Type *</label>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Payment Type *
+                </label>
                 <select
-                  id="paymentTypeId"
                   value={formData.paymentTypeId}
                   onChange={(e) => setFormData({ ...formData, paymentTypeId: e.target.value })}
                   required
+                  className="unified-search-input"
                 >
                   <option value="">Select Payment Type</option>
                   {paymentTypes.map((paymentType) => (
@@ -229,28 +387,32 @@ const Procedures = () => {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="amount">Amount *</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Amount *
+                </label>
                 <input
                   type="number"
-                  id="amount"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   required
                   min="0"
                   step="0.01"
                   placeholder="Enter amount"
+                  className="unified-search-input"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="currency">Currency *</label>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                  Currency *
+                </label>
                 <select
-                  id="currency"
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                   required
+                  className="unified-search-input"
                 >
                   <option value="INR">INR - Indian Rupee</option>
                   <option value="USD">USD - US Dollar</option>
@@ -262,11 +424,11 @@ const Procedures = () => {
               </div>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                {editingProcedure ? 'Update' : 'Create'}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingProcedure ? 'Update Procedure' : 'Add Procedure')}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+              <button type="button" className="unified-btn unified-btn-secondary" onClick={handleCancel}>
                 Cancel
               </button>
             </div>
@@ -274,48 +436,157 @@ const Procedures = () => {
         </div>
       )}
 
-      <div className="procedures-list">
-        {procedures.length === 0 ? (
-          <div className="empty-state">
-            <p>No procedures found. Create your first procedure to get started.</p>
-          </div>
-        ) : (
-          <div className="procedures-grid">
-            {procedures.map((procedure) => (
-              <div key={procedure._id} className="procedure-card">
-                <div className="procedure-header">
-                  <h3>{procedure.name}</h3>
-                  <span className="procedure-code">Code: {procedure.code}</span>
-                </div>
-                <div className="procedure-details">
-                  <p><strong>Category:</strong> {procedure.categoryId?.code} - {procedure.categoryId?.description}</p>
-                  <p><strong>Payment Type:</strong> {procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</p>
-                  <p><strong>Amount:</strong> <span className="amount">{formatCurrency(procedure.amount, procedure.currency)}</span></p>
-                  <div className="status-section">
-                    <span className={`status-badge ${procedure.isActive ? 'active' : 'inactive'}`}>
-                      {procedure.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-                <div className="procedure-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(procedure)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(procedure)}
-                  >
-                    Delete
-                  </button>
-                </div>
+      {/* Content Section */}
+      {!showForm && (
+        <div className="unified-content">
+          {filteredProcedures.length === 0 ? (
+            <div className="empty-state">
+              {procedures.length === 0 ? (
+                <p>No procedures created yet. Create your first procedure to get started.</p>
+              ) : (
+                <p>No procedures match your current filters.</p>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="unified-table-responsive">
+                <table className="unified-table">
+                  <thead>
+                    <tr>
+                      <th>Code</th>
+                      <th>Name</th>
+                      <th>Category</th>
+                      <th>Payment Type</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProcedures.map((procedure) => (
+                      <tr key={procedure._id}>
+                        <td>
+                          <span className="code-badge">{procedure.code}</span>
+                        </td>
+                        <td>
+                          <span className="name-text">{procedure.name}</span>
+                        </td>
+                        <td>{procedure.categoryId?.code} - {procedure.categoryId?.description}</td>
+                        <td>{procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</td>
+                        <td>
+                          <span className="amount-text">
+                            {formatCurrency(procedure.amount, procedure.currency)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${procedure.isActive ? 'active' : 'inactive'}`}>
+                            {procedure.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="unified-table-actions">
+                            <button
+                              className="unified-table-action edit"
+                              onClick={() => handleEdit(procedure)}
+                              title="Edit Procedure"
+                              disabled={loading}
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="unified-table-action delete"
+                              onClick={() => handleDelete(procedure)}
+                              title="Delete Procedure"
+                              disabled={loading}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              {/* Mobile Card View */}
+              <div className="unified-mobile-cards">
+                {filteredProcedures.map((procedure) => (
+                  <MobileCard
+                    key={procedure._id}
+                    id={procedure._id}
+                    title={procedure.name}
+                    badge={procedure.code}
+                    fields={[
+                      { 
+                        label: 'Amount', 
+                        value: formatCurrency(procedure.amount, procedure.currency) 
+                      },
+                      { 
+                        label: 'Status', 
+                        value: procedure.isActive ? 'Active' : 'Inactive' 
+                      }
+                    ]}
+                    sections={[
+                      {
+                        title: 'Details',
+                        items: [
+                          {
+                            label: 'Category',
+                            value: `${procedure.categoryId?.code} - ${procedure.categoryId?.description}`
+                          },
+                          {
+                            label: 'Payment Type',
+                            value: `${procedure.paymentTypeId?.code} - ${procedure.paymentTypeId?.description}`
+                          }
+                        ]
+                      }
+                    ]}
+                    actions={[
+                      {
+                        label: 'Edit',
+                        icon: '✏️',
+                        onClick: () => handleEdit(procedure)
+                      },
+                      {
+                        label: 'Delete',
+                        icon: '🗑️',
+                        variant: 'danger',
+                        onClick: () => handleDelete(procedure)
+                      }
+                    ]}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Scroll to Top Button */}
+      <button 
+        className="scroll-to-top-btn"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: 'var(--primary-color)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          cursor: 'pointer',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        ↑
+      </button>
     </div>
   );
 };

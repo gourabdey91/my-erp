@@ -182,6 +182,26 @@
   font-weight: 500;
 }
 
+.unified-card-badge.badge-success {
+  background: var(--success-color);
+  color: var(--white);
+}
+
+.unified-card-badge.badge-warning {
+  background: var(--warning-color);
+  color: var(--white);
+}
+
+.unified-card-badge.badge-danger {
+  background: var(--danger-color);
+  color: var(--white);
+}
+
+.unified-card-badge.badge-info {
+  background: var(--info-color);
+  color: var(--white);
+}
+
 .unified-card-menu {
   position: relative;
 }

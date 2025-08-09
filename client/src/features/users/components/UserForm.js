@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../services/userAPI';
 import { businessUnitAPI } from '../../business-units/services/businessUnitAPI';
+import '../../../shared/styles/unified-design.css';
 import './UserForm.css';
 
 const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
@@ -160,156 +161,167 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
   };
 
   return (
-    <div className="user-form-overlay">
-      <div className="user-form-container">
-        <div className="user-form-header">
-          <h2>{isEdit ? 'Edit User' : 'Create New User'}</h2>
-          <button className="close-btn" onClick={onCancel}>×</button>
+    <div className="form-section">
+      <div className="section-header">
+        <h2>✏️ {isEdit ? 'Edit User' : 'Add New User'}</h2>
+      </div>
+
+      {error && (
+        <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33', marginBottom: '1rem' }}>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="form-container">
+        {/* Personal Information */}
+        <div className="form-section-header">
+          <h3>👤 Personal Information</h3>
+        </div>
+        
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="firstName">First Name *</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              placeholder="Enter first name"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="lastName">Last Name *</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              placeholder="Enter last name"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="email">Email *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="Enter email address"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="phone">Phone <span className="optional-field">(Optional)</span></label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              placeholder="Enter phone number"
+            />
+          </div>
         </div>
 
-        {error && (
-          <div className="error-message">
-            {error}
+        {/* Authentication */}
+        <div className="form-section-header">
+          <h3>🔐 Authentication</h3>
+        </div>
+        
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="password">
+              Password {!isEdit ? '*' : <span className="optional-field">(Leave blank to keep current)</span>}
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required={!isEdit}
+              minLength="6"
+              placeholder={isEdit ? "Enter new password" : "Enter password (min 6 chars)"}
+            />
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="user-form">
-          <div className="form-section">
-            <h3>Personal Information</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="firstName">First Name *</label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="lastName">Last Name *</label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="email">Email *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone">Phone</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="password">
-                  Password {!isEdit && '*'}
-                  {isEdit && <small>(leave blank to keep current)</small>}
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required={!isEdit}
-                  minLength="6"
-                  placeholder={isEdit ? "Enter new password" : ""}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="confirmPassword">
-                  Confirm Password {!isEdit && '*'}
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required={!isEdit || formData.password}
-                  minLength="6"
-                  placeholder={isEdit ? "Confirm new password" : ""}
-                />
-              </div>
-            </div>
+          
+          <div className="form-group">
+            <label htmlFor="confirmPassword">
+              Confirm Password {!isEdit ? '*' : <span className="optional-field">(If changing password)</span>}
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required={!isEdit || formData.password}
+              minLength="6"
+              placeholder={isEdit ? "Confirm new password" : "Confirm password"}
+            />
           </div>
+        </div>
 
-          <div className="form-section">
-            <h3>Role & Status</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="role">Role</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                >
-                  <option value="user">User</option>
-                  <option value="staff">Staff</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
+        {/* Role & Status */}
+        <div className="form-section-header">
+          <h3>⚙️ Role & Status</h3>
+        </div>
+        
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="role">Role *</label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="user">User</option>
+              <option value="staff">Staff</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
+          
+          <div className="form-group">
+            <label htmlFor="status">Status *</label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
 
           <div className="form-section">
             <h3>Business Unit Access</h3>
             <div className="form-group">
               <label>Available Business Units</label>
               <div className="checkbox-group">
-                {availableBusinessUnits.map((bu) => (
-                  <div key={bu._id} className="checkbox-item">
+                {availableBusinessUnits.map(bu => (
+                  <label key={bu._id} className="checkbox-label">
                     <input
                       type="checkbox"
-                      id={`bu-${bu._id}`}
                       checked={formData.businessUnits.includes(bu._id)}
                       onChange={(e) => handleBusinessUnitChange(bu._id, e.target.checked)}
                     />
-                    <label htmlFor={`bu-${bu._id}`} className="checkbox-label">
-                      <span className="bu-code">{bu.code}</span>
-                      <span className="bu-name">{bu.name}</span>
-                    </label>
-                  </div>
+                    <span className="checkmark"></span>
+                    {bu.code} - {bu.name}
+                  </label>
                 ))}
               </div>
             </div>
@@ -337,24 +349,19 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
           </div>
 
           <div className="form-actions">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (isEdit ? 'Update User' : 'Create User')}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? '⏳ Saving...' : (isEdit ? '💾 Update User' : '✅ Create User')}
             </button>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn-secondary"
               onClick={onCancel}
               disabled={loading}
             >
-              Cancel
+              ✖ Cancel
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 };

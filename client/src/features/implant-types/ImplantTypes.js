@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import './ImplantTypes.css';
 import '../../shared/styles/unified-design.css';
+import './ImplantTypes.css';
 import { implantTypesAPI } from './services/implantTypesAPI';
 import MobileCard from '../../shared/components/MobileCard';
-import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
 import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const ImplantTypes = () => {
@@ -21,12 +20,10 @@ const ImplantTypes = () => {
   // Filter state
   const [filters, setFilters] = useState({
     implantTypeName: '',
-    surgicalCategoryId: ''
+    surgicalCategoryId: '',
+    implantTypeId: ''
   });
   const [showFilters, setShowFilters] = useState(false);
-  
-  // Dropdown menu hook
-  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
 
   // Fetch implant types and categories on component mount
   useEffect(() => {
@@ -34,30 +31,62 @@ const ImplantTypes = () => {
     fetchCategories();
   }, []);
 
-  // Filtered implant types
+  // Get available implant types based on selected surgical category
+  const availableImplantTypes = useMemo(() => {
+    if (!filters.surgicalCategoryId) {
+      return implantTypes; // Show all implant types if no surgical category is selected
+    }
+    
+    return implantTypes.filter(implantType => 
+      implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId)
+    );
+  }, [implantTypes, filters.surgicalCategoryId]);
+
+  // Filtered implant types with filtered subcategories
   const filteredImplantTypes = useMemo(() => {
-    return implantTypes.filter(implantType => {
-      const matchesName = !filters.implantTypeName || 
-        implantType.name.toLowerCase().includes(filters.implantTypeName.toLowerCase());
-      
-      const matchesSurgicalCategory = !filters.surgicalCategoryId ||
-        implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId);
-      
-      return matchesName && matchesSurgicalCategory;
-    });
+    return implantTypes
+      .filter(implantType => {
+        const matchesName = !filters.implantTypeName || 
+          implantType.name.toLowerCase().includes(filters.implantTypeName.toLowerCase());
+        
+        const matchesSurgicalCategory = !filters.surgicalCategoryId ||
+          implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId);
+        
+        const matchesImplantType = !filters.implantTypeId ||
+          implantType._id === filters.implantTypeId;
+        
+        return matchesName && matchesSurgicalCategory && matchesImplantType;
+      })
+      .map(implantType => ({
+        ...implantType,
+        // Filter subcategories to only show those matching the selected surgical category
+        subcategories: filters.surgicalCategoryId 
+          ? implantType.subcategories.filter(sub => sub.surgicalCategory._id === filters.surgicalCategoryId)
+          : implantType.subcategories
+      }));
   }, [implantTypes, filters]);
 
   const handleFilterChange = (filterName, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: value
-    }));
+    setFilters(prev => {
+      const newFilters = {
+        ...prev,
+        [filterName]: value
+      };
+      
+      // If surgical category changes, reset implant type filter
+      if (filterName === 'surgicalCategoryId') {
+        newFilters.implantTypeId = '';
+      }
+      
+      return newFilters;
+    });
   };
 
   const resetFilters = () => {
     setFilters({
       implantTypeName: '',
-      surgicalCategoryId: ''
+      surgicalCategoryId: '',
+      implantTypeId: ''
     });
   };
 
@@ -161,7 +190,6 @@ const ImplantTypes = () => {
     });
     setShowForm(true);
     setError('');
-    closeMenu();
     
     // Scroll to top
     scrollToTop();
@@ -179,7 +207,6 @@ const ImplantTypes = () => {
         setLoading(false);
       }
     }
-    closeMenu();
   };
 
   const resetForm = () => {
@@ -192,16 +219,16 @@ const ImplantTypes = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="unified-container">
       {/* Header */}
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">🔧 Implant Types</h1>
-          <p className="page-description">Manage implant types and their subcategories</p>
-        </div>
-        <div className="page-actions">
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Implant Types</h1>
+            <p>Manage implant types and their subcategories for medical procedures.</p>
+          </div>
           <button
-            className="btn-primary"
+            className="unified-btn unified-btn-primary"
             onClick={() => {
               resetForm();
               setShowForm(!showForm);
@@ -211,58 +238,79 @@ const ImplantTypes = () => {
             }}
             disabled={loading}
           >
-            {showForm ? '✖ Cancel' : '➕ Add Implant Type'}
+            {showForm ? 'Cancel' : 'Add Implant Type'}
           </button>
         </div>
       </div>
 
-      {error && <div className="alert-error">{error}</div>}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-header" onClick={() => setShowFilters(!showFilters)}>
-          <h3>🔍 Filters</h3>
-          <span className={`filter-toggle ${showFilters ? 'open' : ''}`}>▼</span>
-        </div>
-        {showFilters && (
-          <div className="filters-content">
-            <div className="filters-grid">
-              <div className="filter-group">
-                <label>Implant Type Name</label>
-                <input
-                  type="text"
-                  placeholder="Search by implant type name..."
-                  value={filters.implantTypeName}
-                  onChange={(e) => handleFilterChange('implantTypeName', e.target.value)}
-                />
-              </div>
-              
-              <div className="filter-group">
-                <label>Surgical Category</label>
-                <select
-                  value={filters.surgicalCategoryId}
-                  onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.code} - {category.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="filters-actions">
-              <button className="btn-secondary" onClick={resetFilters}>
-                🔄 Reset Filters
-              </button>
-              <span className="filter-results">
-                {filteredImplantTypes.length} of {implantTypes.length} implant types
-              </span>
-            </div>
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Implant Type Name</label>
+            <input
+              type="text"
+              placeholder="Search by implant type name..."
+              value={filters.implantTypeName}
+              onChange={(e) => handleFilterChange('implantTypeName', e.target.value)}
+              className="unified-search-input"
+            />
           </div>
-        )}
+          
+          <div className="unified-filter-group">
+            <label>Surgical Category</label>
+            <select
+              value={filters.surgicalCategoryId}
+              onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category._id} value={category._id}>
+                  {category.code} - {category.description}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <label>Implant Type</label>
+            <select
+              value={filters.implantTypeId}
+              onChange={(e) => handleFilterChange('implantTypeId', e.target.value)}
+              className="unified-filter-select"
+              disabled={!filters.surgicalCategoryId}
+              title={!filters.surgicalCategoryId ? 'Please select a surgical category first' : 'Filter by implant type'}
+            >
+              <option value="">
+                {filters.surgicalCategoryId ? 'All Implant Types' : 'Select Surgical Category First'}
+              </option>
+              {availableImplantTypes.map(implantType => (
+                <option key={implantType._id} value={implantType._id}>
+                  {implantType.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={() => setFilters({ implantTypeName: '', surgicalCategoryId: '', implantTypeId: '' })}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Form */}
@@ -378,81 +426,75 @@ const ImplantTypes = () => {
         </div>
       )}
 
-      {/* Data Section */}
-      <div className="data-section">
-        <div className="section-header">
-          <h2>📊 Implant Types ({filteredImplantTypes.length})</h2>
-        </div>
-
-        {loading && !showForm ? (
-          <div className="loading-state">⏳ Loading implant types...</div>
-        ) : filteredImplantTypes.length === 0 ? (
-          <div className="empty-state">
-            {implantTypes.length === 0 ? (
-              <>
-                <p>No implant types found.</p>
-                <p>Click "Add Implant Type" to create your first implant type.</p>
-              </>
-            ) : (
-              <>
-                <p>No implant types match the current filters.</p>
-                <button className="btn-secondary" onClick={resetFilters}>
-                  🔄 Reset Filters
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
+      {/* Content Section */}
+      {!showForm && (
+        <div className="unified-content">
+          {filteredImplantTypes.length === 0 ? (
+            <div className="empty-state">
+              {implantTypes.length === 0 ? (
+                <p>No implant types created yet. Create your first implant type to get started.</p>
+              ) : (
+                <p>No implant types match your current filters.</p>
+              )}
+            </div>
+          ) : (
+            <>
             {/* Desktop Table View */}
-            <div className="table-container desktop-only">
-              <table className="data-table">
+            <div className="unified-table-responsive">
+              <table className="unified-table">
                 <thead>
                   <tr>
                     <th>Implant Type</th>
                     <th>Subcategories</th>
-                    <th className="actions-column">Actions</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredImplantTypes.map(implantType => (
                     <tr key={implantType._id}>
-                      <td className="implant-name-cell">
-                        <div className="cell-content">
-                          <strong>{implantType.name}</strong>
+                      <td>
+                        <span className="name-text">{implantType.name}</span>
+                      </td>
+                      <td>
+                        <div className="subcategories-display">
+                          {implantType.subcategories.length > 0 ? (
+                            <div className="subcategories-list">
+                              {implantType.subcategories.map((subcat, index) => (
+                                <div key={index} className="subcategory-item">
+                                  <span className="subcategory-name">{subcat.subCategory}</span>
+                                  <span className="subcategory-details">
+                                    <span className="length-badge">
+                                      {subcat.length ? `${subcat.length}mm` : 'N/A'}
+                                    </span>
+                                    <span className="category-badge">
+                                      {subcat.surgicalCategory.code}
+                                    </span>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted">No subcategories</span>
+                          )}
                         </div>
                       </td>
-                      <td className="subcategories-cell">
-                        {implantType.subcategories.length > 0 ? (
-                          <div className="subcategories-list">
-                            {implantType.subcategories.map((subcat, index) => (
-                              <div key={index} className="subcategory-item">
-                                <span className="subcategory-name">{subcat.subCategory}</span>
-                                <span className="subcategory-details">
-                                  {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="no-data">No subcategories</span>
-                        )}
-                      </td>
-                      <td className="actions-cell">
-                        <div className="action-buttons">
+                      <td>
+                        <div className="unified-table-actions">
                           <button
-                            className="btn-outline-primary btn-sm"
+                            className="unified-table-action edit"
                             onClick={() => handleEdit(implantType)}
+                            title="Edit Implant Type"
                             disabled={loading}
                           >
-                            ✏️ Edit
+                            ✏️
                           </button>
                           <button
-                            className="btn-outline-danger btn-sm"
+                            className="unified-table-action delete"
                             onClick={() => handleDelete(implantType)}
+                            title="Delete Implant Type"
                             disabled={loading}
                           >
-                            🗑️ Delete
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -463,52 +505,44 @@ const ImplantTypes = () => {
             </div>
 
             {/* Mobile Card View */}
-            <div className="mobile-only">
+            <div className="unified-mobile-cards">
               {filteredImplantTypes.map(implantType => (
                 <MobileCard
                   key={implantType._id}
                   id={implantType._id}
-                  openMenuId={openMenuId}
-                  onToggleMenu={toggleMenu}
-                  onEdit={() => handleEdit(implantType)}
-                  onDelete={() => handleDelete(implantType)}
-                  loading={loading}
-                >
-                  <div className="card-content">
-                    <div className="card-header">
-                      <h3 className="card-title">{implantType.name}</h3>
-                    </div>
-                    
-                    <div className="card-body">
-                      <div className="info-section">
-                        <div className="info-row">
-                          <span className="info-label">📝 Subcategories:</span>
-                          <span className="info-value">
-                            {implantType.subcategories.length > 0 ? (
-                              <div className="subcategories-mobile-list">
-                                {implantType.subcategories.map((subcat, index) => (
-                                  <div key={index} className="subcategory-mobile-item">
-                                    <strong>{subcat.subCategory}</strong>
-                                    <span className="subcategory-mobile-details">
-                                      {subcat.length ? `${subcat.length}mm` : 'N/A'} - {subcat.surgicalCategory.code}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="no-data">No subcategories</span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  title={implantType.name}
+                  badge={`${implantType.subcategories.length} subcategories`}
+                  sections={[
+                    {
+                      title: 'Subcategories',
+                      items: implantType.subcategories.length > 0 
+                        ? implantType.subcategories.map((subcat, index) => ({
+                            label: subcat.subCategory,
+                            value: `${subcat.length ? `${subcat.length}mm` : 'N/A'} - ${subcat.surgicalCategory.code}`
+                          }))
+                        : [{ label: 'No subcategories', value: '' }]
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(implantType)
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(implantType)
+                    }
+                  ]}
+                />
               ))}
             </div>
           </>
         )}
       </div>
+      )}
     </div>
   );
 };

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from '../services/userAPI';
+import '../../../shared/styles/unified-design.css';
+import MobileCard from '../../../shared/components/MobileCard';
 import './UserList.css';
 
-const UserList = ({ onEditUser, onCreateUser }) => {
+const UserList = ({ onEditUser, onCreateUser, showForm, onCancelForm }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,84 +53,163 @@ const UserList = ({ onEditUser, onCreateUser }) => {
   };
 
   if (loading) {
-    return <div className="loading">Loading users...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="unified-container">
+        <div className="unified-loading">Loading users...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="user-list">
-      <div className="user-list-header">
-        <h2>Users</h2>
-        <button className="btn btn-primary" onClick={onCreateUser}>
-          Add New User
-        </button>
+    <>
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Users</h1>
+            <p>Manage system users and their access permissions. Create and edit user accounts with role-based access control.</p>
+          </div>
+          <button 
+            className="unified-btn unified-btn-primary"
+            onClick={() => {
+              if (!showForm) {
+                onCreateUser();
+              } else {
+                onCancelForm();
+              }
+            }}
+            disabled={loading}
+          >
+            {showForm ? 'Cancel' : 'Add User'}
+          </button>
+        </div>
       </div>
 
-      {users.length === 0 ? (
-        <div className="no-users">
-          <p>No users found. Create your first user!</p>
-        </div>
-      ) : (
-        <div className="user-table-container">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user._id}>
-                  <td data-label="Name">{user.fullName}</td>
-                  <td data-label="Email">{user.email}</td>
-                  <td data-label="Phone">{user.phone}</td>
-                  <td data-label="Role">
-                    <span className={`role-badge role-${user.role}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td data-label="Status">
-                    <button
-                      className={`status-badge status-${user.status}`}
-                      onClick={() => handleStatusToggle(user._id, user.status)}
-                      title="Click to toggle status"
-                    >
-                      {user.status}
-                    </button>
-                  </td>
-                  <td data-label="Created">{new Date(user.createdAt).toLocaleDateString()}</td>
-                  <td data-label="Actions">
-                    <div className="action-buttons">
-                      <button
-                        className="btn btn-small btn-secondary"
-                        onClick={() => onEditUser(user)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-small btn-danger"
-                        onClick={() => handleDeleteUser(user._id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
         </div>
       )}
-    </div>
+
+      {/* Content Section */}
+      {!showForm && (
+        <div className="unified-content">
+          {users.length === 0 ? (
+            <div className="empty-state">
+              <p>No users found. Create your first user to get started.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="unified-table-responsive">
+                <table className="unified-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user._id}>
+                        <td>
+                          <span className="name-text">{user.fullName}</span>
+                        </td>
+                        <td>{user.email}</td>
+                        <td>{user.phone}</td>
+                        <td>
+                          <span className={`unified-status-badge ${user.role === 'admin' ? 'danger' : 'primary'}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className={`unified-status-badge ${user.status === 'active' ? 'success' : 'warning'} clickable`}
+                            onClick={() => handleStatusToggle(user._id, user.status)}
+                            title="Click to toggle status"
+                          >
+                            {user.status}
+                          </button>
+                        </td>
+                        <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                        <td>
+                          <div className="unified-table-actions">
+                            <button
+                              className="unified-table-action edit"
+                              onClick={() => onEditUser(user)}
+                              title="Edit user"
+                              disabled={loading}
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="unified-table-action delete"
+                              onClick={() => handleDeleteUser(user._id)}
+                              title="Delete user"
+                              disabled={loading}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="unified-mobile-cards">
+                {users.map(user => (
+                  <MobileCard
+                    key={user._id}
+                    id={user._id}
+                    title={user.fullName}
+                    subtitle={user.email}
+                    badge={{
+                      text: user.status,
+                      type: user.status === 'active' ? 'success' : 'warning'
+                    }}
+                    fields={[
+                      { label: 'Phone', value: user.phone || 'N/A' },
+                      { label: 'Role', value: user.role },
+                      { label: 'Created', value: new Date(user.createdAt).toLocaleDateString() }
+                    ]}
+                    actions={[
+                      {
+                        label: 'Edit',
+                        onClick: () => onEditUser(user),
+                        variant: 'primary',
+                        disabled: loading
+                      },
+                      {
+                        label: 'Delete',
+                        onClick: () => handleDeleteUser(user._id),
+                        variant: 'danger',
+                        disabled: loading
+                      },
+                      {
+                        label: user.status === 'active' ? 'Deactivate' : 'Activate',
+                        onClick: () => handleStatusToggle(user._id, user.status),
+                        variant: 'secondary',
+                        disabled: loading
+                      }
+                    ]}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </>
   );
 };
 

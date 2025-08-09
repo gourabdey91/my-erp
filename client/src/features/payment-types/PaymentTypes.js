@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { paymentTypeAPI } from './services/paymentTypeAPI';
+import MobileCard from '../../shared/components/MobileCard';
+import '../../shared/styles/unified-design.css';
 import './PaymentTypes.css';
 
 const PaymentTypes = () => {
@@ -106,27 +108,30 @@ const PaymentTypes = () => {
   }
 
   return (
-    <div className="payment-types-container">
-      <div className="page-header">
-        <h1>Payment Types</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => {
-            setShowForm(true);
-            // Scroll to form after opening
-            setTimeout(() => {
-              const formContainer = document.querySelector('.form-container');
-              if (formContainer) {
-                formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }, 100);
-          }}
-        >
-          Add Payment Type
-        </button>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Payment Types</h1>
+            <p>Manage payment type categories for financial transactions.</p>
+          </div>
+          <button 
+            className="unified-btn unified-btn-primary"
+            onClick={() => setShowForm(true)}
+          >
+            Add Payment Type
+          </button>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="form-container">
@@ -179,10 +184,10 @@ const PaymentTypes = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                {editingPaymentType ? 'Update' : 'Create'}
+              <button type="submit" className="unified-btn unified-btn-primary">
+                {editingPaymentType ? 'Update Payment Type' : 'Create Payment Type'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={handleCancel}>
+              <button type="button" className="unified-btn unified-btn-secondary" onClick={handleCancel}>
                 Cancel
               </button>
             </div>
@@ -190,48 +195,105 @@ const PaymentTypes = () => {
         </div>
       )}
 
-      <div className="payment-types-list">
+      <div className="unified-content">
         {paymentTypes.length === 0 ? (
           <div className="empty-state">
-            <p>No payment types found. Create your first payment type to get started.</p>
+            <p>No payment types created yet. Create your first payment type to get started.</p>
           </div>
         ) : (
-          <div className="payment-types-grid">
-            {paymentTypes.map((paymentType) => (
-              <div key={paymentType._id} className="payment-type-card">
-                <div className="payment-type-header">
-                  <h3>{paymentType.description}</h3>
-                  <span className="payment-type-code">Code: {paymentType.code}</span>
-                </div>
-                <div className="payment-type-details">
-                  <div className="status-section">
-                    <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
-                      {paymentType.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    {paymentType.canBeExceeded && (
-                      <span className="exceeded-badge">
-                        Can be exceeded
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="payment-type-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(paymentType)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(paymentType)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            {/* Desktop Table View */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Can Be Exceeded</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentTypes.map((paymentType) => (
+                    <tr key={paymentType._id}>
+                      <td>
+                        <span className="code-badge">{paymentType.code}</span>
+                      </td>
+                      <td>
+                        <span className="name-text">{paymentType.description}</span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${paymentType.canBeExceeded ? 'exceeded' : 'limited'}`}>
+                          {paymentType.canBeExceeded ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${paymentType.isActive ? 'active' : 'inactive'}`}>
+                          {paymentType.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="unified-table-actions">
+                          <button
+                            className="unified-table-action edit"
+                            onClick={() => handleEdit(paymentType)}
+                            title="Edit Payment Type"
+                            disabled={loading}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="unified-table-action delete"
+                            onClick={() => handleDelete(paymentType)}
+                            title="Delete Payment Type"
+                            disabled={loading}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="unified-mobile-cards">
+              {paymentTypes.map((paymentType) => (
+                <MobileCard
+                  key={paymentType._id}
+                  id={paymentType._id}
+                  title={paymentType.description}
+                  badge={paymentType.code}
+                  fields={[
+                    { 
+                      label: 'Can Be Exceeded', 
+                      value: paymentType.canBeExceeded ? 'Yes' : 'No' 
+                    },
+                    { 
+                      label: 'Status', 
+                      value: paymentType.isActive ? 'Active' : 'Inactive' 
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(paymentType)
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(paymentType)
+                    }
+                  ]}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import UserList from './components/UserList';
 import UserForm from './components/UserForm';
+import '../../shared/styles/unified-design.css';
 import './Users.css';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const Users = () => {
   const [showForm, setShowForm] = useState(false);
@@ -11,11 +13,13 @@ const Users = () => {
   const handleCreateUser = () => {
     setEditingUser(null);
     setShowForm(true);
+    scrollToTop();
   };
 
   const handleEditUser = (user) => {
     setEditingUser(user);
     setShowForm(true);
+    scrollToTop();
   };
 
   const handleFormSave = (savedUser) => {
@@ -31,11 +35,13 @@ const Users = () => {
   };
 
   return (
-    <div className="users-page">
+    <div className="unified-container">
       <UserList
         key={refreshKey}
         onCreateUser={handleCreateUser}
         onEditUser={handleEditUser}
+        showForm={showForm}
+        onCancelForm={handleFormCancel}
       />
 
       {showForm && (
