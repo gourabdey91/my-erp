@@ -51,7 +51,23 @@ const fileUploadRoutes = require('./routes/fileUpload');
 const salesOrderRoutes = require('./routes/salesOrders');
 
 app.get('/', (req, res) => {
-  res.send('ERP Billing App Backend');
+  res.json({
+    message: 'ERP Billing App Backend v1.0.0',
+    version: '1.0.0',
+    environment: NODE_ENV,
+    status: 'operational'
+  });
+});
+
+// Health check endpoint for production monitoring
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    version: '1.0.0',
+    environment: NODE_ENV,
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
 });
 
 // Use routes

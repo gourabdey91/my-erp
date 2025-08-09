@@ -1,0 +1,31 @@
+# Render Deployment Configuration
+# https://render.com
+
+services:
+  - type: web
+    name: myerp-backend
+    runtime: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+    
+  - type: static
+    name: myerp-frontend
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/build
+    pullRequestPreviewsEnabled: false
+    
+# Auto-deploy from main branch
+branches:
+  - main

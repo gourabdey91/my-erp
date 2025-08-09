@@ -1,0 +1,22 @@
+# Railway Deployment Configuration
+# https://railway.app
+
+[build]
+  builder = "nixpacks"
+
+[deploy]
+  startCommand = "npm start"
+  restartPolicyType = "always"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "${{PORT}}"
+
+# Auto-deploy from main branch
+[triggers]
+  branch = "main"
+
+# Health check
+[healthcheck]
+  path = "/api/health"
+  interval = 30
