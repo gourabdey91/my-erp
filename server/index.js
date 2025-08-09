@@ -29,6 +29,23 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Health checks - must be before other routes
+app.get('/health', (req, res) => {
+  console.log('Health check accessed');
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  console.log('Root endpoint accessed');
+  res.json({ 
+    message: 'ERP Billing App Backend v1.0.0', 
+    version: '1.0.0', 
+    environment: NODE_ENV, 
+    status: 'operational',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Import routes
 const userRoutes = require('./routes/users');
 const dashboardRoutes = require('./routes/dashboard');
@@ -50,15 +67,6 @@ const deliveryChallanDetailsRoutes = require('./routes/deliveryChallanDetails');
 const fileUploadRoutes = require('./routes/fileUpload');
 const salesOrderRoutes = require('./routes/salesOrders');
 
-app.get('/', (req, res) => {
-  res.json({
-    message: 'ERP Billing App Backend v1.0.0',
-    version: '1.0.0',
-    environment: NODE_ENV,
-    status: 'operational'
-  });
-});
-
 // Health check endpoint for production monitoring
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -68,16 +76,6 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
-});
-
-// Basic health check that doesn't require database
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({ message: 'ERP Server is running', version: '1.0.0' });
 });
 
 // Use routes
@@ -114,6 +112,7 @@ mongoose.connection.on('error', (error) => {
   console.error('MongoDB connection error:', error);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
+  console.log(`Health check available at: http://0.0.0.0:${PORT}/health`);
 });
