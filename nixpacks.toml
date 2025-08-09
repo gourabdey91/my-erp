@@ -1,0 +1,16 @@
+# Nixpacks configuration for Railway deployment
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs", "npm"]
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = ["cd server && npm install --omit=dev"]
+
+[phases.build]
+dependsOn = ["install"]
+
+[start]
+cmd = "cd server && npm start"

@@ -1,16 +1,23 @@
-# Railway Deployment Configuration
+# Railway Deployment Configuration for ERP v1.0.0
 # https://railway.app
 
 [build]
   builder = "nixpacks"
 
 [deploy]
-  startCommand = "npm start"
+  startCommand = "cd server && npm start"
   restartPolicyType = "always"
+
+# Build configuration
+[build.env]
+  NODE_ENV = "production"
 
 [env]
   NODE_ENV = "production"
   PORT = "${{PORT}}"
+  MONGO_URI = "mongodb+srv://gourabdey91:YHVTrGnavP92uMke@main-cluster.svki2gf.mongodb.net/myerp-prod?retryWrites=true&w=majority&appName=Main-Cluster"
+  JWT_SECRET = "MyERPv1.0ProdSecureKey2025!@#$%^&*()"
+  CORS_ORIGIN = "https://myerp-v1.netlify.app"
 
 # Auto-deploy from main branch
 [triggers]
