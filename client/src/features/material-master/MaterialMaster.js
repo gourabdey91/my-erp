@@ -286,10 +286,20 @@ const MaterialMaster = () => {
     setError('');
 
     try {
+      // Prepare form data, ensuring empty values are sent as null for optional fields
+      const submitData = {
+        ...formData,
+        // Convert empty string length to null
+        lengthMm: formData.lengthMm === '' || formData.lengthMm === null || formData.lengthMm === undefined ? null : parseFloat(formData.lengthMm),
+        // Ensure other optional fields are properly handled
+        implantType: formData.implantType || null,
+        subCategory: formData.subCategory || null
+      };
+
       if (editingMaterial) {
-        await materialMasterAPI.update(editingMaterial._id, formData);
+        await materialMasterAPI.update(editingMaterial._id, submitData);
       } else {
-        await materialMasterAPI.create(formData);
+        await materialMasterAPI.create(submitData);
       }
       
       await fetchMaterials();
@@ -305,6 +315,7 @@ const MaterialMaster = () => {
   const handleEdit = async (material) => {
     setEditingMaterial(material);
     setFormData({
+      businessUnitId: material.businessUnitId?._id || '',
       materialNumber: material.materialNumber,
       description: material.description,
       hsnCode: material.hsnCode,
@@ -314,9 +325,9 @@ const MaterialMaster = () => {
       institutionalPrice: material.institutionalPrice,
       distributionPrice: material.distributionPrice,
       surgicalCategory: material.surgicalCategory._id,
-      implantType: material.implantType._id,
-      subCategory: material.subCategory,
-      lengthMm: material.lengthMm,
+      implantType: material.implantType?._id || '',
+      subCategory: material.subCategory || '',
+      lengthMm: material.lengthMm || '', // Ensure empty string for null/undefined values
       unit: material.unit || 'NOS'
     });
     

@@ -180,9 +180,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Subcategory is required when implant type is provided' });
     }
 
-    // Length is optional - only validate if provided
-    if (lengthMm !== null && lengthMm !== undefined && lengthMm <= 0) {
-      return res.status(400).json({ message: 'Length must be greater than 0 if provided' });
+    // Length is optional - only validate if provided and should allow 0 as valid
+    if (lengthMm !== null && lengthMm !== undefined && lengthMm < 0) {
+      return res.status(400).json({ message: 'Length cannot be negative if provided' });
     }
 
     // Check if material number already exists within the same business unit
@@ -307,6 +307,41 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ message: 'Description is required' });
     }
 
+    if (!hsnCode || !hsnCode.trim()) {
+      return res.status(400).json({ message: 'HSN code is required' });
+    }
+
+    if (gstPercentage === undefined || gstPercentage < 0 || gstPercentage > 100) {
+      return res.status(400).json({ message: 'Valid GST percentage is required (0-100)' });
+    }
+
+    if (!mrp || mrp <= 0) {
+      return res.status(400).json({ message: 'Valid MRP is required' });
+    }
+
+    if (!institutionalPrice || institutionalPrice <= 0) {
+      return res.status(400).json({ message: 'Valid institutional price is required' });
+    }
+
+    if (!distributionPrice || distributionPrice <= 0) {
+      return res.status(400).json({ message: 'Valid distribution price is required' });
+    }
+
+    if (!surgicalCategory) {
+      return res.status(400).json({ message: 'Surgical category is required' });
+    }
+
+    // ImplantType and subCategory are optional
+    // Only validate if implantType is provided, then subCategory should also be provided
+    if (implantType && (!subCategory || !subCategory.trim())) {
+      return res.status(400).json({ message: 'Subcategory is required when implant type is provided' });
+    }
+
+    // Length is optional - only validate if provided and should allow 0 as valid
+    if (lengthMm !== null && lengthMm !== undefined && lengthMm < 0) {
+      return res.status(400).json({ message: 'Length cannot be negative if provided' });
+    }
+
     // Check if material exists
     const existingMaterial = await MaterialMaster.findById(materialId);
     if (!existingMaterial) {
@@ -341,8 +376,8 @@ router.put('/:id', async (req, res) => {
         institutionalPrice,
         distributionPrice,
         surgicalCategory,
-        implantType,
-        subCategory: subCategory.trim(),
+        implantType: implantType || null,
+        subCategory: subCategory ? subCategory.trim() : null,
         lengthMm,
         updatedBy: req.user?.id
       },
