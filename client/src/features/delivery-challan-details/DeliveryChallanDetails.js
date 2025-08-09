@@ -96,8 +96,8 @@ const DeliveryChallanDetails = () => {
     if (!formData.deliveryChallanNumber.trim()) {
       return 'Delivery challan number is required';
     }
-    if (formData.deliveryChallanNumber.trim().length < 5) {
-      return 'Delivery challan number must be at least 5 characters';
+    if (formData.deliveryChallanNumber.trim().length < 2) {
+      return 'Delivery challan number must be at least 2 characters';
     }
     if (formData.deliveryChallanNumber.trim().length > 50) {
       return 'Delivery challan number cannot exceed 50 characters';
@@ -467,10 +467,10 @@ const DeliveryChallanDetails = () => {
             </h2>
           </div>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Delivery Challan Number * (5-50 chars)
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Delivery Challan Number * (2-50 chars)
                 </label>
                 <input
                   type="text"
@@ -484,8 +484,8 @@ const DeliveryChallanDetails = () => {
                 />
               </div>
               
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
                   Hospital *
                 </label>
                 <select
@@ -504,8 +504,8 @@ const DeliveryChallanDetails = () => {
                 </select>
               </div>
               
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
                   Challan Date <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional)</span>
                 </label>
                 <input
@@ -517,8 +517,8 @@ const DeliveryChallanDetails = () => {
                 />
               </div>
               
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
                   Sales Order Number <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional, Max 10 chars)</span>
                 </label>
                 <input
@@ -533,24 +533,20 @@ const DeliveryChallanDetails = () => {
               </div>
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500', color: 'var(--gray-700)', cursor: 'pointer' }}>
+            <div className="unified-checkbox-container">
+              <label className="unified-checkbox-label">
                 <input
                   type="checkbox"
                   name="consumedIndicator"
                   checked={formData.consumedIndicator}
                   onChange={handleInputChange}
-                  style={{ 
-                    width: '16px', 
-                    height: '16px', 
-                    accentColor: 'var(--accent-color)' 
-                  }}
+                  className="unified-checkbox"
                 />
                 Consumed Indicator
               </label>
-              <small style={{ color: 'var(--gray-500)', marginLeft: '1.5rem' }}>
+              <div className="unified-help-text">
                 Mark this if the materials have been consumed
-              </small>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './MaterialMaster.css';
+import '../../shared/styles/unified-design.css';
+import MobileCard from '../../shared/components/MobileCard';
 import { materialMasterAPI } from './services/materialMasterAPI';
+import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const MaterialMaster = () => {
   const [materials, setMaterials] = useState([]);
@@ -13,7 +16,7 @@ const MaterialMaster = () => {
   const [filterImplantTypes, setFilterImplantTypes] = useState([]);
   const [filterSubcategories, setFilterSubcategories] = useState([]);
   const [filterLengths, setFilterLengths] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [error, setError] = useState('');
@@ -280,6 +283,22 @@ const MaterialMaster = () => {
     }
   };
 
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      businessUnitId: '',
+      surgicalCategory: '',
+      implantType: '',
+      subCategory: '',
+      lengthMm: '',
+      isActive: true
+    });
+    // Reset dependent filter dropdowns
+    setFilterImplantTypes([]);
+    setFilterSubcategories([]);
+    setFilterLengths([]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -406,43 +425,71 @@ const MaterialMaster = () => {
     }).format(amount);
   };
 
+  if (loading && materials.length === 0) {
+    return (
+      <div className="unified-container">
+        <div className="unified-loading">Loading materials...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="material-master-container">
-      <div className="page-header">
-        <h1>Material Master</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            resetForm();
-            setShowForm(!showForm);
-          }}
-          disabled={loading}
-        >
-          {showForm ? 'Cancel' : 'Add Material'}
-        </button>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Material Master</h1>
+            <p>Manage material inventory, pricing, and specifications. Configure HSN codes, GST rates, and maintain product information for surgical implants and medical devices.</p>
+          </div>
+          <button
+            className="unified-btn unified-btn-primary"
+            onClick={() => {
+              if (!showForm) {
+                resetForm();
+                setShowForm(true);
+                scrollToTop();
+              } else {
+                resetForm();
+                setShowForm(false);
+              }
+            }}
+            disabled={loading}
+          >
+            {showForm ? 'Cancel' : 'Add Material'}
+          </button>
+        </div>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="filters-container">
-        <div className="filters-row">
-          <div className="filter-group">
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Search Materials</label>
             <input
               type="text"
               name="search"
               value={filters.search}
               onChange={handleFilterChange}
               placeholder="Search by material number or description..."
-              className="search-input"
+              className="unified-search-input"
             />
           </div>
-          <div className="filter-group">
+          <div className="unified-filter-group">
+            <label>Business Unit</label>
             <select
               name="businessUnitId"
               value={filters.businessUnitId}
               onChange={handleFilterChange}
-              className="filter-select"
+              className="unified-filter-select"
             >
               <option value="">All Business Units</option>
               {businessUnits.map(unit => (
@@ -452,12 +499,13 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
-          <div className="filter-group">
+          <div className="unified-filter-group">
+            <label>Surgical Category</label>
             <select
               name="surgicalCategory"
               value={filters.surgicalCategory}
               onChange={handleFilterSurgicalCategoryChange}
-              className="filter-select"
+              className="unified-filter-select"
             >
               <option value="">All Categories</option>
               {categories.map(category => (
@@ -468,13 +516,14 @@ const MaterialMaster = () => {
             </select>
           </div>
         </div>
-        <div className="filters-row compact-filters">
-          <div className="filter-group">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Implant Type</label>
             <select
               name="implantType"
               value={filters.implantType}
               onChange={handleFilterImplantTypeChange}
-              className="filter-select"
+              className="unified-filter-select"
               disabled={!filters.surgicalCategory}
             >
               <option value="">All Implant Types</option>
@@ -485,12 +534,13 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
-          <div className="filter-group">
+          <div className="unified-filter-group">
+            <label>Sub Category</label>
             <select
               name="subCategory"
               value={filters.subCategory}
               onChange={handleFilterSubcategoryChange}
-              className="filter-select"
+              className="unified-filter-select"
               disabled={!filters.implantType}
             >
               <option value="">All Sub Categories</option>
@@ -501,12 +551,13 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
-          <div className="filter-group">
+          <div className="unified-filter-group">
+            <label>Length</label>
             <select
               name="lengthMm"
               value={filters.lengthMm}
               onChange={handleFilterChange}
-              className="filter-select"
+              className="unified-filter-select"
               disabled={!filters.subCategory}
             >
               <option value="">All Lengths</option>
@@ -517,35 +568,51 @@ const MaterialMaster = () => {
               ))}
             </select>
           </div>
-          <div className="filter-group">
+          <div className="unified-filter-group">
+            <label>Status</label>
             <select
               name="isActive"
               value={filters.isActive}
               onChange={handleFilterChange}
-              className="filter-select"
+              className="unified-filter-select"
             >
               <option value={true}>Active</option>
               <option value={false}>Inactive</option>
             </select>
           </div>
+          
+          <div className="unified-filter-group">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={resetFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Form Section */}
       {showForm && (
-        <div className="form-container">
-          <div className="form-header">
-            <h2>{editingMaterial ? 'Edit Material' : 'Add New Material'}</h2>
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingMaterial ? 'Edit Material' : 'Add New Material'}
+            </h2>
           </div>
-          <form onSubmit={handleSubmit} className="material-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="businessUnitId">Business Unit *</label>
+          <form onSubmit={handleSubmit}>
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Business Unit *
+                </label>
                 <select
-                  id="businessUnitId"
                   name="businessUnitId"
                   value={formData.businessUnitId}
                   onChange={handleInputChange}
                   required
+                  className="unified-search-input"
                 >
                   <option value="">Select Business Unit</option>
                   {businessUnits.map(unit => (
@@ -555,70 +622,82 @@ const MaterialMaster = () => {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="materialNumber">Material Number *</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Material Number *
+                </label>
                 <input
                   type="text"
-                  id="materialNumber"
                   name="materialNumber"
                   value={formData.materialNumber}
                   onChange={handleInputChange}
+                  placeholder="Enter material number"
                   maxLength="20"
                   required
+                  className="unified-search-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="description">Description *</label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Description *
+                </label>
                 <input
                   type="text"
-                  id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
+                  placeholder="Enter material description"
                   maxLength="100"
                   required
+                  className="unified-search-input"
                 />
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="hsnCode">HSN Code *</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  HSN Code *
+                </label>
                 <input
                   type="text"
-                  id="hsnCode"
                   name="hsnCode"
                   value={formData.hsnCode}
                   onChange={handleInputChange}
+                  placeholder="Enter HSN code"
                   maxLength="15"
                   required
+                  className="unified-search-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="gstPercentage">GST % *</label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  GST Percentage *
+                </label>
                 <input
                   type="number"
-                  id="gstPercentage"
                   name="gstPercentage"
                   value={formData.gstPercentage}
                   onChange={handleInputChange}
+                  placeholder="Enter GST percentage"
                   min="0"
                   max="100"
                   step="0.01"
                   required
+                  className="unified-search-input"
                 />
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="currency">Currency</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Currency *
+                </label>
                 <select
-                  id="currency"
                   name="currency"
                   value={formData.currency}
                   onChange={handleInputChange}
                   required
+                  className="unified-search-input"
                 >
                   <option value="INR">INR</option>
                   <option value="USD">USD</option>
@@ -626,59 +705,68 @@ const MaterialMaster = () => {
                   <option value="GBP">GBP</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="mrp">MRP *</label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  MRP *
+                </label>
                 <input
                   type="number"
-                  id="mrp"
                   name="mrp"
                   value={formData.mrp}
                   onChange={handleInputChange}
+                  placeholder="Enter MRP"
                   min="0"
                   step="0.01"
                   required
+                  className="unified-search-input"
                 />
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="institutionalPrice">Institutional Price *</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Institutional Price *
+                </label>
                 <input
                   type="number"
-                  id="institutionalPrice"
                   name="institutionalPrice"
                   value={formData.institutionalPrice}
                   onChange={handleInputChange}
+                  placeholder="Enter institutional price"
                   min="0"
                   step="0.01"
                   required
+                  className="unified-search-input"
                 />
               </div>
-              <div className="form-group">
-                <label htmlFor="distributionPrice">Distribution Price *</label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Distribution Price *
+                </label>
                 <input
                   type="number"
-                  id="distributionPrice"
                   name="distributionPrice"
                   value={formData.distributionPrice}
                   onChange={handleInputChange}
+                  placeholder="Enter distribution price"
                   min="0"
                   step="0.01"
                   required
+                  className="unified-search-input"
                 />
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="surgicalCategory">Surgical Category *</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Surgical Category *
+                </label>
                 <select
-                  id="surgicalCategory"
                   name="surgicalCategory"
                   value={formData.surgicalCategory}
                   onChange={handleSurgicalCategoryChange}
                   required
+                  className="unified-search-input"
                 >
                   <option value="">Select Surgical Category</option>
                   {categories.map(category => (
@@ -688,15 +776,18 @@ const MaterialMaster = () => {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="implantType">Implant Type *</label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Implant Type *
+                </label>
                 <select
-                  id="implantType"
                   name="implantType"
                   value={formData.implantType}
                   onChange={handleImplantTypeChange}
                   required
                   disabled={!formData.surgicalCategory}
+                  className="unified-search-input"
                 >
                   <option value="">Select Implant Type</option>
                   {filteredImplantTypes.map(implantType => (
@@ -706,18 +797,18 @@ const MaterialMaster = () => {
                   ))}
                 </select>
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="subCategory">Sub Category {formData.implantType ? '*' : ''}</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Sub Category {formData.implantType ? '*' : ''}
+                </label>
                 <select
-                  id="subCategory"
                   name="subCategory"
                   value={formData.subCategory}
                   onChange={handleSubcategoryChange}
                   required={!!formData.implantType}
                   disabled={!formData.implantType}
+                  className="unified-search-input"
                 >
                   <option value="">Select Sub Category</option>
                   {subcategories.map((subcat, index) => (
@@ -727,14 +818,17 @@ const MaterialMaster = () => {
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="lengthMm">Length (mm) <span className="optional-text">(Optional)</span></label>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Length (mm) <span className="optional-text">(Optional)</span>
+                </label>
                 {lengths.length > 0 ? (
                   <select
-                    id="lengthMm"
                     name="lengthMm"
                     value={formData.lengthMm}
                     onChange={handleInputChange}
+                    className="unified-search-input"
                   >
                     <option value="">Select Length (Optional)</option>
                     {lengths.map((length, index) => (
@@ -746,27 +840,27 @@ const MaterialMaster = () => {
                 ) : (
                   <input
                     type="number"
-                    id="lengthMm"
                     name="lengthMm"
                     value={formData.lengthMm}
                     onChange={handleInputChange}
                     placeholder="Enter length in mm (optional)"
                     min="0"
                     step="0.1"
+                    className="unified-search-input"
                   />
                 )}
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="unit">Unit *</label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Unit *
+                </label>
                 <select
-                  id="unit"
                   name="unit"
                   value={formData.unit}
                   onChange={handleInputChange}
                   required
+                  className="unified-search-input"
                 >
                   <option value="NOS">NOS</option>
                   <option value="PCS">PCS</option>
@@ -778,13 +872,13 @@ const MaterialMaster = () => {
               </div>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
                 {loading ? 'Saving...' : (editingMaterial ? 'Update Material' : 'Add Material')}
               </button>
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="unified-btn unified-btn-secondary"
                 onClick={() => {
                   resetForm();
                   setShowForm(false);
@@ -797,20 +891,24 @@ const MaterialMaster = () => {
         </div>
       )}
 
-      {/* Table Container */}
-      <div className="data-table-container">
+      {/* Content */}
+      <div className="unified-content">
         {loading && !showForm ? (
-          <div className="loading">Loading materials...</div>
+          <div className="unified-loading">Loading materials...</div>
         ) : materials.length === 0 ? (
-          <div className="empty-state">
-            <p>No materials found.</p>
-            <p>Click "Add Material" to create your first material.</p>
+          <div className="unified-empty">
+            <h3>No materials found</h3>
+            <p>
+              {materials.length === 0 
+                ? "Create your first material to get started." 
+                : "Try adjusting your search criteria."}
+            </p>
           </div>
         ) : (
           <>
-            {/* Desktop Table View */}
-            <div className="table-responsive">
-              <table className="data-table">
+            {/* Desktop Table */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
                 <thead>
                   <tr>
                     <th>Business Unit</th>
@@ -832,12 +930,8 @@ const MaterialMaster = () => {
                   {materials.map(material => (
                     <tr key={material._id}>
                       <td>{material.businessUnitId?.code || '-'}</td>
-                      <td className="material-number-cell">
-                        <strong>{material.materialNumber}</strong>
-                      </td>
-                      <td className="description-cell">
-                        {material.description}
-                      </td>
+                      <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{material.materialNumber}</td>
+                      <td>{material.description}</td>
                       <td>{material.hsnCode}</td>
                       <td>{material.gstPercentage}%</td>
                       <td>{formatCurrency(material.mrp)}</td>
@@ -848,20 +942,20 @@ const MaterialMaster = () => {
                       <td>{material.lengthMm}mm</td>
                       <td>{material.unit}</td>
                       <td>
-                        <div className="action-buttons">
+                        <div className="unified-table-actions">
                           <button
-                            className="btn btn-sm btn-outline-primary"
+                            className="unified-table-action edit"
                             onClick={() => handleEdit(material)}
-                            disabled={loading}
                             title="Edit Material"
+                            disabled={loading}
                           >
                             ✏️
                           </button>
                           <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="unified-table-action delete"
                             onClick={() => handleDelete(material)}
-                            disabled={loading}
                             title="Delete Material"
+                            disabled={loading}
                           >
                             🗑️
                           </button>
@@ -873,65 +967,76 @@ const MaterialMaster = () => {
               </table>
             </div>
 
-            {/* Mobile Card View */}
-            <div className="mobile-card-view">
+            {/* Mobile Cards */}
+            <div className="unified-mobile-cards">
               {materials.map(material => (
-                <div key={`mobile-${material._id}`} className="material-mobile-card">
-                  <div className="mobile-card-header">
-                    <h3 className="mobile-card-title">{material.materialNumber}</h3>
-                    <span className="mobile-card-badge">{material.gstPercentage}% GST</span>
-                  </div>
-                  <div className="mobile-card-content">
-                    <p><strong>Description:</strong> {material.description}</p>
-                    <p><strong>HSN Code:</strong> {material.hsnCode}</p>
-                    <div className="mobile-prices">
-                      <span className="price-item">MRP: {formatCurrency(material.mrp)}</span>
-                      <span className="price-item">Inst: {formatCurrency(material.institutionalPrice)}</span>
-                      <span className="price-item">Dist: {formatCurrency(material.distributionPrice)}</span>
-                    </div>
-                    <p><strong>Implant:</strong> {material.implantType.name}</p>
-                    <p><strong>Sub Category:</strong> {material.subCategory} ({material.lengthMm}mm)</p>
-                    <p><strong>Unit:</strong> {material.unit}</p>
-                  </div>
-                  <div className="mobile-card-actions">
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => handleEdit(material)}
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDelete(material)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                <MobileCard
+                  key={`mobile-${material._id}`}
+                  id={material._id}
+                  title={material.materialNumber}
+                  subtitle={material.description}
+                  badge={`${material.gstPercentage}% GST`}
+                  fields={[
+                    { label: 'Business Unit', value: material.businessUnit?.name || 'N/A' },
+                    { label: 'HSN Code', value: material.hsnCode }
+                  ]}
+                  sections={[
+                    {
+                      title: 'Pricing',
+                      items: [
+                        { label: 'MRP', value: `${material.currency} ${material.mrp}` },
+                        { label: 'Institutional Price', value: `${material.currency} ${material.institutionalPrice}` },
+                        { label: 'Distribution Price', value: `${material.currency} ${material.distributionPrice}` }
+                      ]
+                    },
+                    {
+                      title: 'Specifications',
+                      items: [
+                        { label: 'Implant Type', value: material.implantType?.name || 'N/A' },
+                        { label: 'Sub Category', value: material.subCategory || 'N/A' },
+                        { label: 'Length', value: material.lengthMm ? `${material.lengthMm} mm` : 'N/A' },
+                        { label: 'Unit', value: material.unit }
+                      ]
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(material),
+                      disabled: loading
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(material),
+                      disabled: loading
+                    }
+                  ]}
+                />
               ))}
             </div>
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="pagination-container">
-                <div className="pagination-info">
+              <div className="unified-pagination">
+                <div className="unified-pagination-info">
                   Showing {(pagination.page - 1) * pagination.limit + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} materials
                 </div>
-                <div className="pagination-controls">
+                <div className="unified-pagination-controls">
                   <button
-                    className="btn btn-outline-secondary btn-sm"
+                    className="unified-btn unified-btn-secondary unified-btn-sm"
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={!pagination.hasPrev || loading}
                   >
                     Previous
                   </button>
-                  <span className="pagination-current">
+                  <span className="unified-pagination-current">
                     Page {pagination.page} of {pagination.totalPages}
                   </span>
                   <button
-                    className="btn btn-outline-secondary btn-sm"
+                    className="unified-btn unified-btn-secondary unified-btn-sm"
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={!pagination.hasNext || loading}
                   >

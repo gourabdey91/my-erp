@@ -211,9 +211,9 @@ const ExpenseTypes = () => {
             </h2>
           </div>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">
                   Expense Type Code * (3-10 chars)
                 </label>
                 <input
@@ -228,8 +228,8 @@ const ExpenseTypes = () => {
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
                   Expense Type Name * (2-100 chars)
                 </label>
                 <input

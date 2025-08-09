@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { hospitalAPI } from './services/hospitalAPI';
 import CreditNotes from './components/CreditNotes';
@@ -8,15 +8,14 @@ import MaterialAssignments from './components/MaterialAssignments';
 import './Hospitals.css';
 import '../../shared/styles/unified-design.css';
 import MobileCard from '../../shared/components/MobileCard';
-import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
 import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const Hospitals = () => {
   const { currentUser } = useAuth();
-  const menuRef = useRef(null);
   
   const [hospitals, setHospitals] = useState([]);
   const [surgicalCategories, setSurgicalCategories] = useState([]);
+  const [businessUnits, setBusinessUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -29,17 +28,6 @@ const Hospitals = () => {
   const [showExpenseTypeAssignments, setShowExpenseTypeAssignments] = useState(false);
   const [showMaterialAssignments, setShowMaterialAssignments] = useState(false);
   const [selectedHospital, setSelectedHospital] = useState(null);
-  
-  // Filter state
-  const [filters, setFilters] = useState({
-    hospitalName: '',
-    stateCode: '',
-    surgicalCategoryId: ''
-  });
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Dropdown menu hook
-  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
   
   const [formData, setFormData] = useState({
     shortName: '',
@@ -66,38 +54,18 @@ const Hospitals = () => {
   useEffect(() => {
     fetchAllHospitals();
     fetchAllSurgicalCategories();
+    fetchBusinessUnits();
   }, []);
 
-  // Filtered hospitals
-  const filteredHospitals = useMemo(() => {
-    return hospitals.filter(hospital => {
-      const matchesName = !filters.hospitalName || 
-        hospital.shortName.toLowerCase().includes(filters.hospitalName.toLowerCase()) ||
-        hospital.legalName.toLowerCase().includes(filters.hospitalName.toLowerCase());
-      
-      const matchesStateCode = !filters.stateCode || 
-        hospital.stateCode.toLowerCase().includes(filters.stateCode.toLowerCase());
-      
-      const matchesSurgicalCategory = !filters.surgicalCategoryId ||
-        hospital.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId);
-      
-      return matchesName && matchesStateCode && matchesSurgicalCategory;
-    });
-  }, [hospitals, filters]);
-
-  const handleFilterChange = (filterName, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: value
-    }));
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      hospitalName: '',
-      stateCode: '',
-      surgicalCategoryId: ''
-    });
+  // Fetch business units
+  const fetchBusinessUnits = async () => {
+    try {
+      const response = await hospitalAPI.getBusinessUnits();
+      setBusinessUnits(response || []);
+    } catch (err) {
+      console.error('Error fetching business units:', err);
+      setBusinessUnits([]);
+    }
   };
 
   // Auto-dismiss success messages
@@ -279,7 +247,6 @@ const Hospitals = () => {
     setShowForm(true);
     setError('');
     setSuccess('');
-    closeMenu();
     
     // Scroll to top
     scrollToTop();
@@ -301,7 +268,6 @@ const Hospitals = () => {
         console.error('Error deleting customer:', err);
       }
     }
-    closeMenu();
   };
 
   const handleCreditNotes = (hospital) => {
@@ -363,294 +329,470 @@ const Hospitals = () => {
   }
 
   return (
-    <div className="hospitals-container">
-      <div className="hospitals-header">
-        <h2>Customer Details</h2>
-        <button 
-          className="add-button"
-          onClick={() => setShowForm(true)}
-        >
-          + Add Customer
-        </button>
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Customer Details</h1>
+            <p>Manage customer information including hospitals, addresses, GST details, and business relationships. Configure surgical categories and business settings for each customer.</p>
+          </div>
+          <button 
+            className="unified-btn unified-btn-primary"
+            onClick={() => {
+              resetForm();
+              setShowForm(true);
+              scrollToTop();
+            }}
+            disabled={loading}
+          >
+            Add Customer
+          </button>
+        </div>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      {showForm && (
-        <div className="form-overlay">
-          <div className="form-container">
-            <div className="form-header">
-              <h3>{editingHospital ? 'Edit Customer' : 'Add New Customer'}</h3>
-              <button className="close-button" onClick={resetForm}>×</button>
-            </div>
-            
-            <div className="form-content">
-              <form id="hospital-form" onSubmit={handleSubmit} className="hospital-form">
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="shortName">Short Name *</label>
-                  <input
-                    type="text"
-                    id="shortName"
-                    name="shortName"
-                    value={formData.shortName}
-                    onChange={handleInputChange}
-                    placeholder="Enter short name"
-                    maxLength="50"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="legalName">Legal Name *</label>
-                  <input
-                    type="text"
-                    id="legalName"
-                    name="legalName"
-                    value={formData.legalName}
-                    onChange={handleInputChange}
-                    placeholder="Enter legal name"
-                    maxLength="100"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="address">Address *</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Enter complete address"
-                  maxLength="200"
-                  rows="3"
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="gstNumber">GST Number *</label>
-                  <input
-                    type="text"
-                    id="gstNumber"
-                    name="gstNumber"
-                    value={formData.gstNumber}
-                    onChange={handleInputChange}
-                    placeholder="Enter GST number"
-                    maxLength="15"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="stateCode">State Code *</label>
-                  <input
-                    type="text"
-                    id="stateCode"
-                    name="stateCode"
-                    value={formData.stateCode}
-                    onChange={handleInputChange}
-                    placeholder="Enter state code"
-                    maxLength="3"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="businessUnit">Business Unit *</label>
-                  <select
-                    id="businessUnit"
-                    name="businessUnit"
-                    value={formData.businessUnit}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select Business Unit</option>
-                    {currentUser?.businessUnits?.map(bu => (
-                      <option key={bu._id} value={bu._id}>
-                        {bu.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="paymentTerms">Payment Terms *</label>
-                  <select
-                    id="paymentTerms"
-                    name="paymentTerms"
-                    value={formData.paymentTerms}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    {paymentTermsOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="defaultPricing"
-                      checked={formData.defaultPricing}
-                      onChange={handleInputChange}
-                    />
-                    <span>Use default pricing from material master</span>
-                  </label>
-                  <small className="help-text">
-                    When enabled, material prices will be automatically set from the material master and cannot be edited manually.
-                  </small>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="discountAllowed"
-                      checked={formData.discountAllowed}
-                      onChange={handleInputChange}
-                    />
-                    <span>Discount Allowed</span>
-                  </label>
-                  <small className="help-text">
-                    When enabled, discounts can be applied to this hospital's transactions.
-                  </small>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="customerIsHospital"
-                      checked={formData.customerIsHospital}
-                      onChange={handleInputChange}
-                    />
-                    <span>Customer is Hospital</span>
-                  </label>
-                  <small className="help-text">
-                    Indicates that this customer is a hospital entity.
-                  </small>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Surgical Categories *</label>
-                <div className="debug-info" style={{fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem'}}>
-                  Categories loaded: {surgicalCategories.length}
-                </div>
-                <div className="categories-grid">
-                  {surgicalCategories.map(category => (
-                    <label key={category._id} className="category-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.surgicalCategories.includes(category._id)}
-                        onChange={() => handleCategoryChange(category._id)}
-                      />
-                      <span>{category.description}</span>
-                    </label>
-                  ))}
-                </div>
-                {surgicalCategories.length === 0 && (
-                  <p className="no-categories">No surgical categories available. Please create categories first.</p>
-                )}
-              </div>
-              </form>
-            </div>
-
-            <div className="form-actions">
-              <button type="button" onClick={resetForm} className="cancel-button">
-                Cancel
-              </button>
-              <button type="submit" form="hospital-form" className="submit-button">
-                {editingHospital ? 'Update Hospital' : 'Create Hospital'}
-              </button>
-            </div>
+      {/* Status Messages */}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33', marginBottom: '1rem' }}>
+            {error}
+          </div>
+        </div>
+      )}
+      {success && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#efe', border: '1px solid #cfc', borderRadius: '8px', color: '#363', marginBottom: '1rem' }}>
+            {success}
           </div>
         </div>
       )}
 
-      <div className="hospitals-list">
+      {/* Form Section */}
+      {showForm && (
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingHospital ? 'Edit Customer Details' : 'Add New Customer'}
+            </h2>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Short Name * (2-50 chars)
+                </label>
+                <input
+                  type="text"
+                  name="shortName"
+                  value={formData.shortName}
+                  onChange={handleInputChange}
+                  placeholder="Enter short name"
+                  required
+                  maxLength="50"
+                  className="unified-search-input"
+                />
+              </div>
+              
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Legal Name * (2-100 chars)
+                </label>
+                <input
+                  type="text"
+                  name="legalName"
+                  value={formData.legalName}
+                  onChange={handleInputChange}
+                  placeholder="Enter legal name"
+                  required
+                  maxLength="100"
+                  className="unified-search-input"
+                />
+              </div>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Business Unit *
+                </label>
+                <select
+                  name="businessUnit"
+                  value={formData.businessUnit}
+                  onChange={handleInputChange}
+                  required
+                  className="unified-search-input"
+                >
+                  <option value="">Select Business Unit</option>
+                  {businessUnits.map(unit => (
+                    <option key={unit._id} value={unit._id}>
+                      {unit.name} ({unit.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Address * (Max 200 chars)
+                </label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Enter complete address"
+                  required
+                  maxLength="200"
+                  rows="3"
+                  className="unified-search-input"
+                />
+              </div>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  GST Number *
+                </label>
+                <input
+                  type="text"
+                  name="gstNumber"
+                  value={formData.gstNumber}
+                  onChange={handleInputChange}
+                  placeholder="Enter GST number (15 digits)"
+                  required
+                  maxLength="15"
+                  className="unified-search-input"
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </div>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  State Code *
+                </label>
+                <input
+                  type="text"
+                  name="stateCode"
+                  value={formData.stateCode}
+                  onChange={handleInputChange}
+                  placeholder="Enter 2-digit state code"
+                  required
+                  maxLength="2"
+                  className="unified-search-input"
+                />
+              </div>
+
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Payment Terms (Days) *
+                </label>
+                <input
+                  type="number"
+                  name="paymentTerms"
+                  value={formData.paymentTerms}
+                  onChange={handleInputChange}
+                  placeholder="Enter payment terms in days"
+                  required
+                  min="1"
+                  max="365"
+                  className="unified-search-input"
+                />
+              </div>
+            </div>
+
+            <div className="unified-checkbox-container">
+              <label className="unified-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="defaultPricing"
+                  checked={formData.defaultPricing}
+                  onChange={handleInputChange}
+                  className="unified-checkbox"
+                />
+                Default Pricing
+              </label>
+              <div className="unified-help-text">
+                Apply default pricing structure for this customer
+              </div>
+            </div>
+
+            <div className="unified-checkbox-container">
+              <label className="unified-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="discountAllowed"
+                  checked={formData.discountAllowed}
+                  onChange={handleInputChange}
+                  className="unified-checkbox"
+                />
+                Discount Allowed
+              </label>
+              <div className="unified-help-text">
+                Allow discounts to be applied for this customer
+              </div>
+            </div>
+
+            <div className="unified-checkbox-container">
+              <label className="unified-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="customerIsHospital"
+                  checked={formData.customerIsHospital}
+                  onChange={handleInputChange}
+                  className="unified-checkbox"
+                />
+                Customer is Hospital
+              </label>
+              <div className="unified-help-text">
+                Indicates that this customer is a hospital entity
+              </div>
+            </div>
+
+            <div className="unified-form-field">
+              <label className="unified-form-label">
+                Surgical Categories *
+              </label>
+              <div className="unified-help-text" style={{ marginBottom: '0.75rem' }}>
+                Categories loaded: {surgicalCategories.length}
+              </div>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                gap: '0.75rem',
+                background: '#f8f9fa',
+                border: '1px solid #ced4da',
+                borderRadius: '6px',
+                padding: '1rem'
+              }}>
+                {surgicalCategories.map(category => (
+                  <label key={category._id} className="unified-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.surgicalCategories.includes(category._id)}
+                      onChange={() => handleCategoryChange(category._id)}
+                      className="unified-checkbox"
+                    />
+                    {category.description}
+                  </label>
+                ))}
+              </div>
+              {surgicalCategories.length === 0 && (
+                <div className="unified-help-text" style={{ color: '#dc3545', marginTop: '0.5rem' }}>
+                  No surgical categories available. Please create categories first.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingHospital ? 'Update Customer' : 'Add Customer')}
+              </button>
+              <button
+                type="button"
+                className="unified-btn unified-btn-secondary"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Content Section */}
+      <div className="unified-content">
         {hospitals.length === 0 ? (
-          <div className="empty-state">
-            <p>No hospitals found. Click "Add Hospital" to create your first hospital.</p>
+          <div className="unified-empty">
+            <h3>No customers found</h3>
+            <p>Create your first customer to get started.</p>
           </div>
         ) : (
-          <div className="hospitals-grid">
-            {hospitals.map(hospital => (
-              <div key={hospital._id} className="hospital-card">
-                <div className="hospital-header">
-                  <div className="hospital-title">
-                    <h3>{hospital.shortName}</h3>
-                    <span className="hospital-id">ID: {hospital.hospitalId}</span>
-                  </div>
-                  <div className="hospital-menu" ref={openMenuId === hospital._id ? menuRef : null}>
-                    <button 
-                      className="menu-trigger"
-                      onClick={() => toggleMenu(hospital._id)}
-                      aria-label="More actions"
-                    >
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </button>
-                    {openMenuId === hospital._id && (
-                      <div className="menu-dropdown">
-                        <button onClick={() => { handleEdit(hospital); closeMenu(); }}>
-                          <i className="icon-edit"></i> Edit
-                        </button>
-                        <button onClick={() => { handleCreditNotes(hospital); closeMenu(); }}>
-                          <i className="icon-credit"></i> Credit Notes
-                        </button>
-                        <button onClick={() => { handleDoctorAssignments(hospital); closeMenu(); }}>
-                          <i className="icon-doctor"></i> Doctors
-                        </button>
-                        <button onClick={() => { handleExpenseTypeAssignments(hospital); closeMenu(); }}>
-                          <i className="icon-expense"></i> Expenses
-                        </button>
-                        <button onClick={() => { handleMaterialAssignments(hospital); closeMenu(); }}>
-                          <i className="icon-material"></i> Materials
-                        </button>
-                        <button onClick={() => { handleDelete(hospital); closeMenu(); }} className="delete-action">
-                          <i className="icon-delete"></i> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="hospital-details">
-                  <p><strong>Legal Name:</strong> {hospital.legalName}</p>
-                  <p><strong>Business Unit:</strong> {hospital.businessUnit?.name || 'N/A'}</p>
-                  <p><strong>Address:</strong> {hospital.address}</p>
-                  <p><strong>GST Number:</strong> {hospital.gstNumber}</p>
-                  <p><strong>State Code:</strong> {hospital.stateCode}</p>
-                  <p><strong>Payment Terms:</strong> {hospital.paymentTerms} days</p>
-                  <div className="categories">
-                    <strong>Surgical Categories:</strong>
-                    <div className="category-tags">
-                      {hospital.surgicalCategories.map(category => (
-                        <span key={category._id} className="category-tag">
-                          {category.description}
+          <>
+            {/* Desktop Table */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
+                <thead>
+                  <tr>
+                    <th>Short Name</th>
+                    <th>Legal Name</th>
+                    <th>Business Unit</th>
+                    <th>GST Number</th>
+                    <th>State</th>
+                    <th>Payment Terms</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hospitals.map((hospital) => (
+                    <tr key={hospital._id}>
+                      <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>
+                        {hospital.shortName}
+                        <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                          ID: {hospital.hospitalId}
+                        </div>
+                      </td>
+                      <td>{hospital.legalName}</td>
+                      <td>{hospital.businessUnit?.name || 'N/A'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                        {hospital.gstNumber}
+                      </td>
+                      <td>{hospital.stateCode}</td>
+                      <td>{hospital.paymentTerms} days</td>
+                      <td>
+                        <span style={{ 
+                          padding: '0.25rem 0.5rem', 
+                          borderRadius: '1rem', 
+                          fontSize: '0.75rem',
+                          background: hospital.customerIsHospital ? '#d4edda' : '#fff3cd',
+                          color: hospital.customerIsHospital ? '#155724' : '#856404'
+                        }}>
+                          {hospital.customerIsHospital ? 'Hospital' : 'Customer'}
                         </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                      </td>
+                      <td>
+                        <div className="unified-table-actions">
+                          <button
+                            className="unified-table-action edit"
+                            onClick={() => handleEdit(hospital)}
+                            title="Edit Customer"
+                            disabled={loading}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="unified-table-action view"
+                            onClick={() => handleCreditNotes(hospital)}
+                            title="Credit Notes"
+                            disabled={loading}
+                          >
+                            💳
+                          </button>
+                          <button
+                            className="unified-table-action view"
+                            onClick={() => handleDoctorAssignments(hospital)}
+                            title="Doctor Assignments"
+                            disabled={loading}
+                          >
+                            👨‍⚕️
+                          </button>
+                          <button
+                            className="unified-table-action view"
+                            onClick={() => handleExpenseTypeAssignments(hospital)}
+                            title="Expense Assignments"
+                            disabled={loading}
+                          >
+                            💰
+                          </button>
+                          <button
+                            className="unified-table-action view"
+                            onClick={() => handleMaterialAssignments(hospital)}
+                            title="Material Assignments"
+                            disabled={loading}
+                          >
+                            📦
+                          </button>
+                          <button
+                            className="unified-table-action delete"
+                            onClick={() => handleDelete(hospital)}
+                            title="Delete Customer"
+                            disabled={loading}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="unified-mobile-cards">
+              {hospitals.map((hospital) => (
+                <MobileCard
+                  key={hospital._id}
+                  id={hospital._id}
+                  title={hospital.shortName}
+                  subtitle={hospital.legalName}
+                  badge={{
+                    text: hospital.customerIsHospital ? 'Hospital' : 'Customer',
+                    type: hospital.customerIsHospital ? 'success' : 'warning'
+                  }}
+                  fields={[
+                    { label: 'Business Unit', value: hospital.businessUnit?.name || 'N/A' },
+                    { label: 'GST Number', value: hospital.gstNumber },
+                    { label: 'State Code', value: hospital.stateCode },
+                    { label: 'Payment Terms', value: `${hospital.paymentTerms} days` }
+                  ]}
+                  sections={[
+                    {
+                      title: 'Address',
+                      items: [
+                        { label: 'Address', value: hospital.address }
+                      ]
+                    },
+                    {
+                      title: 'Surgical Categories',
+                      items: [
+                        { 
+                          label: 'Categories', 
+                          value: hospital.surgicalCategories.length > 0 
+                            ? hospital.surgicalCategories.map(cat => cat.description).join(', ')
+                            : 'None assigned'
+                        }
+                      ]
+                    },
+                    {
+                      title: 'Settings',
+                      items: [
+                        { label: 'Default Pricing', value: hospital.defaultPricing ? 'Yes' : 'No' },
+                        { label: 'Discount Allowed', value: hospital.discountAllowed ? 'Yes' : 'No' }
+                      ]
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      onClick: () => handleEdit(hospital),
+                      variant: 'primary',
+                      disabled: loading
+                    },
+                    {
+                      label: 'Credit Notes',
+                      onClick: () => handleCreditNotes(hospital),
+                      variant: 'secondary',
+                      disabled: loading
+                    },
+                    {
+                      label: 'Doctors',
+                      onClick: () => handleDoctorAssignments(hospital),
+                      variant: 'secondary',
+                      disabled: loading
+                    },
+                    {
+                      label: 'Expenses',
+                      onClick: () => handleExpenseTypeAssignments(hospital),
+                      variant: 'secondary',
+                      disabled: loading
+                    },
+                    {
+                      label: 'Materials',
+                      onClick: () => handleMaterialAssignments(hospital),
+                      variant: 'secondary',
+                      disabled: loading
+                    },
+                    {
+                      label: 'Delete',
+                      onClick: () => handleDelete(hospital),
+                      variant: 'danger',
+                      disabled: loading
+                    }
+                  ]}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

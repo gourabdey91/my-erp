@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Doctors.css';
 import '../../shared/styles/unified-design.css';
 import MobileCard from '../../shared/components/MobileCard';
-import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
 import { scrollToTop } from '../../shared/utils/scrollUtils';
 
 const Doctors = () => {
@@ -28,10 +27,6 @@ const Doctors = () => {
     doctorName: '',
     surgicalCategoryId: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Dropdown menu hook
-  const { openMenuId, toggleMenu, closeMenu } = useDropdownMenu();
 
   const { currentUser } = useAuth();
 
@@ -184,7 +179,6 @@ const Doctors = () => {
     });
     setShowForm(true);
     setError('');
-    closeMenu();
     
     // Scroll to top
     scrollToTop();
@@ -204,7 +198,6 @@ const Doctors = () => {
         setLoading(false);
       }
     }
-    closeMenu();
   };
 
   const handleCategoryChange = (categoryId, isChecked) => {
@@ -228,134 +221,139 @@ const Doctors = () => {
     setError('');
   };
 
-  const getCategoryNames = (doctorCategories) => {
-    return doctorCategories.map(cat => cat.description).join(', ');
-  };
-
   if (loading && doctors.length === 0) {
     return <div className="loading-state">⏳ Loading doctors...</div>;
   }
 
   return (
-    <div className="page-container">
+    <div className="unified-container">
       {/* Header */}
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="page-title">👨‍⚕️ Doctor Details</h1>
-          <p className="page-description">Manage doctor profiles and surgical categories</p>
-        </div>
-        <div className="page-actions">
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Doctor Details</h1>
+            <p>Manage doctor profiles, surgical categories, and contact information. Assign doctors to specific surgical categories and maintain their professional details.</p>
+          </div>
           <button 
-            className="btn-primary"
+            className="unified-btn unified-btn-primary"
             onClick={() => {
               setShowForm(true);
               scrollToTop();
             }}
             disabled={loading}
           >
-            {showForm ? '✖ Cancel' : '➕ Add Doctor'}
+            Add Doctor
           </button>
         </div>
       </div>
 
-      {error && <div className="alert-error">{error}</div>}
+      {error && (
+        <div className="unified-content">
+          <div style={{ padding: '1rem', background: '#fee', border: '1px solid #fcc', borderRadius: '8px', color: '#c33' }}>
+            {error}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-header" onClick={() => setShowFilters(!showFilters)}>
-          <h3>🔍 Filters</h3>
-          <span className={`filter-toggle ${showFilters ? 'open' : ''}`}>▼</span>
-        </div>
-        {showFilters && (
-          <div className="filters-content">
-            <div className="filters-grid">
-              <div className="filter-group">
-                <label>Doctor Name</label>
-                <input
-                  type="text"
-                  placeholder="Search by doctor name..."
-                  value={filters.doctorName}
-                  onChange={(e) => handleFilterChange('doctorName', e.target.value)}
-                />
-              </div>
-              
-              <div className="filter-group">
-                <label>Surgical Category</label>
-                <select
-                  value={filters.surgicalCategoryId}
-                  onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
-                >
-                  <option value="">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.code} - {category.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="filters-actions">
-              <button className="btn-secondary" onClick={resetFilters}>
-                🔄 Reset Filters
-              </button>
-              <span className="filter-results">
-                {filteredDoctors.length} of {doctors.length} doctors
-              </span>
-            </div>
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label>Doctor Name</label>
+            <input
+              type="text"
+              placeholder="Search by doctor name..."
+              value={filters.doctorName}
+              onChange={(e) => handleFilterChange('doctorName', e.target.value)}
+              className="unified-search-input"
+            />
           </div>
-        )}
+          
+          <div className="unified-filter-group">
+            <label>Surgical Category</label>
+            <select
+              value={filters.surgicalCategoryId}
+              onChange={(e) => handleFilterChange('surgicalCategoryId', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category._id} value={category._id}>
+                  {category.code} - {category.description}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={resetFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Form */}
       {showForm && (
-        <div className="form-section">
-          <div className="section-header">
-            <h2>✏️ {editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</h2>
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}
+            </h2>
           </div>
-          <form onSubmit={handleSubmit} className="form-container">
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="name">Doctor Name * (2-50 chars)</label>
+          <form onSubmit={handleSubmit}>
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">Doctor Name * (2-50 chars)</label>
                 <input
                   type="text"
-                  id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                   maxLength="50"
                   placeholder="Enter doctor's full name"
+                  className="unified-search-input"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="email">Email Address <span className="optional-field">(Optional)</span></label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Email Address <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional)</span>
+                </label>
                 <input
                   type="email"
-                  id="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="doctor@example.com"
+                  className="unified-search-input"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="phoneNumber">Phone Number <span className="optional-field">(Optional)</span></label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Phone Number <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional)</span>
+                </label>
                 <input
                   type="tel"
-                  id="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                   placeholder="+1 (555) 123-4567"
+                  className="unified-search-input"
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="consultingDoctor">Consulting Doctor <span className="optional-field">(Optional)</span></label>
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Consulting Doctor <span style={{ color: 'var(--gray-500)', fontWeight: '400' }}>(Optional)</span>
+                </label>
                 <select
-                  id="consultingDoctor"
                   value={formData.consultingDoctor}
                   onChange={(e) => setFormData(prev => ({ ...prev, consultingDoctor: e.target.value }))}
+                  className="unified-search-input"
                 >
                   <option value="">Select Consulting Doctor</option>
                   {consultingDoctors.map(doctor => (
@@ -367,118 +365,109 @@ const Doctors = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Surgical Categories * (Select at least one)</label>
-              <div className="checkbox-grid">
+            <div style={{ marginBottom: '2rem' }}>
+              <label className="unified-form-label">Surgical Categories * (Select at least one)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {categories.map(category => (
-                  <label key={category._id} className="checkbox-item">
+                  <label key={category._id} className="unified-checkbox-label">
                     <input
                       type="checkbox"
                       checked={formData.surgicalCategories.includes(category._id)}
                       onChange={(e) => handleCategoryChange(category._id, e.target.checked)}
+                      className="unified-checkbox"
                     />
-                    <span className="checkbox-label">
-                      {category.description} ({category.code})
-                    </span>
+                    {category.description} ({category.code})
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? '⏳ Saving...' : (editingDoctor ? '💾 Update Doctor' : '✅ Add Doctor')}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingDoctor ? 'Update Doctor' : 'Add Doctor')}
               </button>
-              <button type="button" className="btn-secondary" onClick={resetForm}>
-                ✖ Cancel
+              <button type="button" className="unified-btn unified-btn-secondary" onClick={resetForm}>
+                Cancel
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Data Section */}
-      <div className="data-section">
-        <div className="section-header">
-          <h2>📊 Doctors ({filteredDoctors.length})</h2>
-        </div>
-
-        {loading && !showForm ? (
-          <div className="loading-state">⏳ Loading doctors...</div>
-        ) : filteredDoctors.length === 0 ? (
-          <div className="empty-state">
-            {doctors.length === 0 ? (
-              <>
-                <p>No doctors found.</p>
-                <p>Click "Add Doctor" to create your first doctor profile.</p>
-              </>
-            ) : (
-              <>
-                <p>No doctors match the current filters.</p>
-                <button className="btn-secondary" onClick={resetFilters}>
-                  🔄 Reset Filters
-                </button>
-              </>
-            )}
+      {/* Content */}
+      <div className="unified-content">
+        {filteredDoctors.length === 0 ? (
+          <div className="unified-empty">
+            <h3>No doctors found</h3>
+            <p>
+              {doctors.length === 0 
+                ? "Create your first doctor profile to get started." 
+                : "Try adjusting your search criteria."}
+            </p>
           </div>
         ) : (
           <>
-            {/* Desktop Table View */}
-            <div className="table-container desktop-only">
-              <table className="data-table">
+            {/* Desktop Table */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
                 <thead>
                   <tr>
-                    <th>Doctor ID</th>
                     <th>Name</th>
                     <th>Surgical Categories</th>
                     <th>Contact</th>
-                    <th className="actions-column">Actions</th>
+                    <th>Consulting Doctor</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDoctors.map(doctor => (
                     <tr key={doctor._id}>
-                      <td className="doctor-id-cell">
-                        <div className="cell-content">
-                          <code>{doctor.doctorId}</code>
-                        </div>
+                      <td>
+                        <span className="name-text">Dr. {doctor.name}</span>
                       </td>
-                      <td className="doctor-name-cell">
-                        <div className="cell-content">
-                          <strong>Dr. {doctor.name}</strong>
-                        </div>
-                      </td>
-                      <td className="categories-cell">
-                        <div className="category-tags">
+                      <td>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                           {doctor.surgicalCategories.map(cat => (
-                            <span key={cat._id} className="category-tag">
+                            <span key={cat._id} style={{ 
+                              padding: '0.125rem 0.5rem', 
+                              borderRadius: '1rem', 
+                              fontSize: '0.75rem',
+                              background: 'var(--gray-100)',
+                              color: 'var(--gray-700)',
+                              fontWeight: '500'
+                            }}>
                               {cat.code}
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="contact-cell">
-                        <div className="contact-info">
+                      <td>
+                        <div>
                           {doctor.phoneNumber && <div>📱 {doctor.phoneNumber}</div>}
                           {doctor.email && <div>✉️ {doctor.email}</div>}
-                          {!doctor.phoneNumber && !doctor.email && <span className="no-data">No contact info</span>}
+                          {!doctor.phoneNumber && !doctor.email && <span style={{ color: 'var(--gray-500)' }}>No contact info</span>}
                         </div>
                       </td>
-                      <td className="actions-cell">
-                        <div className="action-buttons">
-                          <button 
-                            className="btn-outline-primary btn-sm"
+                      <td>
+                        {doctor.consultingDoctor ? doctor.consultingDoctor.name : '-'}
+                      </td>
+                      <td>
+                        <div className="unified-table-actions">
+                          <button
+                            className="unified-table-action edit"
                             onClick={() => handleEdit(doctor)}
+                            title="Edit Doctor"
                             disabled={loading}
                           >
-                            ✏️ Edit
+                            ✏️
                           </button>
-                          <button 
-                            className="btn-outline-danger btn-sm"
+                          <button
+                            className="unified-table-action delete"
                             onClick={() => handleDelete(doctor)}
+                            title="Delete Doctor"
                             disabled={loading}
                           >
-                            🗑️ Delete
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -487,53 +476,43 @@ const Doctors = () => {
                 </tbody>
               </table>
             </div>
-            
-            {/* Mobile Card View */}
-            <div className="mobile-only">
+
+            {/* Mobile Cards */}
+            <div className="unified-mobile-cards">
               {filteredDoctors.map(doctor => (
                 <MobileCard
                   key={doctor._id}
                   id={doctor._id}
-                  openMenuId={openMenuId}
-                  onToggleMenu={toggleMenu}
-                  onEdit={() => handleEdit(doctor)}
-                  onDelete={() => handleDelete(doctor)}
-                  loading={loading}
-                >
-                  <div className="card-content">
-                    <div className="card-header">
-                      <h3 className="card-title">Dr. {doctor.name}</h3>
-                      <span className="card-id">{doctor.doctorId}</span>
-                    </div>
-                    
-                    <div className="card-body">
-                      <div className="info-section">
-                        <div className="info-row">
-                          <span className="info-label">🩺 Categories:</span>
-                          <span className="info-value">
-                            <div className="category-tags-mobile">
-                              {doctor.surgicalCategories.map(cat => (
-                                <span key={cat._id} className="category-tag">
-                                  {cat.code}
-                                </span>
-                              ))}
-                            </div>
-                          </span>
-                        </div>
-                        
-                        <div className="info-row">
-                          <span className="info-label">📱 Phone:</span>
-                          <span className="info-value">{doctor.phoneNumber || 'Not provided'}</span>
-                        </div>
-                        
-                        <div className="info-row">
-                          <span className="info-label">✉️ Email:</span>
-                          <span className="info-value">{doctor.email || 'Not provided'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
+                  title={`Dr. ${doctor.name}`}
+                  badge={doctor.doctorId}
+                  fields={[
+                    { label: 'Phone', value: doctor.phoneNumber || 'Not provided' },
+                    { label: 'Email', value: doctor.email || 'Not provided' },
+                    { label: 'Consulting Doctor', value: doctor.consultingDoctor?.name || 'None assigned' }
+                  ]}
+                  sections={[
+                    {
+                      title: 'Surgical Categories',
+                      items: doctor.surgicalCategories.map(cat => ({
+                        label: cat.code,
+                        value: cat.description
+                      }))
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(doctor)
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(doctor)
+                    }
+                  ]}
+                />
               ))}
             </div>
           </>
