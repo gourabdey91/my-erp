@@ -5,7 +5,8 @@
   "main": "server/index.js",
   "scripts": {
     "install-server": "cd server && npm install",
-    "start": "cd server && npm start",
+    "start": "cd server && node test-server.js",
+    "start-full": "cd server && npm start",
     "dev": "cd server && npm run dev",
     "build": "npm run install-server"
   },
