@@ -1,4 +1,3 @@
 BU,Material Number,Description,HSN Code,GST %,Currency,MRP,Institutional Price,Distribution Price,Surgical Category,Implant Type,Sub Category,Length (mm),Unit
-BU001,M001,Test Material 1,12345,18,INR,1000,900,800,CRANIAL,Trauma,Screws,25,NOS
-BU002,M001,Test Material 1 (BU002),12345,18,INR,1000,900,800,CRANIAL,Trauma,Screws,25,NOS
-BU001,M002,Test Material 2,67890,18,INR,2000,1800,1600,CRANIAL,Trauma,Plates,30,NOS
+BU001,TEST001,Test Material without implant type,12345,18,INR,1000,900,800,CRANIAL,,,,NOS
+BU002,TEST001,Same material in different BU,12345,18,INR,1000,900,800,CRANIAL,,,,NOS

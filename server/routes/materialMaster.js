@@ -174,16 +174,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Surgical category is required' });
     }
 
-    if (!implantType) {
-      return res.status(400).json({ message: 'Implant type is required' });
+    // ImplantType and subCategory are optional
+    // Only validate if implantType is provided, then subCategory should also be provided
+    if (implantType && (!subCategory || !subCategory.trim())) {
+      return res.status(400).json({ message: 'Subcategory is required when implant type is provided' });
     }
 
-    if (!subCategory || !subCategory.trim()) {
-      return res.status(400).json({ message: 'Subcategory is required' });
-    }
-
-    if (!lengthMm || lengthMm <= 0) {
-      return res.status(400).json({ message: 'Valid length is required' });
+    // Length is optional - only validate if provided
+    if (lengthMm !== null && lengthMm !== undefined && lengthMm <= 0) {
+      return res.status(400).json({ message: 'Length must be greater than 0 if provided' });
     }
 
     // Check if material number already exists within the same business unit
@@ -224,18 +223,18 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Verify surgical category and implant type exist
-    const [categoryExists, implantTypeExists] = await Promise.all([
-      Category.findById(surgicalCategory),
-      ImplantType.findById(implantType)
-    ]);
-
+    // Verify surgical category exists
+    const categoryExists = await Category.findById(surgicalCategory);
     if (!categoryExists) {
       return res.status(400).json({ message: 'Invalid surgical category' });
     }
 
-    if (!implantTypeExists) {
-      return res.status(400).json({ message: 'Invalid implant type' });
+    // Verify implant type exists if provided
+    if (implantType) {
+      const implantTypeExists = await ImplantType.findById(implantType);
+      if (!implantTypeExists) {
+        return res.status(400).json({ message: 'Invalid implant type' });
+      }
     }
 
     const material = new MaterialMaster({
@@ -249,8 +248,8 @@ router.post('/', async (req, res) => {
       institutionalPrice,
       distributionPrice,
       surgicalCategory,
-      implantType,
-      subCategory: subCategory.trim(),
+      implantType: implantType || null,
+      subCategory: subCategory ? subCategory.trim() : null,
       lengthMm,
       createdBy: req.user?.id,
       updatedBy: req.user?.id
