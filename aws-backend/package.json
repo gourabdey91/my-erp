@@ -1,0 +1,33 @@
+{
+  "name": "myerp-aws-backend",
+  "version": "1.0.0",
+  "description": "AWS Serverless Backend for ERP System",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "offline": "serverless offline",
+    "remove": "serverless remove",
+    "logs": "serverless logs -f",
+    "info": "serverless info"
+  },
+  "dependencies": {
+    "mongoose": "^7.6.3",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "validator": "^13.11.0",
+    "dayjs": "^1.11.13",
+    "multer": "^1.4.5-lts.1",
+    "aws-sdk": "^2.1501.0"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "SS Agency",
+  "license": "MIT"
+}

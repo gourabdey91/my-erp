@@ -5,15 +5,15 @@ services:
   - type: web
     name: myerp-backend
     runtime: node
+    plan: starter
+    region: singapore
     buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    startCommand: cd server && node index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: MONGODB_URI
-        fromDatabase:
-          name: mongodb
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: PORT
@@ -22,6 +22,7 @@ services:
     
   - type: static
     name: myerp-frontend
+    plan: starter
     buildCommand: cd client && npm install && npm run build
     staticPublishPath: client/build
     pullRequestPreviewsEnabled: false

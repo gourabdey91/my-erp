@@ -8,9 +8,18 @@ const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Database connection with environment-based naming
-const mongoUri = process.env.MONGO_URI;
+const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 console.log(`Starting in ${NODE_ENV} mode`);
-console.log(`Connecting to database: ${mongoUri.split('@')[1].split('?')[0]}`); // Log only the cluster info, not credentials
+
+if (!mongoUri) {
+  console.error('❌ MongoDB connection string not found!');
+  console.error('Set MONGO_URI or MONGODB_URI environment variable');
+  process.exit(1);
+}
+
+// Decode URL-encoded ampersands in MongoDB URI if present
+const decodedMongoUri = mongoUri.replace(/%26/g, '&');
+console.log(`Connecting to database: ${decodedMongoUri.split('@')[1].split('?')[0]}`); // Log only the cluster info, not credentials
 
 // CORS configuration for production
 const corsOptions = {
@@ -45,6 +54,46 @@ app.get('/', (req, res) => {
     status: 'operational',
     timestamp: new Date().toISOString()
   });
+});
+
+// Railway IP detection endpoint for MongoDB Atlas security
+app.get('/detect-railway-ip', async (req, res) => {
+  try {
+    console.log(`IP detection endpoint accessed at ${new Date().toISOString()}`);
+    
+    // Try to get external IP
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    
+    res.json({
+      success: true,
+      railway_outbound_ip: data.ip,
+      mongodb_atlas_format: `${data.ip}/32`,
+      timestamp: new Date().toISOString(),
+      instructions: [
+        '1. Copy the IP address above',
+        '2. Go to MongoDB Atlas → Network Access',
+        '3. Delete the 0.0.0.0/0 entry (security risk)',
+        `4. Add this IP: ${data.ip}/32`,
+        '5. Wait 2-3 minutes for changes to take effect',
+        '6. Test your application endpoints'
+      ],
+      security_note: 'This replaces the insecure 0.0.0.0/0 setting with Railway-specific access'
+    });
+    
+  } catch (error) {
+    console.error('Error detecting Railway IP:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to detect Railway IP address',
+      fallback_instructions: [
+        '1. Check Railway deployment logs for connection errors',
+        '2. Use Google Cloud Platform IP ranges for us-west1 region',
+        '3. Consider upgrading to Railway Pro for static IP addresses'
+      ]
+    });
+  }
 });
 
 // Import routes
@@ -101,7 +150,7 @@ app.use('/api/file-upload', fileUploadRoutes);
 app.use('/api/sales-orders', salesOrderRoutes);
 
 // MongoDB connection with environment awareness
-mongoose.connect(mongoUri);
+mongoose.connect(decodedMongoUri);
 
 mongoose.connection.once('open', () => {
   console.log(`Connected to MongoDB (${NODE_ENV} environment)`);

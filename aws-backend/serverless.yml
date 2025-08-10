@@ -1,0 +1,282 @@
+# Serverless Framework Configuration for ERP v1.0.0
+service: myerp-backend
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: prod
+  region: ap-south-1  # Mumbai region for better latency in India
+  memorySize: 256
+  timeout: 30
+  
+  environment:
+    NODE_ENV: production
+    MONGO_URI: mongodb+srv://gourabdey91:YHVTrGnavP92uMke@main-cluster.svki2gf.mongodb.net/myerp-prod?retryWrites=true&w=majority&appName=Main-Cluster
+    JWT_SECRET: MyERPv1.0ProdSecureKey2025!@#$%^&*()
+    CORS_ORIGIN: https://myerp.s3-website.ap-south-1.amazonaws.com
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+
+# Lambda Functions
+functions:
+  # Health Check
+  health:
+    handler: handlers/health.handler
+    events:
+      - http:
+          path: /health
+          method: get
+          cors: true
+
+  # Authentication
+  auth-login:
+    handler: handlers/auth.login
+    events:
+      - http:
+          path: /api/auth/login
+          method: post
+          cors: true
+
+  auth-register:
+    handler: handlers/auth.register
+    events:
+      - http:
+          path: /api/auth/register
+          method: post
+          cors: true
+
+  # Users
+  users-get:
+    handler: handlers/users.getUsers
+    events:
+      - http:
+          path: /api/users
+          method: get
+          cors: true
+
+  users-create:
+    handler: handlers/users.createUser
+    events:
+      - http:
+          path: /api/users
+          method: post
+          cors: true
+
+  users-update:
+    handler: handlers/users.updateUser
+    events:
+      - http:
+          path: /api/users/{id}
+          method: put
+          cors: true
+
+  users-delete:
+    handler: handlers/users.deleteUser
+    events:
+      - http:
+          path: /api/users/{id}
+          method: delete
+          cors: true
+
+  # Business Units
+  business-units-get:
+    handler: handlers/businessUnits.getBusinessUnits
+    events:
+      - http:
+          path: /api/business-units
+          method: get
+          cors: true
+
+  business-units-create:
+    handler: handlers/businessUnits.createBusinessUnit
+    events:
+      - http:
+          path: /api/business-units
+          method: post
+          cors: true
+
+  # Categories
+  categories-get:
+    handler: handlers/categories.getCategories
+    events:
+      - http:
+          path: /api/categories
+          method: get
+          cors: true
+
+  categories-create:
+    handler: handlers/categories.createCategory
+    events:
+      - http:
+          path: /api/categories
+          method: post
+          cors: true
+
+  # Payment Types
+  payment-types-get:
+    handler: handlers/paymentTypes.getPaymentTypes
+    events:
+      - http:
+          path: /api/payment-types
+          method: get
+          cors: true
+
+  payment-types-create:
+    handler: handlers/paymentTypes.createPaymentType
+    events:
+      - http:
+          path: /api/payment-types
+          method: post
+          cors: true
+
+  # Doctors
+  doctors-get:
+    handler: handlers/doctors.getDoctors
+    events:
+      - http:
+          path: /api/doctors
+          method: get
+          cors: true
+
+  doctors-create:
+    handler: handlers/doctors.createDoctor
+    events:
+      - http:
+          path: /api/doctors
+          method: post
+          cors: true
+
+  doctors-update:
+    handler: handlers/doctors.updateDoctor
+    events:
+      - http:
+          path: /api/doctors/{id}
+          method: put
+          cors: true
+
+  doctors-delete:
+    handler: handlers/doctors.deleteDoctor
+    events:
+      - http:
+          path: /api/doctors/{id}
+          method: delete
+          cors: true
+
+  # Hospitals
+  hospitals-get:
+    handler: handlers/hospitals.getHospitals
+    events:
+      - http:
+          path: /api/hospitals
+          method: get
+          cors: true
+
+  hospitals-create:
+    handler: handlers/hospitals.createHospital
+    events:
+      - http:
+          path: /api/hospitals
+          method: post
+          cors: true
+
+  # Material Master
+  material-master-get:
+    handler: handlers/materialMaster.getMaterialMasters
+    events:
+      - http:
+          path: /api/material-master
+          method: get
+          cors: true
+
+  material-master-create:
+    handler: handlers/materialMaster.createMaterialMaster
+    events:
+      - http:
+          path: /api/material-master
+          method: post
+          cors: true
+
+  material-master-update:
+    handler: handlers/materialMaster.updateMaterialMaster
+    events:
+      - http:
+          path: /api/material-master/{id}
+          method: put
+          cors: true
+
+  material-master-delete:
+    handler: handlers/materialMaster.deleteMaterialMaster
+    events:
+      - http:
+          path: /api/material-master/{id}
+          method: delete
+          cors: true
+
+  # Expense Types
+  expense-types-get:
+    handler: handlers/expenseTypes.getExpenseTypes
+    events:
+      - http:
+          path: /api/expense-types
+          method: get
+          cors: true
+
+  expense-types-create:
+    handler: handlers/expenseTypes.createExpenseType
+    events:
+      - http:
+          path: /api/expense-types
+          method: post
+          cors: true
+
+  # Sales Orders
+  sales-orders-get:
+    handler: handlers/salesOrders.getSalesOrders
+    events:
+      - http:
+          path: /api/sales-orders
+          method: get
+          cors: true
+
+  sales-orders-create:
+    handler: handlers/salesOrders.createSalesOrder
+    events:
+      - http:
+          path: /api/sales-orders
+          method: post
+          cors: true
+
+  # Dashboard
+  dashboard-stats:
+    handler: handlers/dashboard.getStats
+    events:
+      - http:
+          path: /api/dashboard/stats
+          method: get
+          cors: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3001
+
+# Package configuration
+package:
+  patterns:
+    - "!node_modules/**"
+    - "!.git/**"
+    - "!.env"
+    - "!*.md"
+    - "handlers/**"
+    - "utils/**"
+    - "models/**"
