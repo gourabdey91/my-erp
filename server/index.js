@@ -56,41 +56,83 @@ app.get('/', (req, res) => {
   });
 });
 
-// Railway IP detection endpoint for MongoDB Atlas security
+// Render IP detection endpoint for MongoDB Atlas security
 app.get('/detect-railway-ip', async (req, res) => {
   try {
     console.log(`IP detection endpoint accessed at ${new Date().toISOString()}`);
     
-    // Try to get external IP
-    const fetch = (await import('node-fetch')).default;
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
+    // Try multiple IP detection services using built-in https module
+    const https = require('https');
+    
+    const getIP = (url) => {
+      return new Promise((resolve, reject) => {
+        https.get(url, (response) => {
+          let data = '';
+          response.on('data', (chunk) => data += chunk);
+          response.on('end', () => {
+            try {
+              const parsed = JSON.parse(data);
+              resolve(parsed.ip || parsed.origin);
+            } catch (e) {
+              resolve(data.trim());
+            }
+          });
+        }).on('error', reject);
+      });
+    };
+    
+    // Try multiple services
+    let detectedIP = null;
+    const services = [
+      'https://api.ipify.org?format=json',
+      'https://httpbin.org/ip',
+      'https://api64.ipify.org?format=json'
+    ];
+    
+    for (const service of services) {
+      try {
+        detectedIP = await getIP(service);
+        if (detectedIP) break;
+      } catch (e) {
+        console.log(`Failed to get IP from ${service}`);
+      }
+    }
+    
+    if (!detectedIP) {
+      throw new Error('All IP detection services failed');
+    }
     
     res.json({
       success: true,
-      railway_outbound_ip: data.ip,
-      mongodb_atlas_format: `${data.ip}/32`,
+      render_outbound_ip: detectedIP,
+      mongodb_atlas_format: `${detectedIP}/32`,
       timestamp: new Date().toISOString(),
       instructions: [
         '1. Copy the IP address above',
         '2. Go to MongoDB Atlas → Network Access',
         '3. Delete the 0.0.0.0/0 entry (security risk)',
-        `4. Add this IP: ${data.ip}/32`,
+        `4. Add this IP: ${detectedIP}/32`,
         '5. Wait 2-3 minutes for changes to take effect',
         '6. Test your application endpoints'
       ],
-      security_note: 'This replaces the insecure 0.0.0.0/0 setting with Railway-specific access'
+      security_note: 'This replaces the insecure 0.0.0.0/0 setting with Render-specific access',
+      platform: 'Render'
     });
     
   } catch (error) {
-    console.error('Error detecting Railway IP:', error);
+    console.error('Error detecting Render IP:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to detect Railway IP address',
+      error: 'Failed to detect Render IP address',
       fallback_instructions: [
-        '1. Check Railway deployment logs for connection errors',
-        '2. Use Google Cloud Platform IP ranges for us-west1 region',
-        '3. Consider upgrading to Railway Pro for static IP addresses'
+        '1. Use these known Render IP ranges:',
+        '   - 216.24.57.0/24',
+        '   - 216.24.57.1/32 to 216.24.57.255/32',
+        '2. Or temporarily use 0.0.0.0/0 for testing (less secure)',
+        '3. Check Render documentation for current IP ranges'
+      ],
+      render_ip_ranges: [
+        '216.24.57.0/24'
       ]
     });
   }
