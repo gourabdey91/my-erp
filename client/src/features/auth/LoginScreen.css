@@ -96,19 +96,29 @@
   border-radius: 4px;
   font-size: 16px;
   background: #f8f9fa;
-  color: #32363a;
+  color: #32363a !important;
   transition: all 0.2s ease;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-text-fill-color: #32363a !important;
+  opacity: 1 !important;
+  -webkit-opacity: 1 !important;
 }
 
 .form-input:focus {
   outline: none;
   background: #ffffff;
+  color: #32363a !important;
+  -webkit-text-fill-color: #32363a !important;
   box-shadow: 0 0 0 2px rgba(8, 84, 160, 0.1);
 }
 
 .form-input::placeholder {
-  color: #8c8c8c;
+  color: #8c8c8c !important;
+  -webkit-text-fill-color: #8c8c8c !important;
+  opacity: 1;
 }
 
 .login-button {
@@ -331,11 +341,13 @@
   .form-input {
     background: #404040;
     border: none;
-    color: #ffffff;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
   }
 
   .form-input::placeholder {
-    color: #999999;
+    color: #999999 !important;
+    -webkit-text-fill-color: #999999 !important;
   }
 
   .login-button.secondary {
@@ -347,4 +359,34 @@
   .login-footer p {
     color: #999999;
   }
+}
+
+/* Mobile Safari input fix */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .form-input {
+    background: #f8f9fa !important;
+    color: #32363a !important;
+    -webkit-text-fill-color: #32363a !important;
+  }
+  
+  .form-input:focus {
+    background: #ffffff !important;
+    color: #32363a !important;
+    -webkit-text-fill-color: #32363a !important;
+  }
+}
+
+/* Additional mobile input visibility fix */
+input[type="email"],
+input[type="password"] {
+  color: #32363a !important;
+  -webkit-text-fill-color: #32363a !important;
+  background-color: #f8f9fa !important;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+  color: #32363a !important;
+  -webkit-text-fill-color: #32363a !important;
+  background-color: #ffffff !important;
 }
