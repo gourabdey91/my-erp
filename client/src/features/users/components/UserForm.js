@@ -161,9 +161,11 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
   };
 
   return (
-    <div className="form-section">
-      <div className="section-header">
-        <h2>✏️ {isEdit ? 'Edit User' : 'Add New User'}</h2>
+    <div className="unified-content">
+      <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+        <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+          {isEdit ? 'Edit User' : 'Add New User'}
+        </h2>
       </div>
 
       {error && (
@@ -172,168 +174,186 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="form-container">
+      <form onSubmit={handleSubmit}>
         {/* Personal Information */}
-        <div className="form-section-header">
-          <h3>👤 Personal Information</h3>
-        </div>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>👤 Personal Information</h3>
+          </div>
         
-        <div className="form-grid">
-          <div className="form-group">
-            <label htmlFor="firstName">First Name *</label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              placeholder="Enter first name"
-              required
-            />
-          </div>
+          <div className="unified-form-grid">
+            <div className="unified-form-field">
+              <label className="unified-form-label">First Name *</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                placeholder="Enter first name"
+                className="unified-search-input"
+                required
+              />
+            </div>
           
-          <div className="form-group">
-            <label htmlFor="lastName">Last Name *</label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              placeholder="Enter last name"
-              required
-            />
-          </div>
+            <div className="unified-form-field">
+              <label className="unified-form-label">Last Name *</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                placeholder="Enter last name"
+                className="unified-search-input"
+                required
+              />
+            </div>
           
-          <div className="form-group">
-            <label htmlFor="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="Enter email address"
-              required
-            />
-          </div>
+            <div className="unified-form-field">
+              <label className="unified-form-label">Email *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Enter email address"
+                className="unified-search-input"
+                required
+              />
+            </div>
           
-          <div className="form-group">
-            <label htmlFor="phone">Phone <span className="optional-field">(Optional)</span></label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder="Enter phone number"
-            />
+            <div className="unified-form-field">
+              <label className="unified-form-label">
+                Phone <span style={{ color: 'var(--gray-500)', fontWeight: 'normal' }}>(Optional)</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Enter phone number"
+                className="unified-search-input"
+              />
+            </div>
           </div>
         </div>
 
         {/* Authentication */}
-        <div className="form-section-header">
-          <h3>🔐 Authentication</h3>
-        </div>
-        
-        <div className="form-grid">
-          <div className="form-group">
-            <label htmlFor="password">
-              Password {!isEdit ? '*' : <span className="optional-field">(Leave blank to keep current)</span>}
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required={!isEdit}
-              minLength="6"
-              placeholder={isEdit ? "Enter new password" : "Enter password (min 6 chars)"}
-            />
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>🔐 Authentication</h3>
           </div>
+        
+          <div className="unified-form-grid">
+            <div className="unified-form-field">
+              <label className="unified-form-label">
+                Password {!isEdit ? '*' : <span style={{ color: 'var(--gray-500)', fontWeight: 'normal' }}>(Leave blank to keep current)</span>}
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required={!isEdit}
+                minLength="6"
+                placeholder={isEdit ? "Enter new password" : "Enter password (min 6 chars)"}
+                className="unified-search-input"
+              />
+            </div>
           
-          <div className="form-group">
-            <label htmlFor="confirmPassword">
-              Confirm Password {!isEdit ? '*' : <span className="optional-field">(If changing password)</span>}
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              required={!isEdit || formData.password}
-              minLength="6"
-              placeholder={isEdit ? "Confirm new password" : "Confirm password"}
-            />
+            <div className="unified-form-field">
+              <label className="unified-form-label">
+                Confirm Password {!isEdit ? '*' : <span style={{ color: 'var(--gray-500)', fontWeight: 'normal' }}>(If changing password)</span>}
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required={!isEdit || formData.password}
+                minLength="6"
+                placeholder={isEdit ? "Confirm new password" : "Confirm password"}
+                className="unified-search-input"
+              />
+            </div>
           </div>
         </div>
 
         {/* Role & Status */}
-        <div className="form-section-header">
-          <h3>⚙️ Role & Status</h3>
-        </div>
-        
-        <div className="form-grid">
-          <div className="form-group">
-            <label htmlFor="role">Role *</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="user">User</option>
-              <option value="staff">Staff</option>
-              <option value="manager">Manager</option>
-              <option value="admin">Admin</option>
-            </select>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>⚙️ Role & Status</h3>
           </div>
+        
+          <div className="unified-form-grid">
+            <div className="unified-form-field">
+              <label className="unified-form-label">Role *</label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="unified-search-input"
+                required
+              >
+                <option value="user">User</option>
+                <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
           
-          <div className="form-group">
-            <label htmlFor="status">Status *</label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <div className="unified-form-field">
+              <label className="unified-form-label">Status *</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="unified-search-input"
+                required
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
         </div>
 
-          <div className="form-section">
-            <h3>Business Unit Access</h3>
-            <div className="form-group">
-              <label>Available Business Units</label>
-              <div className="checkbox-group">
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>🏢 Business Unit Access</h3>
+            </div>
+            
+            <div className="unified-form-field">
+              <label className="unified-form-label">Available Business Units</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
                 {availableBusinessUnits.map(bu => (
-                  <label key={bu._id} className="checkbox-label">
+                  <div key={bu._id} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem', border: '1px solid var(--gray-300)', borderRadius: '6px', backgroundColor: formData.businessUnits.includes(bu._id) ? 'var(--blue-50)' : 'white', transition: 'all 0.2s ease' }}>
                     <input
                       type="checkbox"
                       checked={formData.businessUnits.includes(bu._id)}
                       onChange={(e) => handleBusinessUnitChange(bu._id, e.target.checked)}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer', marginRight: '0.75rem' }}
                     />
-                    <span className="checkmark"></span>
-                    {bu.code} - {bu.name}
-                  </label>
+                    <label style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                      <span style={{ fontFamily: 'Courier New, monospace', backgroundColor: 'var(--blue-100)', color: 'var(--blue-700)', padding: '2px 6px', borderRadius: '3px', fontWeight: '600', fontSize: '12px' }}>
+                        {bu.code}
+                      </span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+                        {bu.name}
+                      </span>
+                    </label>
+                  </div>
                 ))}
               </div>
             </div>
             
             {formData.businessUnits.length > 0 && (
-              <div className="form-group">
-                <label htmlFor="defaultBusinessUnit">Default Business Unit</label>
+              <div className="unified-form-field" style={{ marginTop: '1rem' }}>
+                <label className="unified-form-label">Default Business Unit</label>
                 <select
-                  id="defaultBusinessUnit"
                   name="defaultBusinessUnit"
                   value={formData.defaultBusinessUnit}
                   onChange={handleDefaultBusinessUnitChange}
+                  className="unified-search-input"
                 >
                   <option value="">Select default business unit</option>
                   {availableBusinessUnits
@@ -348,17 +368,17 @@ const UserForm = ({ user, onSave, onCancel, isEdit = false }) => {
             )}
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? '⏳ Saving...' : (isEdit ? '💾 Update User' : '✅ Create User')}
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+              {loading ? 'Saving...' : (isEdit ? 'Update User' : 'Create User')}
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="unified-btn unified-btn-secondary"
               onClick={onCancel}
               disabled={loading}
             >
-              ✖ Cancel
+              Cancel
             </button>
           </div>
         </form>

@@ -18,8 +18,8 @@ const expenseTypeSchema = new mongoose.Schema({
   businessUnit: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',
-    required: [true, 'Business unit is required'],
-    index: true
+    required: false,
+    index: { sparse: true }
   },
   isActive: {
     type: Boolean,
@@ -39,10 +39,14 @@ const expenseTypeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index for business unit and code uniqueness
-expenseTypeSchema.index({ businessUnit: 1, code: 1 }, { unique: true });
+// Compound index for business unit and code uniqueness (sparse for null business units)
+expenseTypeSchema.index({ businessUnit: 1, code: 1 }, { unique: true, sparse: true });
 
-// Compound index for business unit and name uniqueness
-expenseTypeSchema.index({ businessUnit: 1, name: 1 }, { unique: true });
+// Compound index for business unit and name uniqueness (sparse for null business units)  
+expenseTypeSchema.index({ businessUnit: 1, name: 1 }, { unique: true, sparse: true });
+
+// Simple indexes for cases without business unit
+expenseTypeSchema.index({ code: 1 }, { unique: true, partialFilterExpression: { businessUnit: { $exists: false } } });
+expenseTypeSchema.index({ name: 1 }, { unique: true, partialFilterExpression: { businessUnit: { $exists: false } } });
 
 module.exports = mongoose.model('ExpenseType', expenseTypeSchema);

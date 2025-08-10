@@ -62,7 +62,11 @@ router.post('/', async (req, res) => {
     // Check if expense type with same code already exists
     const existingByCode = await ExpenseType.findOne({ 
       code: code.trim().toUpperCase(),
-      isActive: true 
+      isActive: true,
+      $or: [
+        { businessUnit: { $exists: false } },
+        { businessUnit: null }
+      ]
     });
 
     if (existingByCode) {
@@ -74,7 +78,11 @@ router.post('/', async (req, res) => {
     // Check if expense type with same name already exists
     const existingByName = await ExpenseType.findOne({ 
       name: name.trim(),
-      isActive: true 
+      isActive: true,
+      $or: [
+        { businessUnit: { $exists: false } },
+        { businessUnit: null }
+      ]
     });
 
     if (existingByName) {

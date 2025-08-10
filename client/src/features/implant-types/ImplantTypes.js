@@ -23,7 +23,6 @@ const ImplantTypes = () => {
     surgicalCategoryId: '',
     implantTypeId: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch implant types and categories on component mount
   useEffect(() => {
@@ -79,14 +78,6 @@ const ImplantTypes = () => {
       }
       
       return newFilters;
-    });
-  };
-
-  const resetFilters = () => {
-    setFilters({
-      implantTypeName: '',
-      surgicalCategoryId: '',
-      implantTypeId: ''
     });
   };
 
@@ -315,68 +306,81 @@ const ImplantTypes = () => {
 
       {/* Form */}
       {showForm && (
-        <div className="form-section">
-          <div className="section-header">
-            <h2>✏️ {editingImplantType ? 'Edit Implant Type' : 'Add New Implant Type'}</h2>
+        <div className="unified-content">
+          <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.5rem', fontWeight: '600' }}>
+              {editingImplantType ? 'Edit Implant Type' : 'Add New Implant Type'}
+            </h2>
           </div>
-          <form onSubmit={handleSubmit} className="form-container">
-            <div className="form-grid">
-              <div className="form-group">
-                <label htmlFor="name">Implant Type Name *</label>
+          <form onSubmit={handleSubmit}>
+            <div className="unified-form-grid">
+              <div className="unified-form-field">
+                <label className="unified-form-label">
+                  Implant Type Name * (e.g., Plates, Screws, Borehole Mesh)
+                </label>
                 <input
                   type="text"
-                  id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="e.g., Plates, Screws, Borehole Mesh, Orbital Plates"
+                  placeholder="Enter implant type name"
+                  className="unified-search-input"
                   required
                 />
               </div>
             </div>
 
-            <div className="subcategories-section">
-              <div className="section-header">
-                <h3>📝 Subcategories</h3>
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>📝 Subcategories</h3>
                 <button
                   type="button"
-                  className="btn-secondary"
+                  className="unified-btn unified-btn-secondary"
                   onClick={addSubcategory}
                 >
                   ➕ Add Subcategory
                 </button>
               </div>
 
-              <div className="subcategories-container">
+              <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid var(--gray-300)', borderRadius: '8px', padding: '1rem', backgroundColor: 'var(--white)' }}>
                 {formData.subcategories.map((subcat, index) => (
-                  <div key={index} className="subcategory-card">
-                    <div className="subcategory-grid">
-                      <div className="form-group">
-                        <label>Subcategory *</label>
+                  <div key={index} style={{ border: '1px solid var(--gray-300)', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', backgroundColor: 'var(--gray-50)' }}>
+                    <div className="unified-form-grid" style={{ gridTemplateColumns: '2fr 1fr 2fr', gap: '1rem' }}>
+                      <div className="unified-form-field">
+                        <label className="unified-form-label">
+                          Subcategory *
+                        </label>
                         <input
                           type="text"
                           value={subcat.subCategory}
                           onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
                           placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
+                          className="unified-search-input"
                           required
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Length (mm) <span className="optional-field">(Optional)</span></label>
+                      <div className="unified-form-field">
+                        <label className="unified-form-label">
+                          Length (mm) <span style={{ color: 'var(--gray-500)', fontWeight: 'normal' }}>(Optional)</span>
+                        </label>
                         <input
                           type="number"
                           value={subcat.length}
                           onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
                           placeholder="Length in mm"
+                          className="unified-search-input"
                           min="0"
                           step="0.1"
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Surgical Category *</label>
+                      <div className="unified-form-field">
+                        <label className="unified-form-label">
+                          Surgical Category *
+                        </label>
                         <select
                           value={subcat.surgicalCategory}
                           onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
+                          className="unified-search-input"
                           required
                         >
                           <option value="">Select Category</option>
@@ -388,38 +392,41 @@ const ImplantTypes = () => {
                         </select>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn-danger remove-btn"
-                      onClick={() => removeSubcategory(index)}
-                      title="Remove Subcategory"
-                    >
-                      🗑️ Remove
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="unified-btn unified-btn-danger"
+                        onClick={() => removeSubcategory(index)}
+                        title="Remove Subcategory"
+                        style={{ fontSize: '0.875rem' }}
+                      >
+                        🗑️ Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
 
                 {formData.subcategories.length === 0 && (
-                  <div className="empty-state">
+                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)', fontStyle: 'italic' }}>
                     <p>No subcategories added yet. Click "Add Subcategory" to add one.</p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? '⏳ Saving...' : (editingImplantType ? '💾 Update Implant Type' : '✅ Add Implant Type')}
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                {loading ? 'Saving...' : (editingImplantType ? 'Update Implant Type' : 'Add Implant Type')}
               </button>
               <button
                 type="button"
-                className="btn-secondary"
+                className="unified-btn unified-btn-secondary"
                 onClick={() => {
                   resetForm();
                   setShowForm(false);
                 }}
               >
-                ✖ Cancel
+                Cancel
               </button>
             </div>
           </form>
