@@ -1,6 +1,6 @@
 // API configuration and base URL
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-backend-url.com' // Update this with your production backend URL
+  ? 'https://myerp-backend.onrender.com' // Updated for Render deployment
   : 'http://localhost:5000';
 
 // Common API request function

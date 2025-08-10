@@ -24,9 +24,13 @@ services:
   - type: static
     name: myerp-frontend
     plan: starter
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: client/build
+    rootDirectory: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
     pullRequestPreviewsEnabled: false
+    envVars:
+      - key: NODE_ENV
+        value: production
     
 # Auto-deploy from main branch
 branches:
