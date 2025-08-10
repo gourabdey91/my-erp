@@ -26,9 +26,9 @@ const corsOptions = {
   origin: [
     'http://localhost:3000', // Development
     'https://localhost:3000', // Development with HTTPS
-    process.env.CORS_ORIGIN, // Production frontend URL
-    // Add your production URLs here after deployment
-    // 'https://your-app-name.netlify.app'
+    'https://my-erp.onrender.com', // Production frontend URL
+    'https://myerp-frontend.onrender.com', // Alternative frontend URL
+    process.env.CORS_ORIGIN, // Additional production frontend URL
   ].filter(Boolean), // Remove undefined values
   credentials: true,
   optionsSuccessStatus: 200
