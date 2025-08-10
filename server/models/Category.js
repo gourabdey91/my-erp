@@ -20,7 +20,7 @@ const categorySchema = new mongoose.Schema({
   businessUnitId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BusinessUnit',
-    required: true
+    required: false  // Surgical categories are global, not business unit specific
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -36,6 +36,8 @@ const categorySchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-categorySchema.index({ businessUnitId: 1, isActive: 1 });
+categorySchema.index({ code: 1 });
+categorySchema.index({ isActive: 1 });
+categorySchema.index({ businessUnitId: 1, isActive: 1 }, { sparse: true }); // Sparse index for optional businessUnitId
 
 module.exports = mongoose.model('Category', categorySchema);
