@@ -7,8 +7,9 @@ services:
     runtime: node
     plan: starter
     region: singapore
-    buildCommand: cd server && npm install
-    startCommand: cd server && node index.js
+    rootDirectory: server
+    buildCommand: npm install
+    startCommand: node index.js
     envVars:
       - key: NODE_ENV
         value: production
