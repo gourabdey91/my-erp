@@ -243,6 +243,25 @@
   background: #c82333;
 }
 
+/* Responsive Design - Show/hide table vs cards */
+@media (min-width: 769px) {
+  .credit-notes-table {
+    display: block !important;
+  }
+  .credit-notes-cards {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .credit-notes-table {
+    display: none !important;
+  }
+  .credit-notes-cards {
+    display: block !important;
+  }
+}
+
 /* Mobile Card Layout */
 .credit-notes-cards {
   display: none;

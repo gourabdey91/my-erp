@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { doctorAssignmentAPI } from '../services/doctorAssignmentAPI';
 import './DoctorAssignments.css';
+import '../../../shared/styles/unified-design.css';
 
 const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
   const [doctorAssignments, setDoctorAssignments] = useState([]);
@@ -262,44 +263,53 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
 
   return (
     <div className="doctor-assignments-modal">
-      <div className="doctor-assignments-content">
-        <div className="doctor-assignments-header">
-          <h2>Doctor Assignments - {hospital.shortName}</h2>
+      <div className="doctor-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+        {/* Header */}
+        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
+          <div className="unified-header-content">
+            <div className="unified-header-text">
+              <h1 style={{fontSize: '1.5rem'}}>Doctor Assignments</h1>
+              <p>Manage doctor assignments and charges for {hospital.shortName}</p>
+            </div>
+            <button 
+              className="unified-btn unified-btn-primary"
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+            >
+              Add Doctor Assignment
+            </button>
+          </div>
           <button 
             className="close-button"
             onClick={onClose}
+            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
           >
             ×
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-
-        <div className="doctor-assignments-actions">
-          <button 
-            className="add-button"
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-          >
-            Add Doctor Assignment
-          </button>
-        </div>
+        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
+        {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
         {showForm && (
-          <div className="doctor-assignment-form">
-            <h3>{editingAssignment ? 'Edit Doctor Assignment' : 'Add Doctor Assignment'}</h3>
+          <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
+            <div style={{borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem'}}>
+              <h2 style={{margin: 0, color: 'var(--primary-color)', fontSize: '1.25rem', fontWeight: '600'}}>
+                {editingAssignment ? 'Edit Doctor Assignment' : 'Add Doctor Assignment'}
+              </h2>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Doctor *</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Doctor *</label>
                   <select
                     value={formData.doctor}
                     onChange={(e) => setFormData({ ...formData, doctor: e.target.value })}
                     disabled={editingAssignment} // Can't change doctor when editing
                     required
+                    className="unified-search-input"
                   >
                     <option value="">Select Doctor</option>
                     {doctors.map(doctor => (
@@ -310,13 +320,14 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Expense Type *</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Expense Type *</label>
                   <select
                     value={formData.expenseType}
                     onChange={(e) => setFormData({ ...formData, expenseType: e.target.value })}
                     disabled={true} // Hardcoded to Clinical Charges
                     required
+                    className="unified-search-input"
                   >
                     {expenseTypes.length > 0 ? (
                       expenseTypes.map(type => (
@@ -331,13 +342,14 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Payment Type (Optional)</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Payment Type (Optional)</label>
                   <select
                     value={formData.paymentType}
                     onChange={(e) => handlePaymentTypeChange(e.target.value)}
                     disabled={editingAssignment} // Can't change payment type when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Payment Types</option>
                     {paymentTypes.map(type => (
@@ -348,12 +360,13 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Surgical Category (Optional)</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Surgical Category (Optional)</label>
                   <select
                     value={formData.surgicalCategory}
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     disabled={editingAssignment} // Can't change category when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Categories</option>
                     {categories.map(category => (
@@ -365,13 +378,14 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Procedure (Optional)</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Procedure (Optional)</label>
                   <select
                     value={formData.procedure}
                     onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
                     disabled={editingAssignment} // Can't change procedure when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Procedures</option>
                     {procedures.map(procedure => (
@@ -382,11 +396,12 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Charge Type (Optional)</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Charge Type (Optional)</label>
                   <select
                     value={formData.chargeType}
                     onChange={(e) => setFormData({ ...formData, chargeType: e.target.value })}
+                    className="unified-search-input"
                   >
                     <option value="">Not specified</option>
                     <option value="percentage">Percentage (%)</option>
@@ -395,9 +410,9 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Charge Value (Optional)</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Charge Value (Optional)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -406,65 +421,70 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                     value={formData.chargeValue}
                     onChange={(e) => setFormData({ ...formData, chargeValue: e.target.value })}
                     placeholder={formData.chargeType === 'percentage' ? '0-100' : 'Amount in ₹'}
+                    className="unified-search-input"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Valid From *</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Valid From *</label>
                   <input
                     type="date"
                     value={formData.validityFrom}
                     onChange={(e) => setFormData({ ...formData, validityFrom: e.target.value })}
                     required
+                    className="unified-search-input"
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Valid To *</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Valid To *</label>
                   <input
                     type="date"
                     value={formData.validityTo}
                     onChange={(e) => setFormData({ ...formData, validityTo: e.target.value })}
                     required
+                    className="unified-search-input"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Description</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Description</label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     maxLength="200"
                     placeholder="Optional description"
+                    className="unified-search-input"
                   />
                 </div>
               </div>
 
-              <div className="form-buttons">
-                <button type="submit" className="save-button">
-                  {editingAssignment ? 'Update' : 'Save'} Assignment
-                </button>
-                <button type="button" onClick={resetForm} className="cancel-button">
+              <div style={{display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem'}}>
+                <button type="button" onClick={resetForm} className="unified-btn unified-btn-secondary">
                   Cancel
+                </button>
+                <button type="submit" className="unified-btn unified-btn-primary">
+                  {editingAssignment ? 'Update' : 'Save'} Assignment
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        <div className="doctor-assignments-list">
+        <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
           {doctorAssignments.length === 0 ? (
-            <div className="no-data">
-              No doctor assignments found for this hospital.
+            <div className="unified-empty">
+              <h3>No Doctor Assignments</h3>
+              <p>No doctor assignments found for this hospital.</p>
             </div>
           ) : (
             <>
               {/* Desktop Table View */}
-              <div className="doctor-assignments-table">
-                <table>
+              <div className="doctor-assignments-table" style={{display: 'block'}}>
+                <table className="unified-table">
                   <thead>
                     <tr>
                       <th>Doctor</th>
@@ -486,18 +506,20 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                         <td data-label="Valid To">{formatDate(assignment.validityTo)}</td>
                         <td data-label="Description">{assignment.description || '-'}</td>
                         <td data-label="Actions">
-                          <div className="action-buttons">
+                          <div className="unified-table-actions">
                             <button
                               onClick={() => handleEdit(assignment)}
-                              className="edit-button"
+                              className="unified-table-action edit"
+                              title="Edit assignment"
                             >
-                              Edit
+                              ✏️
                             </button>
                             <button
                               onClick={() => handleDelete(assignment)}
-                              className="delete-button"
+                              className="unified-table-action delete"
+                              title="Delete assignment"
                             >
-                              Delete
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -508,54 +530,52 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
               </div>
 
               {/* Mobile Card View */}
-              <div className="doctor-assignments-cards">
+              <div className="doctor-assignments-cards" style={{display: 'none'}}>
                 {doctorAssignments.map(assignment => (
-                  <div key={assignment._id} className="doctor-assignment-card">
-                    <div className="doctor-assignment-card-header">
-                      <div className="doctor-name">
+                  <div key={assignment._id} className="unified-mobile-card">
+                    <div className="unified-card-header">
+                      <div className="unified-card-title">
                         {getDoctorName(assignment.doctor)}
                       </div>
-                      <div className="clinical-charges">
+                      <div className="unified-card-badge">
                         {getChargeDisplay(assignment)}
                       </div>
                     </div>
                     
-                    <div className="doctor-assignment-applicability">
-                      <div className="doctor-assignment-applicability-label">Applies to:</div>
-                      <div className="doctor-assignment-applicability-value">
-                        {getApplicabilityText(assignment)}
-                      </div>
-                    </div>
-
-                    <div className="doctor-assignment-validity">
-                      <div className="doctor-assignment-validity-label">Valid:</div>
-                      <div className="doctor-assignment-validity-value">
-                        {formatDate(assignment.validityFrom)} - {formatDate(assignment.validityTo)}
-                      </div>
-                    </div>
-
-                    {assignment.description && (
-                      <div className="doctor-assignment-description">
-                        <div className="doctor-assignment-description-label">Description:</div>
-                        <div className="doctor-assignment-description-value">
-                          {assignment.description}
+                    <div className="unified-card-body" style={{padding: '1rem 1.5rem'}}>
+                      <div style={{marginBottom: '0.75rem'}}>
+                        <strong style={{fontSize: '0.85rem', color: 'var(--gray-600)'}}>Applies to:</strong>
+                        <div style={{marginTop: '0.25rem', background: 'var(--gray-50)', padding: '0.5rem', borderRadius: 'var(--border-radius)', fontSize: '0.9rem'}}>
+                          {getApplicabilityText(assignment)}
                         </div>
                       </div>
-                    )}
 
-                    <div className="doctor-assignment-actions">
-                      <button
-                        onClick={() => handleEdit(assignment)}
-                        className="edit-button"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(assignment)}
-                        className="delete-button"
-                      >
-                        Delete
-                      </button>
+                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                        <strong>Valid:</strong> {formatDate(assignment.validityFrom)} - {formatDate(assignment.validityTo)}
+                      </div>
+
+                      {assignment.description && (
+                        <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--gray-600)'}}>
+                          <strong>Description:</strong> {assignment.description}
+                        </div>
+                      )}
+
+                      <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
+                        <button
+                          onClick={() => handleEdit(assignment)}
+                          className="unified-btn unified-btn-secondary"
+                          style={{flex: 1}}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(assignment)}
+                          className="unified-btn unified-btn-danger"
+                          style={{flex: 1}}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

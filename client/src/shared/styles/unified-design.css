@@ -483,6 +483,39 @@
   font-size: 0.9rem;
 }
 
+/* ========== Alerts ========== */
+.unified-alert {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.unified-alert-success {
+  background-color: #d1eddb;
+  border: 1px solid #badbcc;
+  color: #0f5132;
+}
+
+.unified-alert-danger {
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+  color: #842029;
+}
+
+.unified-alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffecb5;
+  color: #664d03;
+}
+
+.unified-alert-info {
+  background-color: #cff4fc;
+  border: 1px solid #bee5eb;
+  color: #055160;
+}
+
 /* ========== Responsive Design ========== */
 @media (max-width: 1200px) {
   .unified-filters-row {

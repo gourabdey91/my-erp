@@ -244,6 +244,25 @@
   background: #c82333;
 }
 
+/* Responsive Design - Show/hide table vs cards */
+@media (min-width: 769px) {
+  .doctor-assignments-table {
+    display: block !important;
+  }
+  .doctor-assignments-cards {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-assignments-table {
+    display: none !important;
+  }
+  .doctor-assignments-cards {
+    display: block !important;
+  }
+}
+
 /* Mobile Card Layout */
 .doctor-assignments-cards {
   display: none;

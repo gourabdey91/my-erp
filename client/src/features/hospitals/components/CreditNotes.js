@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { creditNoteAPI } from '../services/creditNoteAPI';
 import './CreditNotes.css';
+import '../../../shared/styles/unified-design.css';
 
 const CreditNotes = ({ hospital, currentUser, onClose }) => {
   const [creditNotes, setCreditNotes] = useState([]);
@@ -209,40 +210,49 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
 
   return (
     <div className="credit-notes-modal">
-      <div className="credit-notes-content">
-        <div className="credit-notes-header">
-          <h2>Credit Notes - {hospital.shortName}</h2>
+      <div className="credit-notes-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+        {/* Header */}
+        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
+          <div className="unified-header-content">
+            <div className="unified-header-text">
+              <h1 style={{fontSize: '1.5rem'}}>Credit Notes</h1>
+              <p>Manage credit note assignments for {hospital.shortName}</p>
+            </div>
+            <button 
+              className="unified-btn unified-btn-primary"
+              onClick={() => setShowForm(true)}
+            >
+              Add Credit Note
+            </button>
+          </div>
           <button 
             className="close-button"
             onClick={onClose}
+            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
           >
             ×
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-
-        <div className="credit-notes-actions">
-          <button 
-            className="add-button"
-            onClick={() => setShowForm(true)}
-          >
-            Add Credit Note
-          </button>
-        </div>
+        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
+        {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
         {showForm && (
-          <div className="credit-note-form">
-            <h3>{editingCreditNote ? 'Edit Credit Note' : 'Add Credit Note'}</h3>
+          <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
+            <div style={{borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem'}}>
+              <h2 style={{margin: 0, color: 'var(--primary-color)', fontSize: '1.25rem', fontWeight: '600'}}>
+                {editingCreditNote ? 'Edit Credit Note' : 'Add Credit Note'}
+              </h2>
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Payment Type (Optional)</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Payment Type (Optional)</label>
                   <select
                     value={formData.paymentType}
                     onChange={(e) => handlePaymentTypeChange(e.target.value)}
                     disabled={editingCreditNote} // Can't change payment type when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Payment Types</option>
                     {paymentTypes.map(type => (
@@ -253,12 +263,13 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Surgical Category (Optional)</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Surgical Category (Optional)</label>
                   <select
                     value={formData.surgicalCategory}
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     disabled={editingCreditNote} // Can't change category when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Categories</option>
                     {categories.map(category => (
@@ -270,13 +281,14 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Procedure (Optional)</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Procedure (Optional)</label>
                   <select
                     value={formData.procedure}
                     onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
                     disabled={editingCreditNote} // Can't change procedure when editing
+                    className="unified-search-input"
                   >
                     <option value="">All Procedures</option>
                     {procedures.map(procedure => (
@@ -287,8 +299,8 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Percentage (%) *</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Percentage (%) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -297,67 +309,72 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                     value={formData.percentage}
                     onChange={(e) => setFormData({ ...formData, percentage: e.target.value })}
                     required
+                    className="unified-search-input"
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Valid From *</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Valid From *</label>
                   <input
                     type="date"
                     value={formData.validityFrom}
                     onChange={(e) => setFormData({ ...formData, validityFrom: e.target.value })}
                     required
+                    className="unified-search-input"
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Valid To *</label>
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Valid To *</label>
                   <input
                     type="date"
                     value={formData.validityTo}
                     onChange={(e) => setFormData({ ...formData, validityTo: e.target.value })}
                     required
+                    className="unified-search-input"
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Description</label>
+              <div className="unified-form-grid">
+                <div className="unified-form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label className="unified-form-label">Description</label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     maxLength="200"
                     placeholder="Optional description"
+                    className="unified-search-input"
                   />
                 </div>
               </div>
 
-              <div className="form-buttons">
-                <button type="submit" className="save-button">
-                  {editingCreditNote ? 'Update' : 'Save'} Credit Note
-                </button>
-                <button type="button" onClick={resetForm} className="cancel-button">
+              <div style={{display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem'}}>
+                <button type="button" onClick={resetForm} className="unified-btn unified-btn-secondary">
                   Cancel
+                </button>
+                <button type="submit" className="unified-btn unified-btn-primary">
+                  {editingCreditNote ? 'Update' : 'Save'} Credit Note
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        <div className="credit-notes-list">
+        <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
           {creditNotes.length === 0 ? (
-            <div className="no-data">
-              No credit notes found for this hospital.
+            <div className="unified-empty">
+              <h3>No Credit Notes</h3>
+              <p>No credit notes found for this hospital.</p>
             </div>
           ) : (
             <>
               {/* Desktop Table View */}
-              <div className="credit-notes-table">
-                <table>
+              <div className="credit-notes-table" style={{display: 'block'}}>
+                <table className="unified-table">
                   <thead>
                     <tr>
                       <th>Applicability</th>
@@ -377,18 +394,20 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                         <td data-label="Valid To">{formatDate(creditNote.validityTo)}</td>
                         <td data-label="Description">{creditNote.description || '-'}</td>
                         <td data-label="Actions">
-                          <div className="action-buttons">
+                          <div className="unified-table-actions">
                             <button
                               onClick={() => handleEdit(creditNote)}
-                              className="edit-button"
+                              className="unified-table-action edit"
+                              title="Edit credit note"
                             >
-                              Edit
+                              ✏️
                             </button>
                             <button
                               onClick={() => handleDelete(creditNote)}
-                              className="delete-button"
+                              className="unified-table-action delete"
+                              title="Delete credit note"
                             >
-                              Delete
+                              🗑️
                             </button>
                           </div>
                         </td>
@@ -399,49 +418,52 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
               </div>
 
               {/* Mobile Card View */}
-              <div className="credit-notes-cards">
+              <div className="credit-notes-cards" style={{display: 'none'}}>
                 {creditNotes.map(creditNote => (
-                  <div key={creditNote._id} className="credit-note-card">
-                    <div className="credit-note-card-header">
-                      <div className="credit-note-percentage">
-                        {creditNote.percentage}%
+                  <div key={creditNote._id} className="unified-mobile-card">
+                    <div className="unified-card-header">
+                      <div className="unified-card-title" style={{fontSize: '1rem'}}>
+                        Credit Note
                       </div>
-                      <div className="credit-note-validity">
-                        <div>{formatDate(creditNote.validityFrom)}</div>
-                        <div>to</div>
-                        <div>{formatDate(creditNote.validityTo)}</div>
+                      <div className="unified-card-badge badge-info" style={{fontSize: '1.25rem', fontWeight: 'bold'}}>
+                        {creditNote.percentage}%
                       </div>
                     </div>
                     
-                    <div className="credit-note-applicability">
-                      <div className="credit-note-applicability-label">Applies to:</div>
-                      <div className="credit-note-applicability-value">
-                        {getApplicabilityText(creditNote)}
-                      </div>
-                    </div>
-
-                    {creditNote.description && (
-                      <div className="credit-note-description">
-                        <div className="credit-note-description-label">Description:</div>
-                        <div className="credit-note-description-value">
-                          {creditNote.description}
+                    <div className="unified-card-body" style={{padding: '1rem 1.5rem'}}>
+                      <div style={{marginBottom: '0.75rem'}}>
+                        <strong style={{fontSize: '0.85rem', color: 'var(--gray-600)'}}>Applies to:</strong>
+                        <div style={{marginTop: '0.25rem', background: 'var(--gray-50)', padding: '0.5rem', borderRadius: 'var(--border-radius)', fontSize: '0.9rem'}}>
+                          {getApplicabilityText(creditNote)}
                         </div>
                       </div>
-                    )}
 
-                    <div className="credit-note-actions">
-                      <button
-                        onClick={() => handleEdit(creditNote)}
-                        className="edit-button"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(creditNote)}
-                        className="delete-button"
-                      >
-                        Delete
-                      </button>
+                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                        <strong>Valid:</strong> {formatDate(creditNote.validityFrom)} - {formatDate(creditNote.validityTo)}
+                      </div>
+
+                      {creditNote.description && (
+                        <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--gray-600)'}}>
+                          <strong>Description:</strong> {creditNote.description}
+                        </div>
+                      )}
+
+                      <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
+                        <button
+                          onClick={() => handleEdit(creditNote)}
+                          className="unified-btn unified-btn-secondary"
+                          style={{flex: 1}}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(creditNote)}
+                          className="unified-btn unified-btn-danger"
+                          style={{flex: 1}}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
