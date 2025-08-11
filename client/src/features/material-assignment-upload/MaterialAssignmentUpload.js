@@ -394,22 +394,22 @@ const MaterialAssignmentUpload = ({ onBack }) => {
               <h2>Processing Summary</h2>
             </div>
             <div className="unified-card-body">
-              <div className="unified-stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '1.5rem' }}>
-                <div className="unified-stat-card primary">
+              <div className="unified-stats-grid">
+                <div className="unified-stat-card">
                   <div className="unified-stat-icon">📊</div>
                   <div className="unified-stat-content">
                     <div className="unified-stat-number">{uploadSummary.totalRows}</div>
                     <div className="unified-stat-label">Total Rows</div>
                   </div>
                 </div>
-                <div className="unified-stat-card success">
+                <div className="unified-stat-card">
                   <div className="unified-stat-icon">✅</div>
                   <div className="unified-stat-content">
                     <div className="unified-stat-number">{uploadSummary.validRows}</div>
                     <div className="unified-stat-label">Valid Rows</div>
                   </div>
                 </div>
-                <div className="unified-stat-card danger">
+                <div className="unified-stat-card">
                   <div className="unified-stat-icon">❌</div>
                   <div className="unified-stat-content">
                     <div className="unified-stat-number">{uploadSummary.invalidRows}</div>
@@ -419,13 +419,15 @@ const MaterialAssignmentUpload = ({ onBack }) => {
               </div>
               
               {uploadSummary.validRows > 0 && (
-                <button
-                  onClick={handleSaveToDatabase}
-                  disabled={uploading}
-                  className="unified-btn unified-btn-success"
-                >
-                  {uploading ? 'Saving...' : `💾 Save ${uploadSummary.validRows} Records to Database`}
-                </button>
+                <div style={{ marginTop: '1.5rem' }}>
+                  <button
+                    onClick={handleSaveToDatabase}
+                    disabled={uploading}
+                    className="unified-btn unified-btn-success"
+                  >
+                    {uploading ? 'Saving...' : `💾 Save ${uploadSummary.validRows} Records to Database`}
+                  </button>
+                </div>
               )}
             </div>
           </div>
