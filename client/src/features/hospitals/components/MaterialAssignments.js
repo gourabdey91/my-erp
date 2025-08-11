@@ -257,47 +257,46 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
 
   return (
     <div className="unified-modal-overlay">
-      <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%'}}>
-        <div className="unified-modal-content" style={{maxHeight: '90vh', display: 'flex', flexDirection: 'column'}}>
-          {/* Header */}
-          <div className="unified-modal-header">
-            <div className="unified-modal-title">
-              <h1>Material Assignments</h1>
-              <p>Manage material assignments and pricing for {hospital?.shortName}</p>
-            </div>
-            <button 
-              className="unified-modal-close"
-              onClick={onClose}
-              aria-label="Close dialog"
-            >
-              ×
-            </button>
+      <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
+        {/* Header */}
+        <div className="unified-modal-header">
+          <div className="unified-modal-title">
+            <h1>Material Assignments</h1>
+            <p>Manage material assignments and pricing for {hospital?.shortName}</p>
           </div>
+          <button 
+            className="unified-modal-close"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
 
-          {error && <div className="unified-alert unified-alert-danger">{error}</div>}
-          {success && <div className="unified-alert unified-alert-success">{success}</div>}
+        {error && <div className="unified-alert unified-alert-danger" style={{margin: '0 1.5rem'}}>{error}</div>}
+        {success && <div className="unified-alert unified-alert-success" style={{margin: '0 1.5rem'}}>{success}</div>}
 
-          {/* Scrollable Content */}
-          <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem'}}>
-            {/* Action Buttons */}
-            {!showAddForm && (
-              <div className="unified-modal-actions" style={{marginBottom: '1.5rem', borderTop: 'none', padding: 0}}>
-                <button 
-                  className="unified-btn unified-btn-secondary"
-                  onClick={() => setShowBulkUpload(true)}
-                >
-                  📥 Bulk Upload
-                </button>
-                <button 
-                  className="unified-btn unified-btn-primary"
-                  onClick={() => setShowAddForm(true)}
-                >
-                  ✚ Add Material
-                </button>
-              </div>
-            )}
+        {/* Scrollable Content */}
+        <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem'}}>
+          {/* Action Buttons */}
+          {!showAddForm && (
+            <div className="unified-modal-actions" style={{marginBottom: '1.5rem', borderTop: 'none', padding: 0}}>
+              <button 
+                className="unified-btn unified-btn-secondary"
+                onClick={() => setShowBulkUpload(true)}
+              >
+                📥 Bulk Upload
+              </button>
+              <button 
+                className="unified-btn unified-btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                ✚ Add Material
+              </button>
+            </div>
+          )}
 
-            {/* Default Pricing Info */}
+          {/* Default Pricing Info */}
             <div className="unified-card" style={{marginBottom: '1.5rem'}}>
               <div className="unified-card-body">
                 <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
@@ -583,26 +582,10 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                 <div className="unified-mobile-cards">
                   {filteredMaterials.map(assignment => (
                     <div key={assignment._id} className="unified-card-mobile" style={{marginBottom: '1rem', borderRadius: '8px', border: '1px solid var(--gray-200)', overflow: 'hidden'}}>
-                      <div className="unified-card-mobile-header" style={{padding: '1rem', background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem'}}>
-                        <div className="material-title" style={{flex: 1, minWidth: '200px'}}>
+                      <div className="unified-card-mobile-header" style={{padding: '1rem', background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)'}}>
+                        <div className="material-title" style={{marginBottom: '0.5rem'}}>
                           <span className="code-badge" style={{display: 'inline-block', background: 'var(--primary-color)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem'}}>{assignment.material?.materialNumber}</span>
                           <div style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', lineHeight: '1.3'}}>{assignment.material?.description}</div>
-                        </div>
-                        <div className="price-badge" style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', minWidth: 'fit-content'}}>
-                          <div style={{fontSize: '0.75rem', color: 'var(--gray-600)', fontWeight: '500'}}>MRP</div>
-                          {editingAssignment === assignment._id ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="unified-input unified-input-sm"
-                              value={editPricing.mrp}
-                              onChange={(e) => setEditPricing(prev => ({...prev, mrp: e.target.value}))}
-                              required
-                              style={{width: '100px', fontSize: '0.875rem', padding: '0.25rem 0.5rem'}}
-                            />
-                          ) : (
-                            <span style={{color: 'var(--success-color)', fontWeight: '600', fontSize: '0.875rem'}}>{formatCurrency(assignment.mrp)}</span>
-                          )}
                         </div>
                       </div>
                       <div className="unified-card-mobile-body" style={{padding: '1rem'}}>
@@ -629,6 +612,25 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                             </span>
                           </div>
                           
+                          {/* MRP Row */}
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>MRP:</span>
+                            {editingAssignment === assignment._id ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="unified-input unified-input-sm"
+                                value={editPricing.mrp}
+                                onChange={(e) => setEditPricing(prev => ({...prev, mrp: e.target.value}))}
+                                required
+                                style={{width: '100px', fontSize: '0.875rem', padding: '0.25rem 0.5rem'}}
+                              />
+                            ) : (
+                              <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--accent-color)', textAlign: 'right', flex: 1, fontWeight: '600'}}>{formatCurrency(assignment.mrp)}</span>
+                            )}
+                          </div>
+                          
+                          {/* Institutional Price Row */}
                           <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
                             <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Institutional Price:</span>
                             {editingAssignment === assignment._id ? (
@@ -719,7 +721,6 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
             )}
           </div>
         )}
-          </div>
         </div>
       </div>
       
