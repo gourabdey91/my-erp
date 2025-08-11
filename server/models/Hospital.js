@@ -87,10 +87,6 @@ const hospitalSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
-    stickerAvailable: {
-      type: Boolean,
-      default: false
-    },
     isActive: {
       type: Boolean,
       default: true

@@ -104,6 +104,24 @@ const hospitalAPI = {
       body: JSON.stringify({ updatedBy })
     });
     return response;
+  },
+
+  // Bulk upload material assignments
+  bulkUploadMaterialAssignments: async (hospitalId, assignments) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/material-assignments/bulk-upload`, {
+      method: 'POST',
+      body: JSON.stringify({ assignments })
+    });
+    return response;
+  },
+
+  // Save processed material assignments to database
+  saveProcessedMaterialAssignments: async (hospitalId, processedData) => {
+    const response = await apiRequest(`/api/hospitals/${hospitalId}/material-assignments/save-processed`, {
+      method: 'POST',
+      body: JSON.stringify({ processedData })
+    });
+    return response;
   }
 };
 

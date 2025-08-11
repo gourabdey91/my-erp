@@ -619,4 +619,202 @@ router.post('/cleanup-duplicates', async (req, res) => {
   }
 });
 
+// Bulk upload material assignments from CSV/Excel
+router.post('/:hospitalId/material-assignments/bulk-upload', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    const { assignments } = req.body; // Array of assignment data
+
+    // Validate hospital exists
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      return res.status(404).json({ message: 'Hospital not found' });
+    }
+
+    const processedData = [];
+    let validRows = 0;
+    let invalidRows = 0;
+
+    for (let i = 0; i < assignments.length; i++) {
+      const assignment = assignments[i];
+      const rowNumber = i + 2; // Assuming row 1 is header
+      
+      const processedRow = {
+        rowIndex: rowNumber,
+        materialNumber: assignment.materialNumber || '',
+        mrp: assignment.mrp || '',
+        institutionalPrice: assignment.institutionalPrice || '',
+        flaggedBilled: assignment.flaggedBilled || false,
+        isValid: true,
+        validationErrors: [],
+        material: null
+      };
+
+      try {
+        // Validate required fields
+        if (!assignment.materialNumber) {
+          processedRow.validationErrors.push('Material Number is required');
+          processedRow.isValid = false;
+        }
+
+        // Find material by material number
+        if (assignment.materialNumber) {
+          const material = await MaterialMaster.findOne({ 
+            materialNumber: assignment.materialNumber 
+          }).populate('surgicalCategory implantType', 'description name');
+
+          if (!material) {
+            processedRow.validationErrors.push(`Material ${assignment.materialNumber} not found in Material Master`);
+            processedRow.isValid = false;
+          } else {
+            processedRow.material = {
+              _id: material._id,
+              description: material.description,
+              surgicalCategory: material.surgicalCategory?.description || '',
+              implantType: material.implantType?.name || '',
+              subCategory: material.subCategory || '',
+              lengthMm: material.lengthMm,
+              masterMrp: material.mrp,
+              masterInstitutionalPrice: material.institutionalPrice
+            };
+
+            // Check if assignment already exists
+            const existingAssignment = hospital.materialAssignments.find(
+              ma => ma.material.toString() === material._id.toString()
+            );
+
+            if (existingAssignment) {
+              processedRow.validationErrors.push(`Material already assigned to this hospital`);
+              processedRow.isValid = false;
+            }
+
+            // Set pricing - use from upload or fetch from material master
+            if (!processedRow.mrp && material.mrp) {
+              processedRow.mrp = material.mrp;
+              processedRow.mrpSource = 'Material Master';
+            } else if (processedRow.mrp) {
+              processedRow.mrpSource = 'Upload File';
+            }
+
+            if (!processedRow.institutionalPrice && material.institutionalPrice) {
+              processedRow.institutionalPrice = material.institutionalPrice;
+              processedRow.institutionalPriceSource = 'Material Master';
+            } else if (processedRow.institutionalPrice) {
+              processedRow.institutionalPriceSource = 'Upload File';
+            }
+
+            // Validate pricing
+            if (!processedRow.mrp && !material.mrp) {
+              processedRow.validationErrors.push('MRP is required (not found in Material Master)');
+              processedRow.isValid = false;
+            }
+
+            if (!processedRow.institutionalPrice && !material.institutionalPrice) {
+              processedRow.validationErrors.push('Institutional Price is required (not found in Material Master)');
+              processedRow.isValid = false;
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error(`Error processing row ${rowNumber}:`, error);
+        processedRow.validationErrors.push(`Processing error: ${error.message}`);
+        processedRow.isValid = false;
+      }
+
+      processedData.push(processedRow);
+      
+      if (processedRow.isValid) {
+        validRows++;
+      } else {
+        invalidRows++;
+      }
+    }
+
+    res.json({
+      message: 'File processed successfully',
+      totalRows: assignments.length,
+      validRows,
+      invalidRows,
+      data: processedData
+    });
+
+  } catch (error) {
+    console.error('Error during bulk upload processing:', error);
+    res.status(500).json({ message: 'Server error during bulk upload processing', error: error.message });
+  }
+});
+
+// Save processed material assignments to database
+router.post('/:hospitalId/material-assignments/save-processed', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    const { processedData } = req.body;
+
+    // Validate hospital exists
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      return res.status(404).json({ message: 'Hospital not found' });
+    }
+
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Filter only valid rows
+    const validRows = processedData.filter(row => row.isValid && row.material);
+
+    for (const row of validRows) {
+      try {
+        // Create new assignment
+        const newAssignment = {
+          material: row.material._id,
+          mrp: parseFloat(row.mrp) || 0,
+          institutionalPrice: parseFloat(row.institutionalPrice) || 0,
+          flaggedBilled: row.flaggedBilled === 'true' || row.flaggedBilled === true || false
+        };
+
+        hospital.materialAssignments.push(newAssignment);
+        
+        results.push({
+          row: row.rowIndex,
+          materialNumber: row.materialNumber,
+          description: row.material.description,
+          status: 'success',
+          mrp: newAssignment.mrp,
+          institutionalPrice: newAssignment.institutionalPrice
+        });
+        
+        successCount++;
+
+      } catch (error) {
+        console.error(`Error saving row ${row.rowIndex}:`, error);
+        results.push({
+          row: row.rowIndex,
+          materialNumber: row.materialNumber,
+          status: 'error',
+          error: error.message
+        });
+        errorCount++;
+      }
+    }
+
+    // Save the hospital with new assignments
+    if (successCount > 0) {
+      await hospital.save();
+    }
+
+    res.json({
+      message: 'Save completed',
+      successCount,
+      errorCount,
+      results
+    });
+
+  } catch (error) {
+    console.error('Error during save:', error);
+    res.status(500).json({ message: 'Server error during save', error: error.message });
+  }
+});
+
 module.exports = router;

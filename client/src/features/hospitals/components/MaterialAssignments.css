@@ -1,3 +1,4 @@
+/* Material Assignments Styles - Following Unified Design Pattern */
 .material-assignments-modal {
   position: fixed;
   top: 0;
@@ -15,89 +16,257 @@
   background: white;
   border-radius: 8px;
   width: 95%;
-  max-width: 1200px;
+  max-width: 1400px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-.hospital-pricing-info {
-  background: #f8f9fa;
-  padding: 1rem;
+/* ========== Form Container ========== */
+.form-container {
+  background: #fff;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
-  border-left: 4px solid #007bff;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.pricing-indicator {
+.form-header {
+  background: #f8f9fa;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ddd;
+  border-radius: 8px 8px 0 0;
+}
+
+.form-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.material-assignment-form {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ========== Materials List Header ========== */
+.materials-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--gray-200);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.materials-list-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.75rem;
 }
 
-.pricing-indicator .label {
-  font-weight: 600;
-  color: #495057;
-}
-
-.pricing-indicator .value {
+.materials-count-badge {
+  background: var(--primary-color);
+  color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 600;
 }
 
-.pricing-indicator .value.enabled {
-  background: #d4edda;
-  color: #155724;
+.materials-search-container {
+  min-width: 300px;
 }
 
-.pricing-indicator .value.disabled {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.pricing-note {
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin: 0;
-  font-style: italic;
-}
-
-.materials-section {
-  flex: 1;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.section-header h3 {
-  margin: 0;
-  color: #495057;
-  font-size: 1.25rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.search-container {
+.search-with-icon {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
+.search-icon {
+  position: absolute;
+  left: 12px;
+  z-index: 1;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.materials-search {
+  padding-left: 2.5rem !important;
+  background: var(--light-bg);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.materials-search:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  background: white;
+}
+
+/* ========== Table Enhancements ========== */
+.table-header-icon {
+  margin-right: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.code-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.name-text {
+  color: var(--gray-800);
+  font-weight: 500;
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-text,
+.implant-text,
+.sub-category-text {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.price-value {
+  font-weight: 600;
+  color: var(--success-color);
+  font-family: monospace;
+}
+
+.checkbox-cell {
+  text-align: center;
+}
+
+.unified-checkbox-container-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.unified-checkbox-container-inline input[type="checkbox"] {
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.unified-checkbox-container-inline .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  background: white;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.unified-checkbox-container-inline input[type="checkbox"]:checked + .checkmark {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.unified-checkbox-container-inline input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.unified-table-action.save {
+  color: var(--success-color);
+}
+
+.unified-table-action.cancel {
+  color: var(--gray-600);
+}
+
+/* ========== Mobile Card Enhancements ========== */
+.unified-mobile-cards {
+  display: none;
+}
+
+.material-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-badge {
+  background: var(--success-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mobile-checkboxes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--light-bg);
+  border-radius: 6px;
+}
+
+.unified-checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+.unified-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.checkbox-text {
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+/* ========== Legacy Search Input Style ========== */
 .search-input {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
   border: 1px solid #ced4da;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -473,5 +642,271 @@
 
   .materials-table td:before {
     width: 40%;
+  }
+}
+
+/* ========== Enhanced Unified Design Styles ========== */
+.form-container {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-header {
+  background: #f8f9fa;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ddd;
+  border-radius: 8px 8px 0 0;
+}
+
+.form-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.material-assignment-form {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ========== Materials List Header ========== */
+.materials-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--gray-200);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.materials-list-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.materials-count-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.materials-search-container {
+  min-width: 300px;
+}
+
+.search-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  z-index: 1;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.materials-search {
+  padding-left: 2.5rem !important;
+  background: var(--light-bg);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.materials-search:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  background: white;
+}
+
+/* ========== Table Enhancements ========== */
+.table-header-icon {
+  margin-right: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.code-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.name-text {
+  color: var(--gray-800);
+  font-weight: 500;
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-text,
+.implant-text,
+.sub-category-text {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.price-value {
+  font-weight: 600;
+  color: var(--success-color);
+  font-family: monospace;
+}
+
+.checkbox-cell {
+  text-align: center;
+}
+
+.unified-checkbox-container-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.unified-checkbox-container-inline input[type="checkbox"] {
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+}
+
+.unified-checkbox-container-inline .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  background: white;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.unified-checkbox-container-inline input[type="checkbox"]:checked + .checkmark {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.unified-checkbox-container-inline input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.unified-table-action.save {
+  color: var(--success-color);
+}
+
+.unified-table-action.cancel {
+  color: var(--gray-600);
+}
+
+/* ========== Mobile Card Enhancements ========== */
+.material-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-badge {
+  background: var(--success-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mobile-checkboxes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--light-bg);
+  border-radius: 6px;
+}
+
+.unified-checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+.unified-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.checkbox-text {
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+/* ========== Mobile Responsiveness Enhancements ========== */
+@media (max-width: 768px) {
+  .materials-list-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .materials-search-container {
+    min-width: auto;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .unified-mobile-cards {
+    display: block;
+  }
+
+  .unified-table-responsive {
+    display: none;
   }
 }

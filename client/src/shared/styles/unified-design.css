@@ -687,3 +687,216 @@
     margin-left: 1.75rem;
   }
 }
+
+/* ========== File Upload Styles ========== */
+.unified-file-input {
+  display: none;
+}
+
+.unified-file-label {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--white);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+  color: var(--gray-600);
+  font-weight: 500;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.unified-file-label:hover {
+  border-color: var(--accent-color);
+  background: var(--gray-50);
+  color: var(--accent-color);
+}
+
+.unified-file-input:focus + .unified-file-label {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Modal Styles */
+.unified-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.unified-modal-content {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.unified-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.unified-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--gray-800);
+}
+
+.unified-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gray-500);
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.unified-modal-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.unified-modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.unified-modal-actions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.hospital-name-badge {
+  background: var(--accent-color);
+  color: var(--white);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.upload-instructions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.upload-instructions li {
+  margin-bottom: 0.5rem;
+  color: var(--gray-700);
+}
+
+.results-summary {
+  margin-bottom: 1.5rem;
+}
+
+.result-stat {
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.result-stat.success {
+  background: var(--success-color);
+  color: var(--white);
+}
+
+.result-stat.error {
+  background: var(--danger-color);
+  color: var(--white);
+}
+
+.result-stat.total {
+  background: var(--gray-600);
+  color: var(--white);
+}
+
+/* Data Preview Table Styles */
+.data-preview-table {
+  font-size: 0.875rem;
+}
+
+.data-preview-table .description-cell {
+  max-width: 200px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.data-preview-table .valid-row {
+  background: rgba(39, 174, 96, 0.05);
+}
+
+.data-preview-table .invalid-row {
+  background: rgba(231, 76, 60, 0.05);
+}
+
+.validation-errors-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: var(--danger-color);
+}
+
+.validation-errors-list li {
+  margin-bottom: 0.25rem;
+}
+
+.no-errors {
+  color: var(--success-color);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.error-text {
+  color: var(--danger-color);
+  font-size: 0.875rem;
+}
+
+/* Message Cards */
+.success-message {
+  border-left: 4px solid var(--success-color);
+  background: rgba(39, 174, 96, 0.1);
+}
+
+.warning-message {
+  border-left: 4px solid var(--warning-color);
+  background: rgba(243, 156, 18, 0.1);
+}
+
+.error-message {
+  border-left: 4px solid var(--danger-color);
+  background: rgba(231, 76, 60, 0.1);
+}

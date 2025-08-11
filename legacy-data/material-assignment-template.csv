@@ -1,0 +1,4 @@
+Material Number,MRP,Institutional Price,Flagged Billed
+MAT001,1500.00,1350.00,false
+MAT002,,900.00,true
+MAT003,1200.00,,false

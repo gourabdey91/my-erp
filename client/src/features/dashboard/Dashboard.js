@@ -274,6 +274,15 @@ const Dashboard = ({ onViewChange }) => {
             count: 'XLSX',
             onClick: () => onViewChange('material-master-upload'),
             enabled: true
+          },
+          {
+            id: 'material-assignment-upload',
+            title: 'Material Assignments',
+            subtitle: 'Import Hospital Assignments',
+            icon: '🏥',
+            count: 'XLSX',
+            onClick: () => onViewChange('material-assignment-upload'),
+            enabled: true
           }
         ]
       }
