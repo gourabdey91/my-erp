@@ -253,24 +253,44 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
 
   if (loading) {
     return (
-      <div className="doctor-assignments-modal">
-        <div className="doctor-assignments-content">
-          <div className="loading">Loading doctor assignments...</div>
+      <div className="unified-modal-overlay">
+        <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
+          <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <div className="unified-loading-container">
+              <div className="unified-loading-spinner"></div>
+              <p>Loading doctor assignments...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="doctor-assignments-modal">
-      <div className="doctor-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         {/* Header */}
-        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
-          <div className="unified-header-content">
-            <div className="unified-header-text">
-              <h1 style={{fontSize: '1.5rem'}}>Doctor Assignments</h1>
-              <p>Manage doctor assignments and charges for {hospital.shortName}</p>
-            </div>
+        <div className="unified-modal-header">
+          <div className="unified-modal-title">
+            <h1>Doctor Assignments</h1>
+            <p>Manage doctor assignments and charges for {hospital.shortName}</p>
+          </div>
+          <button 
+            className="unified-modal-close"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+
+        {error && <div className="unified-alert unified-alert-danger" style={{margin: '0 1.5rem'}}>{error}</div>}
+        {success && <div className="unified-alert unified-alert-success" style={{margin: '0 1.5rem'}}>{success}</div>}
+
+        {/* Scrollable Content */}
+        <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem'}}>
+          {/* Action Button */}
+          <div className="unified-modal-actions" style={{marginBottom: '1.5rem', borderTop: 'none', padding: 0}}>
             <button 
               className="unified-btn unified-btn-primary"
               onClick={() => {
@@ -281,17 +301,6 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
               Add Doctor Assignment
             </button>
           </div>
-          <button 
-            className="close-button"
-            onClick={onClose}
-            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
-          >
-            ×
-          </button>
-        </div>
-
-        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
-        {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
         {showForm && (
           <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
@@ -582,6 +591,7 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>

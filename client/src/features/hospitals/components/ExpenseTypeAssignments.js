@@ -150,15 +150,29 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
   };
 
   return (
-    <div className="expense-type-assignments-modal">
-      <div className="expense-type-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         {/* Header */}
-        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
-          <div className="unified-header-content">
-            <div className="unified-header-text">
-              <h1 style={{fontSize: '1.5rem'}}>Expense Type Assignments</h1>
-              <p>Manage expense type assignments and charges for {hospital.shortName}</p>
-            </div>
+        <div className="unified-modal-header">
+          <div className="unified-modal-title">
+            <h1>Expense Type Assignments</h1>
+            <p>Manage expense type assignments and charges for {hospital.shortName}</p>
+          </div>
+          <button 
+            className="unified-modal-close"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+
+        {error && <div className="unified-alert unified-alert-danger" style={{margin: '0 1.5rem'}}>{error}</div>}
+
+        {/* Scrollable Content */}
+        <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem'}}>
+          {/* Action Button */}
+          <div className="unified-modal-actions" style={{marginBottom: '1.5rem', borderTop: 'none', padding: 0}}>
             <button 
               className="unified-btn unified-btn-primary"
               onClick={() => setEditingId('new')}
@@ -166,16 +180,6 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
               Add Expense Type Assignment
             </button>
           </div>
-          <button 
-            className="close-button"
-            onClick={onClose}
-            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
-          >
-            ×
-          </button>
-        </div>
-
-        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
 
         {/* Add/Edit Form */}
         {editingId && (
@@ -482,6 +486,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
               </>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
