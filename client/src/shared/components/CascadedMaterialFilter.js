@@ -19,7 +19,7 @@ const CascadedMaterialFilter = ({
     const fetchCategories = async () => {
       try {
         const response = await materialMasterAPI.getDropdownData();
-        setCategories(response.surgicalCategories || []);
+        setCategories(response.categories || []);
       } catch (err) {
         console.error('Error fetching categories:', err);
       }
