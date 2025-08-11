@@ -325,3 +325,35 @@
     padding: 10px 8px;
   }
 }
+
+/* Improved input placeholder styling */
+.unified-input::placeholder {
+  opacity: 0.5 !important;
+  color: var(--text-muted, #666) !important;
+  font-style: italic;
+}
+
+/* Date input styling improvements */
+.unified-input[type="date"] {
+  position: relative;
+}
+
+.unified-input[type="date"]:not(:focus):invalid {
+  opacity: 0.5;
+}
+
+/* Better visual feedback for date inputs */
+.unified-input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.unified-input[type="date"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 0.8;
+}
+
+/* Improved number input styling */
+.unified-input[type="number"]::placeholder {
+  opacity: 0.5;
+  font-style: italic;
+}

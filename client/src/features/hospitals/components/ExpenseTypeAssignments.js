@@ -18,8 +18,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
     paymentType: '',
     category: '',
     procedure: '',
-    validityFrom: '',
-    validityTo: ''
+    validityFrom: `${new Date().getFullYear()}-01-01`,
+    validityTo: '9999-12-31'
   });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +76,17 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
 
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ expenseType: '', value: '', valueType: 'amount', taxBasis: '', paymentType: '', category: '', procedure: '', validityFrom: '', validityTo: '' });
+    setForm({ 
+      expenseType: '', 
+      value: '', 
+      valueType: 'amount', 
+      taxBasis: '', 
+      paymentType: '', 
+      category: '', 
+      procedure: '', 
+      validityFrom: `${new Date().getFullYear()}-01-01`, 
+      validityTo: '9999-12-31' 
+    });
     setError('');
   };
 
@@ -278,8 +288,14 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                         name="value" 
                         value={form.value} 
                         onChange={handleChange} 
-                        placeholder={form.valueType === 'percentage' ? '0-100' : 'Amount in ₹'}
+                        placeholder={form.valueType === 'percentage' ? 'Enter percentage (0-100)' : 'Enter amount in ₹'}
                         required 
+                        style={{
+                          '::placeholder': {
+                            opacity: '0.5',
+                            color: 'var(--text-muted)'
+                          }
+                        }}
                       />
                     </div>
                   </div>
@@ -320,7 +336,13 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                         name="validityFrom" 
                         value={form.validityFrom} 
                         onChange={handleChange} 
+                        min={`${new Date().getFullYear()}-01-01`}
+                        title="Start date for this assignment (defaults to current year Jan 1st)"
                         required 
+                        style={{
+                          colorScheme: 'light',
+                          opacity: form.validityFrom ? '1' : '0.5'
+                        }}
                       />
                     </div>
                   </div>
@@ -334,7 +356,13 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                         name="validityTo" 
                         value={form.validityTo} 
                         onChange={handleChange} 
+                        min={form.validityFrom || `${new Date().getFullYear()}-01-01`}
+                        title="End date for this assignment (defaults to 9999-12-31 for indefinite)"
                         required 
+                        style={{
+                          colorScheme: 'light',
+                          opacity: form.validityTo ? '1' : '0.5'
+                        }}
                       />
                     </div>
                   </div>

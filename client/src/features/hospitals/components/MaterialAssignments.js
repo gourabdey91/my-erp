@@ -30,6 +30,19 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
     institutionalPrice: ''
   });
 
+  const fetchAvailableMaterials = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await hospitalAPI.getAvailableMaterials(hospital._id);
+      setAvailableMaterials(data);
+    } catch (err) {
+      setError('Failed to fetch available materials');
+      console.error('Error fetching available materials:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [hospital._id]);
+
   useEffect(() => {
     if (isOpen && hospital) {
       const activeMaterials = hospital.materialAssignments?.filter(assignment => assignment.isActive) || [];
@@ -63,19 +76,6 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
       setFilteredMaterials(filtered);
     }
   }, [materials, searchTerm]);
-
-  const fetchAvailableMaterials = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await hospitalAPI.getAvailableMaterials(hospital._id);
-      setAvailableMaterials(data);
-    } catch (err) {
-      setError('Failed to fetch available materials');
-      console.error('Error fetching available materials:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [hospital._id]);
 
   const handleMaterialSelect = (materialId) => {
     setSelectedMaterial(materialId);
