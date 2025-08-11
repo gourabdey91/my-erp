@@ -490,6 +490,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
               </>
             )}
           </div>
+        </div>
       </div>
     </div>
   );
