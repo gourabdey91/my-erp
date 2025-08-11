@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { hospitalAPI } from '../services/hospitalAPI';
 import './MaterialAssignments.css';
-import '../../../styles/unified-design.css';
+import '../../../shared/styles/unified-design.css';
 
 const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
   const { currentUser } = useAuth();
