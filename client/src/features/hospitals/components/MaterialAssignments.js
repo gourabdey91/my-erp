@@ -257,8 +257,8 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
 
   return (
     <div className="unified-modal-overlay">
-      <div className="unified-modal-container">
-        <div className="unified-modal-content">
+      <div className="unified-modal-container" style={{maxWidth: '1200px', width: '95%'}}>
+        <div className="unified-modal-content" style={{maxHeight: '90vh', display: 'flex', flexDirection: 'column'}}>
           {/* Header */}
           <div className="unified-modal-header">
             <div className="unified-modal-title">
@@ -277,40 +277,42 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
           {error && <div className="unified-alert unified-alert-danger">{error}</div>}
           {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
-          {/* Action Buttons */}
-          {!showAddForm && (
-            <div className="unified-modal-actions">
-              <button 
-                className="unified-btn unified-btn-secondary"
-                onClick={() => setShowBulkUpload(true)}
-              >
-                📥 Bulk Upload
-              </button>
-              <button 
-                className="unified-btn unified-btn-primary"
-                onClick={() => setShowAddForm(true)}
-              >
-                ✚ Add Material
-              </button>
-            </div>
-          )}
-
-          {/* Default Pricing Info */}
-          <div className="unified-card" style={{marginBottom: '1.5rem'}}>
-            <div className="unified-card-body">
-              <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-                <span><strong>Default Pricing:</strong></span>
-                <span className={`unified-badge ${hospital?.defaultPricing ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
-                  {hospital?.defaultPricing ? 'Enabled' : 'Disabled'}
-                </span>
+          {/* Scrollable Content */}
+          <div className="unified-modal-body" style={{flex: 1, overflow: 'auto', padding: '1.5rem'}}>
+            {/* Action Buttons */}
+            {!showAddForm && (
+              <div className="unified-modal-actions" style={{marginBottom: '1.5rem', borderTop: 'none', padding: 0}}>
+                <button 
+                  className="unified-btn unified-btn-secondary"
+                  onClick={() => setShowBulkUpload(true)}
+                >
+                  📥 Bulk Upload
+                </button>
+                <button 
+                  className="unified-btn unified-btn-primary"
+                  onClick={() => setShowAddForm(true)}
+                >
+                  ✚ Add Material
+                </button>
               </div>
-              {hospital?.defaultPricing && (
-                <p style={{marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-muted)'}}>
-                  Material prices are automatically set from the material master and cannot be edited.
-                </p>
-              )}
+            )}
+
+            {/* Default Pricing Info */}
+            <div className="unified-card" style={{marginBottom: '1.5rem'}}>
+              <div className="unified-card-body">
+                <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                  <span><strong>Default Pricing:</strong></span>
+                  <span className={`unified-badge ${hospital?.defaultPricing ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
+                    {hospital?.defaultPricing ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                {hospital?.defaultPricing && (
+                  <p style={{marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-muted)'}}>
+                    Material prices are automatically set from the material master and cannot be edited.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
           {/* Add Material Form */}
           {showAddForm && (
@@ -580,13 +582,14 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                 {/* Mobile Cards */}
                 <div className="unified-mobile-cards">
                   {filteredMaterials.map(assignment => (
-                    <div key={assignment._id} className="unified-card-mobile">
-                      <div className="unified-card-mobile-header">
-                        <h4 className="material-title">
-                          <span className="code-badge">{assignment.material?.materialNumber}</span>
-                        </h4>
-                        <div className="price-badge">
-                          <strong>MRP:</strong>
+                    <div key={assignment._id} className="unified-card-mobile" style={{marginBottom: '1rem', borderRadius: '8px', border: '1px solid var(--gray-200)', overflow: 'hidden'}}>
+                      <div className="unified-card-mobile-header" style={{padding: '1rem', background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem'}}>
+                        <div className="material-title" style={{flex: 1, minWidth: '200px'}}>
+                          <span className="code-badge" style={{display: 'inline-block', background: 'var(--primary-color)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem'}}>{assignment.material?.materialNumber}</span>
+                          <div style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', lineHeight: '1.3'}}>{assignment.material?.description}</div>
+                        </div>
+                        <div className="price-badge" style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem', minWidth: 'fit-content'}}>
+                          <div style={{fontSize: '0.75rem', color: 'var(--gray-600)', fontWeight: '500'}}>MRP</div>
                           {editingAssignment === assignment._id ? (
                             <input
                               type="number"
@@ -595,56 +598,58 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                               value={editPricing.mrp}
                               onChange={(e) => setEditPricing(prev => ({...prev, mrp: e.target.value}))}
                               required
-                              style={{width: '120px', marginLeft: '8px'}}
+                              style={{width: '100px', fontSize: '0.875rem', padding: '0.25rem 0.5rem'}}
                             />
                           ) : (
-                            <span>{formatCurrency(assignment.mrp)}</span>
+                            <span style={{color: 'var(--success-color)', fontWeight: '600', fontSize: '0.875rem'}}>{formatCurrency(assignment.mrp)}</span>
                           )}
                         </div>
                       </div>
-                      <div className="unified-card-mobile-body">
-                        <div className="unified-card-mobile-item">
-                          <strong>Description:</strong>
-                          <span className="name-text">{assignment.material?.description}</span>
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Category:</strong>
-                          <span className="category-text">{assignment.material?.surgicalCategory?.description}</span>
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Implant Type:</strong>
-                          <span className="implant-text">{assignment.material?.implantType?.name}</span>
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Sub Category:</strong>
-                          <span className="sub-category-text">{assignment.material?.subCategory}</span>
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Length:</strong>
-                          <span className="length-text">
-                            {assignment.material?.lengthMm ? `${assignment.material.lengthMm}mm` : '-'}
-                          </span>
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Institutional Price:</strong>
-                          {editingAssignment === assignment._id ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="unified-input unified-input-sm"
-                              value={editPricing.institutionalPrice}
-                              onChange={(e) => setEditPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
-                              required
-                              style={{width: '120px', marginLeft: '8px'}}
-                            />
-                          ) : (
-                            <span className="price-value">{formatCurrency(assignment.institutionalPrice)}</span>
-                          )}
+                      <div className="unified-card-mobile-body" style={{padding: '1rem'}}>
+                        <div className="unified-card-mobile-details" style={{display: 'grid', gap: '0.75rem'}}>
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Category:</span>
+                            <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--gray-800)', textAlign: 'right', flex: 1, wordBreak: 'break-word'}}>{assignment.material?.surgicalCategory?.description || '-'}</span>
+                          </div>
+                          
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Implant Type:</span>
+                            <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--gray-800)', textAlign: 'right', flex: 1, wordBreak: 'break-word'}}>{assignment.material?.implantType?.name || '-'}</span>
+                          </div>
+                          
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Sub Category:</span>
+                            <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--gray-800)', textAlign: 'right', flex: 1, wordBreak: 'break-word'}}>{assignment.material?.subCategory || '-'}</span>
+                          </div>
+                          
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Length:</span>
+                            <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--gray-800)', textAlign: 'right', flex: 1, wordBreak: 'break-word'}}>
+                              {assignment.material?.lengthMm ? `${assignment.material.lengthMm}mm` : '-'}
+                            </span>
+                          </div>
+                          
+                          <div className="unified-card-mobile-row" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0', borderBottom: '1px solid var(--gray-100)'}}>
+                            <span className="unified-card-mobile-label" style={{fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: '500', minWidth: '120px'}}>Institutional Price:</span>
+                            {editingAssignment === assignment._id ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                className="unified-input unified-input-sm"
+                                value={editPricing.institutionalPrice}
+                                onChange={(e) => setEditPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
+                                required
+                                style={{width: '100px', fontSize: '0.875rem', padding: '0.25rem 0.5rem'}}
+                              />
+                            ) : (
+                              <span className="unified-card-mobile-value" style={{fontSize: '0.875rem', color: 'var(--accent-color)', textAlign: 'right', flex: 1, fontWeight: '600'}}>{formatCurrency(assignment.institutionalPrice)}</span>
+                            )}
+                          </div>
                         </div>
                         
-                        <div className="mobile-checkboxes-grid">
+                        <div className="mobile-checkboxes-grid" style={{marginTop: '1rem', padding: '0.75rem', background: 'var(--gray-50)', borderRadius: '6px'}}>
                           <div className="unified-checkbox-container">
-                            <label className="unified-checkbox-label">
+                            <label className="unified-checkbox-label" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem'}}>
                               <input
                                 type="checkbox"
                                 checked={assignment.flaggedBilled || false}
@@ -653,12 +658,12 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                                 disabled
                                 title="Feature temporarily disabled"
                               />
-                              <span className="checkbox-text">🏥 Flagged Billed</span>
+                              <span className="checkbox-text" style={{color: 'var(--gray-700)', fontWeight: '500'}}>🏥 Flagged Billed</span>
                             </label>
                           </div>
                         </div>
                       </div>
-                      <div className="unified-card-mobile-actions">
+                      <div className="unified-card-mobile-actions" style={{padding: '1rem', borderTop: '1px solid var(--gray-200)', background: 'var(--gray-50)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
                         {editingAssignment === assignment._id ? (
                           <>
                             <button
@@ -666,6 +671,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                               onClick={handleUpdatePricing}
                               className="unified-btn unified-btn-sm unified-btn-success"
                               disabled={loading}
+                              style={{flex: 1, minWidth: '80px'}}
                             >
                               ✅ Save
                             </button>
@@ -673,6 +679,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                               type="button"
                               onClick={() => setEditingAssignment(null)}
                               className="unified-btn unified-btn-sm unified-btn-secondary"
+                              style={{flex: 1, minWidth: '80px'}}
                             >
                               ❌ Cancel
                             </button>
@@ -684,6 +691,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                                 type="button"
                                 onClick={() => handleEditPricing(assignment)}
                                 className="unified-btn unified-btn-sm unified-btn-primary"
+                                style={{flex: 1, minWidth: '80px'}}
                               >
                                 ✏️ Edit
                               </button>
@@ -691,6 +699,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                             <button
                               onClick={() => handleRemoveMaterial(assignment._id)}
                               className="unified-btn unified-btn-sm unified-btn-danger"
+                              style={{flex: 1, minWidth: '80px'}}
                             >
                               🗑️ Remove
                             </button>
@@ -710,6 +719,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
             )}
           </div>
         )}
+          </div>
         </div>
       </div>
       
