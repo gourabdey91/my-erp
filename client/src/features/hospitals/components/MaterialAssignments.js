@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { hospitalAPI } from '../services/hospitalAPI';
 import './MaterialAssignments.css';
+import '../../../styles/unified-design.css';
 
 const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
   const { currentUser } = useAuth();
@@ -255,74 +256,77 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content material-assignments-modal">
-        <div className="modal-header">
-          <h2>Material Assignments - {hospital?.shortName}</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+    <div className="material-assignments-modal">
+      <div className="material-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+        {/* Header */}
+        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
+          <div className="unified-header-content">
+            <div className="unified-header-text">
+              <h1 style={{fontSize: '1.5rem'}}>Material Assignments</h1>
+              <p>Manage material assignments and pricing for {hospital?.shortName}</p>
+            </div>
+            <button 
+              className="unified-btn unified-btn-primary"
+              onClick={() => setShowAddForm(true)}
+            >
+              Add Material Assignment
+            </button>
+          </div>
+          <button 
+            className="close-button"
+            onClick={onClose}
+            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
+          >
+            ×
+          </button>
         </div>
 
-        <div className="modal-body">
-          {error && (
-            <div className="error-message">
-              {error}
-              <button onClick={clearMessages} className="close-error">×</button>
-            </div>
-          )}
-          
-          {success && (
-            <div className="success-message">
-              {success}
-              <button onClick={clearMessages} className="close-success">×</button>
-            </div>
-          )}
+        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
+        {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
-          <div className="hospital-pricing-info">
-            <div className="pricing-indicator">
-              <span className="label">Default Pricing:</span>
-              <span className={`value ${hospital?.defaultPricing ? 'enabled' : 'disabled'}`}>
+        {/* Default Pricing Info */}
+        <div className="unified-card" style={{marginBottom: '1.5rem'}}>
+          <div className="unified-card-body">
+            <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+              <span><strong>Default Pricing:</strong></span>
+              <span className={`unified-badge ${hospital?.defaultPricing ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
                 {hospital?.defaultPricing ? 'Enabled' : 'Disabled'}
               </span>
             </div>
             {hospital?.defaultPricing && (
-              <p className="pricing-note">
+              <p style={{marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-muted)'}}>
                 Material prices are automatically set from the material master and cannot be edited.
               </p>
             )}
           </div>
-
-          <div className="materials-section">
-            <div className="section-header">
+        </div>
+        {/* Search and Materials List */}
+        <div className="unified-card">
+          <div className="unified-card-header">
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
               <h3>Assigned Materials ({materials.length})</h3>
-              <div className="header-actions">
-                <div className="search-container">
-                  <input
-                    type="text"
-                    placeholder="Search materials..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
-                {!showAddForm && (
-                  <button 
-                    className="add-button"
-                    onClick={() => setShowAddForm(true)}
-                    disabled={loading}
-                  >
-                    + Add Material
-                  </button>
-                )}
+              <div className="unified-form-group" style={{marginBottom: 0, width: '300px'}}>
+                <input
+                  type="text"
+                  className="unified-input"
+                  placeholder="Search materials..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
+          </div>
 
-            {showAddForm && (
-              <div className="add-material-form">
-                <form onSubmit={handleAddMaterial}>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Select Material</label>
+          {/* Add Material Form */}
+          {showAddForm && (
+            <div className="unified-card-body" style={{borderBottom: '1px solid var(--border-color)'}}>
+              <form onSubmit={handleAddMaterial} className="unified-form">
+                <div className="unified-row">
+                  <div className="unified-col-md-12">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Select Material</label>
                       <select
+                        className="unified-input"
                         value={selectedMaterial}
                         onChange={(e) => handleMaterialSelect(e.target.value)}
                         required
@@ -336,52 +340,70 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                       </select>
                     </div>
                   </div>
+                </div>
 
-                  {selectedMaterial && !hospital.defaultPricing && (
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>MRP</label>
+                {selectedMaterial && !hospital.defaultPricing && (
+                  <div className="unified-row">
+                    <div className="unified-col-md-6">
+                      <div className="unified-form-group">
+                        <label className="unified-label">MRP</label>
                         <input
                           type="number"
                           step="0.01"
+                          className="unified-input"
                           value={customPricing.mrp}
                           onChange={(e) => setCustomPricing(prev => ({...prev, mrp: e.target.value}))}
                           required
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Institutional Price</label>
+                    </div>
+                    
+                    <div className="unified-col-md-6">
+                      <div className="unified-form-group">
+                        <label className="unified-label">Institutional Price</label>
                         <input
                           type="number"
                           step="0.01"
+                          className="unified-input"
                           value={customPricing.institutionalPrice}
                           onChange={(e) => setCustomPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
                           required
                         />
                       </div>
                     </div>
-                  )}
-
-                  <div className="form-actions">
-                    <button type="button" onClick={() => setShowAddForm(false)} className="cancel-button">
-                      Cancel
-                    </button>
-                    <button type="submit" className="submit-button" disabled={loading}>
-                      {loading ? 'Adding...' : 'Add Material'}
-                    </button>
                   </div>
-                </form>
-              </div>
-            )}
+                )}
 
-            <div className="materials-list">
-              {materials.length === 0 ? (
-                <div className="empty-state">
-                  <p>No materials assigned yet.</p>
+                <div className="unified-form-actions">
+                  <button 
+                    type="submit" 
+                    className="unified-btn unified-btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? 'Adding...' : 'Add Material'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="unified-btn unified-btn-secondary"
+                    onClick={() => setShowAddForm(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
-              ) : (
-                <div className="materials-table-container">
-                  <table className="materials-table">
+              </form>
+            </div>
+          )}
+
+          <div className="unified-card-body">
+            {filteredMaterials.length === 0 ? (
+              <div className="unified-empty-state">
+                <p>No materials assigned yet.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table */}
+                <div className="unified-table-responsive d-none d-md-block">
+                  <table className="unified-table">
                     <thead>
                       <tr>
                         <th>Material Number</th>
@@ -399,122 +421,193 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                     <tbody>
                       {filteredMaterials.map(assignment => (
                         <tr key={assignment._id}>
-                          <td data-label="Material Number">
-                            <div className="material-number">
-                              {assignment.material?.materialNumber}
-                            </div>
+                          <td>{assignment.material?.materialNumber}</td>
+                          <td style={{maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={assignment.material?.description}>
+                            {assignment.material?.description}
                           </td>
-                          <td data-label="Description">
-                            <div className="material-description" title={assignment.material?.description}>
-                              {assignment.material?.description}
-                            </div>
-                          </td>
-                          <td data-label="Category">{assignment.material?.surgicalCategory?.description}</td>
-                          <td data-label="Implant Type">{assignment.material?.implantType?.name}</td>
-                          <td data-label="Sub Category">{assignment.material?.subCategory}</td>
-                          <td data-label="MRP">
+                          <td>{assignment.material?.surgicalCategory?.description}</td>
+                          <td>{assignment.material?.implantType?.name}</td>
+                          <td>{assignment.material?.subCategory}</td>
+                          <td>
                             {editingAssignment === assignment._id ? (
                               <input
                                 type="number"
                                 step="0.01"
+                                className="unified-input unified-input-sm"
                                 value={editPricing.mrp}
                                 onChange={(e) => setEditPricing(prev => ({...prev, mrp: e.target.value}))}
-                                className="price-input"
                                 required
                               />
                             ) : (
-                              <span className="price">{formatCurrency(assignment.mrp)}</span>
+                              <span>{formatCurrency(assignment.mrp)}</span>
                             )}
                           </td>
-                          <td data-label="Institutional Price">
+                          <td>
                             {editingAssignment === assignment._id ? (
                               <input
                                 type="number"
                                 step="0.01"
+                                className="unified-input unified-input-sm"
                                 value={editPricing.institutionalPrice}
                                 onChange={(e) => setEditPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
-                                className="price-input"
                                 required
                               />
                             ) : (
-                              <span className="price">{formatCurrency(assignment.institutionalPrice)}</span>
+                              <span>{formatCurrency(assignment.institutionalPrice)}</span>
                             )}
                           </td>
-                          <td data-label="Flagged Billed">
+                          <td>
                             <input
                               type="checkbox"
                               checked={assignment.flaggedBilled || false}
                               onChange={(e) => handleCheckboxUpdate(assignment._id, 'flaggedBilled', e.target.checked)}
-                              className="checkbox-input"
-                              title="Flagged Billed"
+                              className="unified-checkbox"
                             />
                           </td>
-                          <td data-label="Sticker Available">
+                          <td>
                             <input
                               type="checkbox"
                               checked={assignment.stickerAvailable || false}
                               onChange={(e) => handleCheckboxUpdate(assignment._id, 'stickerAvailable', e.target.checked)}
-                              className="checkbox-input"
-                              title="Sticker Available"
+                              className="unified-checkbox"
                             />
                           </td>
-                          <td data-label="Actions">
-                            <div className="action-buttons">
-                              {editingAssignment === assignment._id ? (
-                                <div className="edit-actions">
+                          <td>
+                            {editingAssignment === assignment._id ? (
+                              <div className="unified-btn-group">
+                                <button
+                                  type="button"
+                                  onClick={handleUpdatePricing}
+                                  className="unified-btn unified-btn-sm unified-btn-outline-success"
+                                  disabled={loading}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingAssignment(null)}
+                                  className="unified-btn unified-btn-sm unified-btn-outline-secondary"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="unified-btn-group">
+                                {!hospital.defaultPricing && (
                                   <button
                                     type="button"
-                                    onClick={() => setEditingAssignment(null)}
-                                    className="cancel-btn"
-                                    title="Cancel"
+                                    onClick={() => handleEditPricing(assignment)}
+                                    className="unified-btn unified-btn-sm unified-btn-outline-primary"
                                   >
-                                    ✕
+                                    Edit
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={handleUpdatePricing}
-                                    className="save-btn"
-                                    disabled={loading}
-                                    title="Save"
-                                  >
-                                    ✓
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="view-actions">
-                                  {!hospital.defaultPricing && (
-                                    <button
-                                      className="edit-btn"
-                                      onClick={() => handleEditPricing(assignment)}
-                                      title="Edit Pricing"
-                                    >
-                                      ✏️
-                                    </button>
-                                  )}
-                                  <button
-                                    className="remove-btn"
-                                    onClick={() => handleRemoveMaterial(assignment._id)}
-                                    title="Remove Material"
-                                  >
-                                    🗑️
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                                )}
+                                <button
+                                  onClick={() => handleRemoveMaterial(assignment._id)}
+                                  className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  
-                  {filteredMaterials.length === 0 && materials.length > 0 && (
-                    <div className="no-results">
-                      <p>No materials found matching "{searchTerm}"</p>
-                    </div>
-                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Mobile Cards */}
+                <div className="d-block d-md-none">
+                  {filteredMaterials.map(assignment => (
+                    <div key={assignment._id} className="unified-card-mobile">
+                      <div className="unified-card-mobile-header">
+                        <h4 style={{fontSize: '0.9rem'}}>{assignment.material?.materialNumber}</h4>
+                        <span className="unified-badge unified-badge-primary">
+                          MRP: {formatCurrency(assignment.mrp)}
+                        </span>
+                      </div>
+                      <div className="unified-card-mobile-body">
+                        <div className="unified-card-mobile-item">
+                          <strong>Description:</strong> {assignment.material?.description}
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Category:</strong> {assignment.material?.surgicalCategory?.description}
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Institutional Price:</strong> {formatCurrency(assignment.institutionalPrice)}
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Flagged Billed:</strong>
+                          <input
+                            type="checkbox"
+                            checked={assignment.flaggedBilled || false}
+                            onChange={(e) => handleCheckboxUpdate(assignment._id, 'flaggedBilled', e.target.checked)}
+                            className="unified-checkbox"
+                            style={{marginLeft: '0.5rem'}}
+                          />
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Sticker Available:</strong>
+                          <input
+                            type="checkbox"
+                            checked={assignment.stickerAvailable || false}
+                            onChange={(e) => handleCheckboxUpdate(assignment._id, 'stickerAvailable', e.target.checked)}
+                            className="unified-checkbox"
+                            style={{marginLeft: '0.5rem'}}
+                          />
+                        </div>
+                      </div>
+                      <div className="unified-card-mobile-actions">
+                        {editingAssignment === assignment._id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={handleUpdatePricing}
+                              className="unified-btn unified-btn-sm unified-btn-outline-success"
+                              disabled={loading}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingAssignment(null)}
+                              className="unified-btn unified-btn-sm unified-btn-outline-secondary"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {!hospital.defaultPricing && (
+                              <button
+                                type="button"
+                                onClick={() => handleEditPricing(assignment)}
+                                className="unified-btn unified-btn-sm unified-btn-outline-primary"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleRemoveMaterial(assignment._id)}
+                              className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {filteredMaterials.length === 0 && materials.length > 0 && (
+                  <div className="unified-empty-state">
+                    <p>No materials found matching "{searchTerm}"</p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

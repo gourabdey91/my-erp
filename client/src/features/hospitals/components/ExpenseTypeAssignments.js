@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import './ExpenseTypeAssignments.css';
+import '../../../shared/styles/unified-design.css';
 
 const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 
@@ -156,196 +157,339 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
 
   return (
     <div className="expense-type-assignments-modal">
-      <div className="expense-type-assignments-content">
-        <div className="expense-type-assignments-header">
-          <h2>Expense Type Assignments - {hospital.shortName}</h2>
+      <div className="expense-type-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+        {/* Header */}
+        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
+          <div className="unified-header-content">
+            <div className="unified-header-text">
+              <h1 style={{fontSize: '1.5rem'}}>Expense Type Assignments</h1>
+              <p>Manage expense type assignments and charges for {hospital.shortName}</p>
+            </div>
+            <button 
+              className="unified-btn unified-btn-primary"
+              onClick={() => setEditingId('new')}
+            >
+              Add Expense Type Assignment
+            </button>
+          </div>
           <button 
             className="close-button"
             onClick={onClose}
+            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
           >
             ×
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
 
-        <div className="expense-type-assignments-actions">
-          <button 
-            className="add-button"
-            onClick={() => setEditingId('new')}
-          >
-            Add Expense Type Assignment
-          </button>
-        </div>
-
+        {/* Add/Edit Form */}
         {editingId && (
-          <div className="expense-type-assignment-form">
-            <h3>{editingId === 'new' ? 'Add Expense Type Assignment' : 'Edit Expense Type Assignment'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Expense Type *</label>
-                  <select name="expenseType" value={form.expenseType} onChange={handleChange} required>
-                    <option value="">Select Expense Type</option>
-                    {options.expenseTypes.map(et => (
-                      <option key={et._id} value={et._id}>{et.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Payment Type (Optional)</label>
-                  <select 
-                    name="paymentType" 
-                    value={form.paymentType} 
-                    onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                  >
-                    <option value="">All Payment Types</option>
-                    {options.paymentTypes.map(pt => (
-                      <option key={pt._id} value={pt._id}>{pt.description}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Surgical Category (Optional)</label>
-                  <select 
-                    name="category" 
-                    value={form.category} 
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                  >
-                    <option value="">All Categories</option>
-                    {options.categories.map(cat => (
-                      <option key={cat._id} value={cat._id}>{cat.description}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Procedure (Optional)</label>
-                  <select name="procedure" value={form.procedure} onChange={handleChange}>
-                    <option value="">All Procedures</option>
-                    {options.procedures.map(proc => (
-                      <option key={proc._id} value={proc._id}>{proc.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Value Type *</label>
-                  <select name="valueType" value={form.valueType} onChange={handleChange} required>
-                    <option value="amount">Fixed Amount (₹)</option>
-                    <option value="percentage">Percentage (%)</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Value *</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    min="0"
-                    max={form.valueType === 'percentage' ? '100' : undefined}
-                    name="value" 
-                    value={form.value} 
-                    onChange={handleChange} 
-                    placeholder={form.valueType === 'percentage' ? '0-100' : 'Amount in ₹'}
-                    required 
-                  />
-                </div>
-              </div>
-
-              {form.valueType === 'percentage' && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Tax Basis *</label>
-                    <select name="taxBasis" value={form.taxBasis} onChange={handleChange} required>
-                      <option value="">Select Tax Basis</option>
-                      <option value="pre-gst">Pre-GST</option>
-                      <option value="post-gst">Post-GST</option>
-                    </select>
+          <div className="unified-card" style={{marginBottom: '1.5rem'}}>
+            <div className="unified-card-header">
+              <h3>{editingId === 'new' ? 'Add Expense Type Assignment' : 'Edit Expense Type Assignment'}</h3>
+            </div>
+            <div className="unified-card-body">
+              <form onSubmit={handleSubmit} className="unified-form">
+                <div className="unified-row">
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Expense Type *</label>
+                      <select 
+                        className="unified-input"
+                        name="expenseType" 
+                        value={form.expenseType} 
+                        onChange={handleChange} 
+                        required
+                      >
+                        <option value="">Select Expense Type</option>
+                        {options.expenseTypes.map(et => (
+                          <option key={et._id} value={et._id}>{et.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="form-group">
-                    {/* Empty div to maintain grid alignment */}
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Payment Type (Optional)</label>
+                      <select 
+                        className="unified-input"
+                        name="paymentType" 
+                        value={form.paymentType} 
+                        onChange={(e) => handlePaymentTypeChange(e.target.value)}
+                      >
+                        <option value="">All Payment Types</option>
+                        {options.paymentTypes.map(pt => (
+                          <option key={pt._id} value={pt._id}>{pt.description}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Valid From *</label>
-                  <input type="date" name="validityFrom" value={form.validityFrom} onChange={handleChange} required />
+                <div className="unified-row">
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Surgical Category (Optional)</label>
+                      <select 
+                        className="unified-input"
+                        name="category" 
+                        value={form.category} 
+                        onChange={(e) => handleCategoryChange(e.target.value)}
+                      >
+                        <option value="">All Categories</option>
+                        {options.categories.map(cat => (
+                          <option key={cat._id} value={cat._id}>{cat.description}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Procedure (Optional)</label>
+                      <select 
+                        className="unified-input"
+                        name="procedure" 
+                        value={form.procedure} 
+                        onChange={handleChange}
+                      >
+                        <option value="">All Procedures</option>
+                        {options.procedures.map(proc => (
+                          <option key={proc._id} value={proc._id}>{proc.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Valid To *</label>
-                  <input type="date" name="validityTo" value={form.validityTo} onChange={handleChange} required />
-                </div>
-              </div>
+                <div className="unified-row">
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Value Type *</label>
+                      <select 
+                        className="unified-input"
+                        name="valueType" 
+                        value={form.valueType} 
+                        onChange={handleChange} 
+                        required
+                      >
+                        <option value="amount">Fixed Amount (₹)</option>
+                        <option value="percentage">Percentage (%)</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div className="form-buttons">
-                <button type="submit" className="save-button" disabled={loading}>
-                  {editingId === 'new' ? 'Save' : 'Update'} Assignment
-                </button>
-                <button type="button" onClick={handleCancel} className="cancel-button">
-                  Cancel
-                </button>
-              </div>
-            </form>
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Value *</label>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={form.valueType === 'percentage' ? '100' : undefined}
+                        className="unified-input"
+                        name="value" 
+                        value={form.value} 
+                        onChange={handleChange} 
+                        placeholder={form.valueType === 'percentage' ? '0-100' : 'Amount in ₹'}
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {form.valueType === 'percentage' && (
+                  <div className="unified-row">
+                    <div className="unified-col-md-6">
+                      <div className="unified-form-group">
+                        <label className="unified-label">Tax Basis *</label>
+                        <select 
+                          className="unified-input"
+                          name="taxBasis" 
+                          value={form.taxBasis} 
+                          onChange={handleChange} 
+                          required
+                        >
+                          <option value="">Select Tax Basis</option>
+                          <option value="pre-gst">Pre-GST</option>
+                          <option value="post-gst">Post-GST</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="unified-col-md-6">
+                      {/* Empty div to maintain grid alignment */}
+                    </div>
+                  </div>
+                )}
+
+                <div className="unified-row">
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Valid From *</label>
+                      <input 
+                        type="date"
+                        className="unified-input"
+                        name="validityFrom" 
+                        value={form.validityFrom} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="unified-col-md-6">
+                    <div className="unified-form-group">
+                      <label className="unified-label">Valid To *</label>
+                      <input 
+                        type="date"
+                        className="unified-input"
+                        name="validityTo" 
+                        value={form.validityTo} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="unified-form-actions">
+                  <button 
+                    type="submit" 
+                    className="unified-btn unified-btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : (editingId === 'new' ? 'Save' : 'Update')} Assignment
+                  </button>
+                  <button 
+                    type="button" 
+                    className="unified-btn unified-btn-secondary"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
-        <div className="expense-type-assignments-list">
-          {assignments.length === 0 ? (
-            <div className="no-data">
-              No expense type assignments found for this hospital.
-            </div>
-          ) : (
-            <div className="expense-type-assignments-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Expense Type</th>
-                    <th>Value</th>
-                    <th>Payment Type</th>
-                    <th>Category</th>
-                    <th>Procedure</th>
-                    <th>Validity</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assignments.map(a => (
-                    <tr key={a._id}>
-                      <td>{a.expenseType?.name}</td>
-                      <td>
-                        {a.valueType === 'percentage' 
-                          ? `${a.value}% (${a.taxBasis})`
-                          : `₹${a.value}`
-                        }
-                      </td>
-                      <td>{a.paymentType?.description || 'Any'}</td>
-                      <td>{a.category?.description || 'Any'}</td>
-                      <td>{a.procedure?.name || 'Any'}</td>
-                      <td>{dayjs(a.validityFrom).format('MMM DD, YYYY')} - {dayjs(a.validityTo).format('MMM DD, YYYY')}</td>
-                      <td>
-                        <div className="action-buttons">
-                          <button onClick={() => handleEdit(a)} className="edit-button">Edit</button>
-                          <button onClick={() => handleDelete(a._id)} className="delete-button">Delete</button>
+        {/* Assignments List */}
+        <div className="unified-card">
+          <div className="unified-card-header">
+            <h3>Current Expense Type Assignments ({assignments.length})</h3>
+          </div>
+          <div className="unified-card-body">
+            {assignments.length === 0 ? (
+              <div className="unified-empty-state">
+                <p>No expense type assignments found for this hospital.</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table */}
+                <div className="unified-table-responsive d-none d-md-block">
+                  <table className="unified-table">
+                    <thead>
+                      <tr>
+                        <th>Expense Type</th>
+                        <th>Value</th>
+                        <th>Payment Type</th>
+                        <th>Category</th>
+                        <th>Procedure</th>
+                        <th>Valid Period</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assignments.map(assignment => (
+                        <tr key={assignment._id}>
+                          <td>{assignment.expenseType?.name}</td>
+                          <td>
+                            {assignment.valueType === 'percentage' 
+                              ? `${assignment.value}% (${assignment.taxBasis})`
+                              : `₹${assignment.value}`
+                            }
+                          </td>
+                          <td>{assignment.paymentType?.description || 'All'}</td>
+                          <td>{assignment.category?.description || 'All'}</td>
+                          <td>{assignment.procedure?.name || 'All'}</td>
+                          <td>
+                            {new Date(assignment.validityFrom).toLocaleDateString()} to{' '}
+                            {new Date(assignment.validityTo).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <div className="unified-btn-group">
+                              <button
+                                onClick={() => setEditingId(assignment._id)}
+                                className="unified-btn unified-btn-sm unified-btn-outline-primary"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(assignment._id)}
+                                className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="d-block d-md-none">
+                  {assignments.map(assignment => (
+                    <div key={assignment._id} className="unified-card-mobile">
+                      <div className="unified-card-mobile-header">
+                        <h4>{assignment.expenseType?.name}</h4>
+                        <span className="unified-badge unified-badge-primary">
+                          {assignment.valueType === 'percentage' 
+                            ? `${assignment.value}% (${assignment.taxBasis})`
+                            : `₹${assignment.value}`
+                          }
+                        </span>
+                      </div>
+                      <div className="unified-card-mobile-body">
+                        <div className="unified-card-mobile-item">
+                          <strong>Payment Type:</strong> {assignment.paymentType?.description || 'All'}
                         </div>
-                      </td>
-                    </tr>
+                        <div className="unified-card-mobile-item">
+                          <strong>Category:</strong> {assignment.category?.description || 'All'}
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Procedure:</strong> {assignment.procedure?.name || 'All'}
+                        </div>
+                        <div className="unified-card-mobile-item">
+                          <strong>Valid Period:</strong> {' '}
+                          {new Date(assignment.validityFrom).toLocaleDateString()} to{' '}
+                          {new Date(assignment.validityTo).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="unified-card-mobile-actions">
+                        <button
+                          onClick={() => setEditingId(assignment._id)}
+                          className="unified-btn unified-btn-sm unified-btn-outline-primary"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(assignment._id)}
+                          className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                </div>
+              </>
+            )}
+          </div>
       </div>
     </div>
   );
