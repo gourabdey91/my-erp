@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { apiRequest } from '../../services/api';
 import '../../shared/styles/unified-design.css';
-import './MaterialMasterUpload.css';
+import '../../shared/styles/unified-upload.css';
 
 const MaterialMasterUpload = () => {
   const { currentUser } = useAuth();
@@ -15,6 +16,41 @@ const MaterialMasterUpload = () => {
   const [uploadSummary, setUploadSummary] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
+
+  const downloadTemplate = () => {
+    // Create template data with headers and sample rows
+    const templateData = [
+      {
+        'Business Unit': 'EXAMPLE_BU',
+        'Material Number': 'MAT001',
+        'Description': 'Sample Material Description',
+        'HSN Code': '1234567',
+        'GST %': '18',
+        'MRP': '1000',
+        'Institutional Price': '800', 
+        'Distribution Price': '600',
+        'Surgical Category': 'General',
+        'Implant Type': 'Screw',
+        'Sub Category': 'Bone Screw',
+        'Length (mm)': '25',
+        'Unit': 'Pcs'
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'MaterialMasterTemplate');
+    
+    // Auto-size columns
+    const cols = [
+      {wch: 15}, {wch: 15}, {wch: 30}, {wch: 10}, {wch: 8}, 
+      {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}, 
+      {wch: 15}, {wch: 12}, {wch: 8}
+    ];
+    ws['!cols'] = cols;
+    
+    XLSX.writeFile(wb, 'material_master_template.xlsx');
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -160,15 +196,23 @@ const MaterialMasterUpload = () => {
           </div>
           <div className="unified-card-body">
             
-            <div className="upload-instructions" style={{ marginBottom: '2rem' }}>
+            <div className="upload-instructions">
               <h3>Instructions:</h3>
               <ul>
-                <li>Upload Excel file with BU, Material Number, Description, HSN Code, Prices, and Category data</li>
                 <li><strong>Business Unit</strong>, <strong>Material Number</strong>, and <strong>Description</strong> are required</li>
                 <li><strong>HSN Code</strong>, <strong>GST %</strong>, and pricing information are required</li>
                 <li><strong>Category</strong>, <strong>Implant Type</strong> must exist in the system</li>
                 <li>Supported formats: Excel (.xlsx, .xls)</li>
               </ul>
+            </div>
+
+            <div className="upload-actions">
+              <button 
+                className="unified-btn unified-btn-secondary"
+                onClick={downloadTemplate}
+              >
+                📥 Download Template
+              </button>
             </div>
 
             <div className="file-upload">
@@ -268,7 +312,8 @@ const MaterialMasterUpload = () => {
               <h2>Data Preview</h2>
             </div>
             <div className="unified-card-body">
-              <div className="unified-table-responsive">
+              {/* Desktop Table View */}
+              <div className="unified-table-responsive d-none d-md-block">
                 <table className="unified-table">
                   <thead>
                     <tr>
@@ -282,10 +327,6 @@ const MaterialMasterUpload = () => {
                       <th>Institutional Price</th>
                       <th>Distribution Price</th>
                       <th>Surgical Category</th>
-                      <th>Implant Type</th>
-                      <th>Sub Category</th>
-                      <th>Length (mm)</th>
-                      <th>Unit</th>
                       <th>Status</th>
                       <th>Validation Errors</th>
                       <th>Actions</th>
@@ -306,10 +347,6 @@ const MaterialMasterUpload = () => {
                         <td>{row.institutionalPrice !== null && row.institutionalPrice !== undefined ? `₹${row.institutionalPrice}` : 'N/A'}</td>
                         <td>{row.distributionPrice !== null && row.distributionPrice !== undefined ? `₹${row.distributionPrice}` : 'N/A'}</td>
                         <td>{row.surgicalCategory}</td>
-                        <td>{row.implantType || 'N/A'}</td>
-                        <td>{row.subCategory || 'N/A'}</td>
-                        <td>{row.lengthMm !== null && row.lengthMm !== undefined ? `${row.lengthMm}mm` : 'N/A'}</td>
-                        <td>{row.unit || 'N/A'}</td>
                         <td>
                           <span className={`unified-badge ${row.isValid ? 'unified-badge-success' : 'unified-badge-danger'}`}>
                             {row.isValid ? '✓ Valid' : '✗ Invalid'}
@@ -339,6 +376,77 @@ const MaterialMasterUpload = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Cards View */}
+              <div className="d-block d-md-none mobile-data-cards">
+                {(uploadedData || []).map((row, index) => (
+                  <div key={index} className={`mobile-data-card ${row.isValid ? 'valid-row' : 'invalid-row'}`}>
+                    <div className="mobile-card-header">
+                      <div className="mobile-card-title">
+                        <span className="code-badge">{row.materialNumber}</span>
+                      </div>
+                      <span className={`unified-badge ${row.isValid ? 'unified-badge-success' : 'unified-badge-danger'}`}>
+                        {row.isValid ? '✓ Valid' : '✗ Invalid'}
+                      </span>
+                    </div>
+                    <div className="mobile-card-body">
+                      <div className="mobile-card-row full-width">
+                        <div className="mobile-card-label">Description</div>
+                        <div className="mobile-card-value">{row.description}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">BU</div>
+                        <div className="mobile-card-value">{row.businessUnitCode || 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Row</div>
+                        <div className="mobile-card-value">{row.rowIndex}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">HSN Code</div>
+                        <div className="mobile-card-value">{row.hsnCode}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">GST %</div>
+                        <div className="mobile-card-value">{row.gstPercentage !== null && row.gstPercentage !== undefined ? `${row.gstPercentage}%` : 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">MRP</div>
+                        <div className="mobile-card-value">{row.mrp !== null && row.mrp !== undefined ? `₹${row.mrp}` : 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Institutional Price</div>
+                        <div className="mobile-card-value">{row.institutionalPrice !== null && row.institutionalPrice !== undefined ? `₹${row.institutionalPrice}` : 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Category</div>
+                        <div className="mobile-card-value">{row.surgicalCategory}</div>
+                      </div>
+                      {(row.validationErrors || []).length > 0 && (
+                        <div className="mobile-card-row full-width">
+                          <div className="mobile-card-label">Validation Errors</div>
+                          <div className="mobile-card-value">
+                            <ul className="validation-errors">
+                              {(row.validationErrors || []).map((error, errorIndex) => (
+                                <li key={errorIndex} className="error-text">{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mobile-card-actions">
+                      <button
+                        onClick={() => handleDeleteRow(index)}
+                        className="unified-btn unified-btn-danger unified-btn-small"
+                        disabled={isLoading}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

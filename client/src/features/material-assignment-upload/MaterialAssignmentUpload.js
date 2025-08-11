@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { hospitalAPI } from '../hospitals/services/hospitalAPI';
 import '../../shared/styles/unified-design.css';
+import '../../shared/styles/unified-upload.css';
 
 const MaterialAssignmentUpload = ({ onBack }) => {
   const [hospitals, setHospitals] = useState([]);
@@ -271,7 +272,7 @@ const MaterialAssignmentUpload = ({ onBack }) => {
         <div className="unified-header-content">
           <div className="unified-header-text">
             <h1>Material Assignment Upload</h1>
-            <p>Bulk upload material assignments from Excel/CSV files</p>
+            <p>Bulk upload material assignments from Excel files</p>
           </div>
           <button className="unified-btn unified-btn-secondary" onClick={onBack}>
             ← Back to Dashboard
@@ -286,14 +287,12 @@ const MaterialAssignmentUpload = ({ onBack }) => {
           </div>
           <div className="unified-card-body">
             
-            <div className="upload-instructions" style={{ marginBottom: '2rem' }}>
+            <div className="upload-instructions">
               <h3>Instructions:</h3>
               <ul>
                 <li>Select a hospital first, then download the template</li>
-                <li>Fill the template with your data</li>
                 <li><strong>Material Number</strong> is required and must exist in Material Master</li>
                 <li><strong>MRP</strong> and <strong>Institutional Price</strong> are optional - if blank, values will be fetched from Material Master</li>
-                <li><strong>Flagged Billed</strong> should be 'true' or 'false' (optional, defaults to false)</li>
                 <li>Supported formats: Excel (.xlsx, .xls) or CSV</li>
               </ul>
             </div>
@@ -317,7 +316,7 @@ const MaterialAssignmentUpload = ({ onBack }) => {
               </select>
             </div>
 
-            <div className="upload-actions" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+            <div className="upload-actions">
               <button 
                 className="unified-btn unified-btn-secondary"
                 onClick={downloadTemplate}
@@ -433,24 +432,22 @@ const MaterialAssignmentUpload = ({ onBack }) => {
           </div>
         )}
 
-        {/* Data Preview Table */}
+        {/* Data Preview */}
         {processedData.length > 0 && (
           <div className="unified-card">
             <div className="unified-card-header">
-              <h2>Data Preview & Validation</h2>
+              <h2>Data Preview</h2>
             </div>
             <div className="unified-card-body">
-              <div className="unified-table-responsive">
-                <table className="unified-table data-preview-table">
+              {/* Desktop Table View */}
+              <div className="unified-table-responsive d-none d-md-block">
+                <table className="unified-table">
                   <thead>
                     <tr>
                       <th>Row</th>
                       <th>Material Number</th>
                       <th>Description</th>
                       <th>Category</th>
-                      <th>Implant Type</th>
-                      <th>Sub Category</th>
-                      <th>Length</th>
                       <th>MRP</th>
                       <th>Institutional Price</th>
                       <th>Flagged Billed</th>
@@ -470,11 +467,6 @@ const MaterialAssignmentUpload = ({ onBack }) => {
                           {row.material?.description || 'N/A'}
                         </td>
                         <td>{row.material?.surgicalCategory || 'N/A'}</td>
-                        <td>{row.material?.implantType || 'N/A'}</td>
-                        <td>{row.material?.subCategory || 'N/A'}</td>
-                        <td>
-                          {row.material?.lengthMm ? `${row.material.lengthMm}mm` : 'N/A'}
-                        </td>
                         <td>
                           {row.mrp ? (
                             <div>
@@ -500,7 +492,7 @@ const MaterialAssignmentUpload = ({ onBack }) => {
                           ) : 'N/A'}
                         </td>
                         <td>
-                          <span className={`unified-badge ${row.flaggedBilled ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
+                          <span className={`unified-badge ${row.flaggedBilled ? 'unified-badge-warning' : 'unified-badge-secondary'}`}>
                             {row.flaggedBilled ? 'Yes' : 'No'}
                           </span>
                         </td>
@@ -511,28 +503,117 @@ const MaterialAssignmentUpload = ({ onBack }) => {
                         </td>
                         <td>
                           {row.validationErrors && row.validationErrors.length > 0 ? (
-                            <ul className="validation-errors-list">
+                            <ul className="validation-errors">
                               {row.validationErrors.map((error, errorIndex) => (
-                                <li key={errorIndex}>{error}</li>
+                                <li key={errorIndex} className="error-text">{error}</li>
                               ))}
                             </ul>
                           ) : (
-                            <span className="no-errors">No errors</span>
+                            <span className="success-text">No errors</span>
                           )}
                         </td>
                         <td>
                           <button
                             onClick={() => handleDeleteRow(index)}
-                            className="unified-btn unified-btn-sm unified-btn-danger"
+                            className="unified-btn unified-btn-danger unified-btn-small"
                             disabled={uploading}
                           >
-                            🗑️
+                            🗑️ Delete
                           </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Cards View */}
+              <div className="d-block d-md-none mobile-data-cards">
+                {processedData.map((row, index) => (
+                  <div key={index} className={`mobile-data-card ${row.isValid ? 'valid-row' : 'invalid-row'}`}>
+                    <div className="mobile-card-header">
+                      <div className="mobile-card-title">
+                        <span className="code-badge">{row.materialNumber}</span>
+                      </div>
+                      <span className={`unified-badge ${row.isValid ? 'unified-badge-success' : 'unified-badge-danger'}`}>
+                        {row.isValid ? '✓ Valid' : '✗ Invalid'}
+                      </span>
+                    </div>
+                    <div className="mobile-card-body">
+                      <div className="mobile-card-row full-width">
+                        <div className="mobile-card-label">Description</div>
+                        <div className="mobile-card-value">{row.material?.description || 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Category</div>
+                        <div className="mobile-card-value">{row.material?.surgicalCategory || 'N/A'}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Row</div>
+                        <div className="mobile-card-value">{row.rowIndex}</div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">MRP</div>
+                        <div className="mobile-card-value">
+                          {row.mrp ? (
+                            <div>
+                              <div>₹{parseFloat(row.mrp).toLocaleString()}</div>
+                              {row.mrpSource && (
+                                <small style={{ color: 'var(--gray-600)' }}>
+                                  ({row.mrpSource})
+                                </small>
+                              )}
+                            </div>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Institutional Price</div>
+                        <div className="mobile-card-value">
+                          {row.institutionalPrice ? (
+                            <div>
+                              <div>₹{parseFloat(row.institutionalPrice).toLocaleString()}</div>
+                              {row.institutionalPriceSource && (
+                                <small style={{ color: 'var(--gray-600)' }}>
+                                  ({row.institutionalPriceSource})
+                                </small>
+                              )}
+                            </div>
+                          ) : 'N/A'}
+                        </div>
+                      </div>
+                      <div className="mobile-card-row">
+                        <div className="mobile-card-label">Flagged Billed</div>
+                        <div className="mobile-card-value">
+                          <span className={`unified-badge ${row.flaggedBilled ? 'unified-badge-warning' : 'unified-badge-secondary'}`}>
+                            {row.flaggedBilled ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      </div>
+                      {row.validationErrors && row.validationErrors.length > 0 && (
+                        <div className="mobile-card-row full-width">
+                          <div className="mobile-card-label">Validation Errors</div>
+                          <div className="mobile-card-value">
+                            <ul className="validation-errors">
+                              {row.validationErrors.map((error, errorIndex) => (
+                                <li key={errorIndex} className="error-text">{error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mobile-card-actions">
+                      <button
+                        onClick={() => handleDeleteRow(index)}
+                        className="unified-btn unified-btn-danger unified-btn-small"
+                        disabled={uploading}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

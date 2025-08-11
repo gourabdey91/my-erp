@@ -1,0 +1,319 @@
+/* Unified Upload Styles - Shared across all upload components */
+
+/* Responsive display utilities */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+
+@media (min-width: 768px) {
+  .d-md-block { display: block !important; }
+  .d-md-none { display: none !important; }
+}
+
+/* Upload Instructions */
+.upload-instructions {
+  background: var(--light-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.upload-instructions h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.upload-instructions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.upload-instructions li {
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+/* File Upload Section */
+.file-upload {
+  margin-bottom: 1.5rem;
+}
+
+.unified-file-input {
+  display: none;
+}
+
+.unified-file-label {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--white);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  min-width: 200px;
+  text-align: center;
+}
+
+.unified-file-label:hover {
+  border-color: var(--primary-color);
+  background: var(--light-bg);
+}
+
+/* Upload Actions */
+.upload-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .upload-actions .unified-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Message Display */
+.success-message {
+  border-left: 4px solid var(--success-color);
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.success-message .unified-card-body {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.error-message {
+  border-left: 4px solid var(--danger-color);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.error-message .unified-card-body {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+.warning-message {
+  border-left: 4px solid var(--warning-color);
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.warning-message .unified-card-body {
+  color: var(--warning-color);
+  font-weight: 500;
+}
+
+/* Upload Summary Stats */
+.unified-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.unified-stat-card {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
+}
+
+.unified-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.unified-stat-card.danger {
+  border-left: 4px solid var(--danger-color);
+}
+
+.unified-stat-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.unified-stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.25rem;
+}
+
+.unified-stat-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Data Preview - Mobile Friendly */
+.data-preview-container {
+  overflow-x: auto;
+}
+
+.data-preview-table {
+  width: 100%;
+  min-width: 800px;
+}
+
+/* Mobile-first responsive table */
+@media (max-width: 768px) {
+  .unified-table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile card layout for data preview */
+  .mobile-data-cards {
+    display: block;
+  }
+  
+  .mobile-data-card {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .mobile-card-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+  }
+  
+  .mobile-card-status {
+    flex-shrink: 0;
+  }
+  
+  .mobile-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .mobile-card-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .mobile-card-row.full-width {
+    grid-column: 1 / -1;
+  }
+  
+  .mobile-card-label {
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .mobile-card-value {
+    color: var(--text-color);
+    word-break: break-word;
+  }
+  
+  .mobile-card-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+  }
+}
+
+/* Row status styling */
+.valid-row {
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.invalid-row {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Code badges */
+.code-badge {
+  background: var(--primary-color);
+  color: var(--white);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Description cell */
+.description-cell {
+  max-width: 200px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+/* Validation errors */
+.validation-errors {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.validation-errors li {
+  margin-bottom: 0.25rem;
+}
+
+.error-text {
+  color: var(--danger-color);
+  font-size: 0.85rem;
+}
+
+.success-text {
+  color: var(--success-color);
+  font-size: 0.85rem;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 480px) {
+  .upload-instructions {
+    padding: 1rem;
+  }
+  
+  .upload-instructions h3 {
+    font-size: 1rem;
+  }
+  
+  .unified-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mobile-card-body {
+    grid-template-columns: 1fr;
+  }
+  
+  .unified-file-label {
+    min-width: auto;
+    width: 100%;
+  }
+}
