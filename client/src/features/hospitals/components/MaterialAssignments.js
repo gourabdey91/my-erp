@@ -256,62 +256,64 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="material-assignments-modal">
-      <div className="material-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)', position: 'relative'}}>
-        {/* Header */}
-        <div className="unified-header" style={{marginBottom: '1.5rem'}}>
-          <div className="unified-header-content">
-            <div className="unified-header-text">
-              <h1 style={{fontSize: '1.5rem'}}>Material Assignments</h1>
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container">
+        <div className="unified-modal-content">
+          {/* Header */}
+          <div className="unified-modal-header">
+            <div className="unified-modal-title">
+              <h1>Material Assignments</h1>
               <p>Manage material assignments and pricing for {hospital?.shortName}</p>
             </div>
-            {!showAddForm && (
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  className="unified-btn unified-btn-secondary"
-                  onClick={() => setShowBulkUpload(true)}
-                >
-                  📥 Bulk Upload
-                </button>
-                <button 
-                  className="unified-btn unified-btn-primary"
-                  onClick={() => setShowAddForm(true)}
-                >
-                  ✚ Add Material
-                </button>
-              </div>
-            )}
+            <button 
+              className="unified-modal-close"
+              onClick={onClose}
+              aria-label="Close dialog"
+            >
+              ×
+            </button>
           </div>
-          <button 
-            className="close-button"
-            onClick={onClose}
-            style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer'}}
-          >
-            ×
-          </button>
-        </div>
 
-        {error && <div className="unified-alert unified-alert-danger">{error}</div>}
-        {success && <div className="unified-alert unified-alert-success">{success}</div>}
+          {error && <div className="unified-alert unified-alert-danger">{error}</div>}
+          {success && <div className="unified-alert unified-alert-success">{success}</div>}
 
-        {/* Default Pricing Info */}
-        <div className="unified-card" style={{marginBottom: '1.5rem'}}>
-          <div className="unified-card-body">
-            <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-              <span><strong>Default Pricing:</strong></span>
-              <span className={`unified-badge ${hospital?.defaultPricing ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
-                {hospital?.defaultPricing ? 'Enabled' : 'Disabled'}
-              </span>
+          {/* Action Buttons */}
+          {!showAddForm && (
+            <div className="unified-modal-actions">
+              <button 
+                className="unified-btn unified-btn-secondary"
+                onClick={() => setShowBulkUpload(true)}
+              >
+                📥 Bulk Upload
+              </button>
+              <button 
+                className="unified-btn unified-btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                ✚ Add Material
+              </button>
             </div>
-            {hospital?.defaultPricing && (
-              <p style={{marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-muted)'}}>
-                Material prices are automatically set from the material master and cannot be edited.
-              </p>
-            )}
+          )}
+
+          {/* Default Pricing Info */}
+          <div className="unified-card" style={{marginBottom: '1.5rem'}}>
+            <div className="unified-card-body">
+              <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                <span><strong>Default Pricing:</strong></span>
+                <span className={`unified-badge ${hospital?.defaultPricing ? 'unified-badge-success' : 'unified-badge-secondary'}`}>
+                  {hospital?.defaultPricing ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              {hospital?.defaultPricing && (
+                <p style={{marginTop: '0.5rem', marginBottom: 0, color: 'var(--text-muted)'}}>
+                  Material prices are automatically set from the material master and cannot be edited.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-        {/* Add Material Form */}
-        {showAddForm && (
+
+          {/* Add Material Form */}
+          {showAddForm && (
           <div className="unified-content">
             <div className="form-container">
               <div className="form-header">
@@ -583,9 +585,22 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                         <h4 className="material-title">
                           <span className="code-badge">{assignment.material?.materialNumber}</span>
                         </h4>
-                        <span className="price-badge">
-                          MRP: {formatCurrency(assignment.mrp)}
-                        </span>
+                        <div className="price-badge">
+                          <strong>MRP:</strong>
+                          {editingAssignment === assignment._id ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="unified-input unified-input-sm"
+                              value={editPricing.mrp}
+                              onChange={(e) => setEditPricing(prev => ({...prev, mrp: e.target.value}))}
+                              required
+                              style={{width: '120px', marginLeft: '8px'}}
+                            />
+                          ) : (
+                            <span>{formatCurrency(assignment.mrp)}</span>
+                          )}
+                        </div>
                       </div>
                       <div className="unified-card-mobile-body">
                         <div className="unified-card-mobile-item">
@@ -612,7 +627,19 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
                         </div>
                         <div className="unified-card-mobile-item">
                           <strong>Institutional Price:</strong>
-                          <span className="price-value">{formatCurrency(assignment.institutionalPrice)}</span>
+                          {editingAssignment === assignment._id ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="unified-input unified-input-sm"
+                              value={editPricing.institutionalPrice}
+                              onChange={(e) => setEditPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
+                              required
+                              style={{width: '120px', marginLeft: '8px'}}
+                            />
+                          ) : (
+                            <span className="price-value">{formatCurrency(assignment.institutionalPrice)}</span>
+                          )}
                         </div>
                         
                         <div className="mobile-checkboxes-grid">
@@ -683,6 +710,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
             )}
           </div>
         )}
+        </div>
       </div>
       
       {/* Bulk Upload Modal */}
