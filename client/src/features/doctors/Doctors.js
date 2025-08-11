@@ -9,6 +9,7 @@ import { scrollToTop } from '../../shared/utils/scrollUtils';
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
   const [consultingDoctors, setConsultingDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,15 +26,18 @@ const Doctors = () => {
   // Filter state
   const [filters, setFilters] = useState({
     doctorName: '',
-    surgicalCategoryId: ''
+    surgicalCategoryId: '',
+    hospitalId: ''
   });
 
   const { currentUser } = useAuth();
 
-  const fetchDoctors = useCallback(async () => {
+  const fetchDoctors = useCallback(async (hospitalFilter = '') => {
     try {
       setLoading(true);
-      const response = await doctorAPI.getAll();
+      const response = hospitalFilter && hospitalFilter !== 'all' 
+        ? await doctorAPI.getByHospital(hospitalFilter)
+        : await doctorAPI.getAll();
       setDoctors(response);
       setError('');
     } catch (err) {
@@ -54,6 +58,16 @@ const Doctors = () => {
     }
   }, []);
 
+  const fetchHospitals = useCallback(async () => {
+    try {
+      const response = await doctorAPI.getHospitals();
+      setHospitals(response);
+    } catch (err) {
+      console.error('Error fetching hospitals:', err);
+      setError('Failed to fetch hospitals');
+    }
+  }, []);
+
   const fetchConsultingDoctors = useCallback(async () => {
     try {
       const response = await doctorAPI.getDropdownDoctors();
@@ -66,8 +80,9 @@ const Doctors = () => {
   useEffect(() => {
     fetchDoctors();
     fetchCategories();
+    fetchHospitals();
     fetchConsultingDoctors();
-  }, [fetchDoctors, fetchCategories, fetchConsultingDoctors]);
+  }, [fetchDoctors, fetchCategories, fetchHospitals, fetchConsultingDoctors]);
 
   // Filtered doctors
   const filteredDoctors = useMemo(() => {
@@ -78,7 +93,12 @@ const Doctors = () => {
       const matchesSurgicalCategory = !filters.surgicalCategoryId ||
         doctor.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId);
       
-      return matchesName && matchesSurgicalCategory;
+      const matchesHospital = !filters.hospitalId ||
+        (doctor.assignedHospitals && doctor.assignedHospitals.some(hospital => 
+          hospital._id === filters.hospitalId
+        ));
+      
+      return matchesName && matchesSurgicalCategory && matchesHospital;
     });
   }, [doctors, filters]);
 
@@ -87,13 +107,20 @@ const Doctors = () => {
       ...prev,
       [filterName]: value
     }));
+    
+    // If hospital filter changes, refresh doctors data
+    if (filterName === 'hospitalId') {
+      fetchDoctors(value);
+    }
   };
 
   const resetFilters = () => {
     setFilters({
       doctorName: '',
-      surgicalCategoryId: ''
+      surgicalCategoryId: '',
+      hospitalId: ''
     });
+    fetchDoctors(); // Reset to all doctors
   };
 
   const handleSubmit = async (e) => {
@@ -270,6 +297,22 @@ const Doctors = () => {
           </div>
           
           <div className="unified-filter-group">
+            <label>Hospital</label>
+            <select
+              value={filters.hospitalId}
+              onChange={(e) => handleFilterChange('hospitalId', e.target.value)}
+              className="unified-filter-select"
+            >
+              <option value="">All Hospitals</option>
+              {hospitals.map(hospital => (
+                <option key={hospital._id} value={hospital._id}>
+                  {hospital.name} ({hospital.code})
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="unified-filter-group">
             <label>Surgical Category</label>
             <select
               value={filters.surgicalCategoryId}
@@ -413,6 +456,7 @@ const Doctors = () => {
                 <thead>
                   <tr>
                     <th>Name</th>
+                    <th>Assigned Hospitals</th>
                     <th>Surgical Categories</th>
                     <th>Contact</th>
                     <th>Consulting Doctor</th>
@@ -424,6 +468,28 @@ const Doctors = () => {
                     <tr key={doctor._id}>
                       <td>
                         <span className="name-text">Dr. {doctor.name}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                          {doctor.assignedHospitals && doctor.assignedHospitals.length > 0 ? (
+                            doctor.assignedHospitals.map(hospital => (
+                              <span key={hospital._id} style={{ 
+                                padding: '0.125rem 0.5rem', 
+                                borderRadius: '1rem', 
+                                fontSize: '0.75rem',
+                                background: 'var(--primary-light)',
+                                color: 'var(--primary-color)',
+                                fontWeight: '500'
+                              }}>
+                                {hospital.name} ({hospital.code})
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ color: 'var(--gray-500)', fontStyle: 'italic' }}>
+                              No hospital assignments
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
@@ -491,6 +557,15 @@ const Doctors = () => {
                     { label: 'Consulting Doctor', value: doctor.consultingDoctor?.name || 'None assigned' }
                   ]}
                   sections={[
+                    {
+                      title: 'Assigned Hospitals',
+                      items: doctor.assignedHospitals && doctor.assignedHospitals.length > 0
+                        ? doctor.assignedHospitals.map(hospital => ({
+                            label: hospital.code,
+                            value: hospital.name
+                          }))
+                        : [{ label: 'No assignments', value: 'Not assigned to any hospital' }]
+                    },
                     {
                       title: 'Surgical Categories',
                       items: doctor.surgicalCategories.map(cat => ({

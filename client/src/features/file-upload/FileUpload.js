@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { apiRequest } from '../../services/api';
 import * as XLSX from 'xlsx';
 import '../../shared/styles/unified-upload.css';

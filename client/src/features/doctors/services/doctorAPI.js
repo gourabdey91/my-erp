@@ -16,6 +16,16 @@ export const doctorAPI = {
     return await apiRequest('/api/doctors/categories');
   },
 
+  // Get hospitals for filtering
+  getHospitals: async () => {
+    return await apiRequest('/api/doctors/hospitals');
+  },
+
+  // Get doctors by hospital filter
+  getByHospital: async (hospitalId = 'all') => {
+    return await apiRequest(`/api/doctors/by-hospital/${hospitalId}`);
+  },
+
   // Get doctors for dropdown (consulting doctor selection)
   getDropdownDoctors: async () => {
     return await apiRequest('/api/doctors/dropdown');

@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Doctor = require('../models/Doctor');
 const Category = require('../models/Category');
+const DoctorAssignment = require('../models/DoctorAssignment');
 
-// Get all doctors
+// Get all doctors with hospital information
 router.get('/', async (req, res) => {
   try {
     const doctors = await Doctor.find({ isActive: true })
@@ -13,7 +14,26 @@ router.get('/', async (req, res) => {
     .populate('updatedBy', 'firstName lastName')
     .sort({ name: 1 });
 
-    res.json(doctors);
+    // Get hospital assignments for each doctor
+    const doctorsWithHospitals = await Promise.all(
+      doctors.map(async (doctor) => {
+        const assignments = await DoctorAssignment.find({
+          doctor: doctor._id,
+          isActive: true,
+          validityFrom: { $lte: new Date() },
+          validityTo: { $gte: new Date() }
+        })
+        .populate('hospital', 'name code address')
+        .distinct('hospital');
+
+        return {
+          ...doctor.toObject(),
+          assignedHospitals: assignments || []
+        };
+      })
+    );
+
+    res.json(doctorsWithHospitals);
   } catch (error) {
     console.error('Error fetching doctors:', error);
     res.status(500).json({ message: 'Server error while fetching doctors' });
@@ -30,6 +50,90 @@ router.get('/categories', async (req, res) => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ message: 'Server error while fetching categories' });
+  }
+});
+
+// Get hospitals for filtering (hospitals that have doctor assignments)
+router.get('/hospitals', async (req, res) => {
+  try {
+    const hospitalsWithDoctors = await DoctorAssignment.find({
+      isActive: true,
+      validityFrom: { $lte: new Date() },
+      validityTo: { $gte: new Date() }
+    })
+    .populate('hospital', 'name code address')
+    .distinct('hospital');
+
+    // Filter out null values and sort by name
+    const hospitals = hospitalsWithDoctors
+      .filter(hospital => hospital && hospital.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(hospitals);
+  } catch (error) {
+    console.error('Error fetching hospitals:', error);
+    res.status(500).json({ message: 'Server error while fetching hospitals' });
+  }
+});
+
+// Get doctors by hospital filter
+router.get('/by-hospital/:hospitalId?', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    
+    let doctors;
+    
+    if (hospitalId && hospitalId !== 'all') {
+      // Get doctors assigned to specific hospital
+      const doctorAssignments = await DoctorAssignment.find({
+        hospital: hospitalId,
+        isActive: true,
+        validityFrom: { $lte: new Date() },
+        validityTo: { $gte: new Date() }
+      }).distinct('doctor');
+
+      doctors = await Doctor.find({ 
+        _id: { $in: doctorAssignments },
+        isActive: true 
+      })
+      .populate('surgicalCategories', 'code description')
+      .populate('consultingDoctor', 'name email')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .sort({ name: 1 });
+    } else {
+      // Get all doctors (existing functionality)
+      doctors = await Doctor.find({ isActive: true })
+      .populate('surgicalCategories', 'code description')
+      .populate('consultingDoctor', 'name email')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .sort({ name: 1 });
+    }
+
+    // Get hospital assignments for each doctor
+    const doctorsWithHospitals = await Promise.all(
+      doctors.map(async (doctor) => {
+        const assignments = await DoctorAssignment.find({
+          doctor: doctor._id,
+          isActive: true,
+          validityFrom: { $lte: new Date() },
+          validityTo: { $gte: new Date() }
+        })
+        .populate('hospital', 'name code address')
+        .distinct('hospital');
+
+        return {
+          ...doctor.toObject(),
+          assignedHospitals: assignments || []
+        };
+      })
+    );
+
+    res.json(doctorsWithHospitals);
+  } catch (error) {
+    console.error('Error fetching doctors by hospital:', error);
+    res.status(500).json({ message: 'Server error while fetching doctors by hospital' });
   }
 });
 
