@@ -252,7 +252,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
 
   return (
     <div className="material-assignments-modal">
-      <div className="material-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)'}}>
+      <div className="material-assignments-content unified-container" style={{padding: '2rem', background: 'var(--light-bg)', position: 'relative'}}>
         {/* Header */}
         <div className="unified-header" style={{marginBottom: '1.5rem'}}>
           <div className="unified-header-content">
@@ -260,12 +260,14 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
               <h1 style={{fontSize: '1.5rem'}}>Material Assignments</h1>
               <p>Manage material assignments and pricing for {hospital?.shortName}</p>
             </div>
-            <button 
-              className="unified-btn unified-btn-primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              Add Material Assignment
-            </button>
+            {!showAddForm && (
+              <button 
+                className="unified-btn unified-btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                Add Material Assignment
+              </button>
+            )}
           </div>
           <button 
             className="close-button"
@@ -295,101 +297,99 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
             )}
           </div>
         </div>
-        {/* Search and Materials List */}
-        <div className="unified-card">
-          <div className="unified-card-header">
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-              <h3>Assigned Materials ({materials.length})</h3>
-              <div className="unified-form-group" style={{marginBottom: 0, width: '300px'}}>
-                <input
-                  type="text"
-                  className="unified-input"
-                  placeholder="Search materials..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {/* Add Material Form */}
+        {showAddForm && (
+          <div className="unified-content">
+            <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+              <h2>{editingAssignment ? 'Edit Material Assignment' : 'Add Material Assignment'}</h2>
+            </div>
+            <form onSubmit={handleAddMaterial}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '2rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                    Select Material *
+                  </label>
+                  <select
+                    className="unified-search-input"
+                    value={selectedMaterial}
+                    onChange={(e) => handleMaterialSelect(e.target.value)}
+                    required
+                  >
+                    <option value="">Choose a material...</option>
+                    {availableMaterials.map(material => (
+                      <option key={material._id} value={material._id}>
+                        {material.materialNumber} - {material.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+
+              {selectedMaterial && !hospital.defaultPricing && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      MRP *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="unified-search-input"
+                      value={customPricing.mrp}
+                      onChange={(e) => setCustomPricing(prev => ({...prev, mrp: e.target.value}))}
+                      placeholder="Enter MRP"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Institutional Price *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="unified-search-input"
+                      value={customPricing.institutionalPrice}
+                      onChange={(e) => setCustomPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
+                      placeholder="Enter institutional price"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
+                  {loading ? 'Adding...' : 'Add Material'}
+                </button>
+                <button 
+                  type="button" 
+                  className="unified-btn unified-btn-secondary"
+                  onClick={() => setShowAddForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
+        )}
 
-          {/* Add Material Form */}
-          {showAddForm && (
-            <div className="unified-card-body" style={{borderBottom: '1px solid var(--border-color)'}}>
-              <form onSubmit={handleAddMaterial} className="unified-form">
-                <div className="unified-row">
-                  <div className="unified-col-md-12">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Select Material</label>
-                      <select
-                        className="unified-input"
-                        value={selectedMaterial}
-                        onChange={(e) => handleMaterialSelect(e.target.value)}
-                        required
-                      >
-                        <option value="">Choose a material...</option>
-                        {availableMaterials.map(material => (
-                          <option key={material._id} value={material._id}>
-                            {material.materialNumber} - {material.description}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedMaterial && !hospital.defaultPricing && (
-                  <div className="unified-row">
-                    <div className="unified-col-md-6">
-                      <div className="unified-form-group">
-                        <label className="unified-label">MRP</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="unified-input"
-                          value={customPricing.mrp}
-                          onChange={(e) => setCustomPricing(prev => ({...prev, mrp: e.target.value}))}
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="unified-col-md-6">
-                      <div className="unified-form-group">
-                        <label className="unified-label">Institutional Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="unified-input"
-                          value={customPricing.institutionalPrice}
-                          onChange={(e) => setCustomPricing(prev => ({...prev, institutionalPrice: e.target.value}))}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="unified-form-actions">
-                  <button 
-                    type="submit" 
-                    className="unified-btn unified-btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Adding...' : 'Add Material'}
-                  </button>
-                  <button 
-                    type="button" 
-                    className="unified-btn unified-btn-secondary"
-                    onClick={() => setShowAddForm(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+        {/* Materials List */}
+        {!showAddForm && (
+          <div className="unified-content">
+            <div style={{ borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>Assigned Materials ({materials.length})</h2>
+              <input
+                type="text"
+                className="unified-search-input"
+                placeholder="Search materials..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: '300px' }}
+              />
             </div>
-          )}
 
-          <div className="unified-card-body">
             {filteredMaterials.length === 0 ? (
               <div className="unified-empty-state">
                 <p>No materials assigned yet.</p>
@@ -397,7 +397,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
             ) : (
               <>
                 {/* Desktop Table */}
-                <div className="unified-table-responsive d-none d-md-block">
+                <div className="unified-table-responsive">
                   <table className="unified-table">
                     <thead>
                       <tr>
@@ -604,7 +604,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
               </>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

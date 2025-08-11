@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import dayjs from 'dayjs';
 import './ExpenseTypeAssignments.css';
 import '../../../shared/styles/unified-design.css';
 
@@ -186,189 +185,169 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
             </div>
             <div className="unified-card-body">
               <form onSubmit={handleSubmit} className="unified-form">
-                <div className="unified-row">
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Expense Type *</label>
-                      <select 
-                        className="unified-input"
-                        name="expenseType" 
-                        value={form.expenseType} 
-                        onChange={handleChange} 
-                        required
-                      >
-                        <option value="">Select Expense Type</option>
-                        {options.expenseTypes.map(et => (
-                          <option key={et._id} value={et._id}>{et.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Expense Type *
+                    </label>
+                    <select 
+                      className="unified-search-input"
+                      name="expenseType" 
+                      value={form.expenseType} 
+                      onChange={handleChange} 
+                      required
+                    >
+                      <option value="">Select Expense Type</option>
+                      {options.expenseTypes.map(et => (
+                        <option key={et._id} value={et._id}>{et.name}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Payment Type (Optional)</label>
-                      <select 
-                        className="unified-input"
-                        name="paymentType" 
-                        value={form.paymentType} 
-                        onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                      >
-                        <option value="">All Payment Types</option>
-                        {options.paymentTypes.map(pt => (
-                          <option key={pt._id} value={pt._id}>{pt.description}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="unified-row">
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Surgical Category (Optional)</label>
-                      <select 
-                        className="unified-input"
-                        name="category" 
-                        value={form.category} 
-                        onChange={(e) => handleCategoryChange(e.target.value)}
-                      >
-                        <option value="">All Categories</option>
-                        {options.categories.map(cat => (
-                          <option key={cat._id} value={cat._id}>{cat.description}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Procedure (Optional)</label>
-                      <select 
-                        className="unified-input"
-                        name="procedure" 
-                        value={form.procedure} 
-                        onChange={handleChange}
-                      >
-                        <option value="">All Procedures</option>
-                        {options.procedures.map(proc => (
-                          <option key={proc._id} value={proc._id}>{proc.name}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Payment Type (Optional)
+                    </label>
+                    <select 
+                      className="unified-search-input"
+                      name="paymentType" 
+                      value={form.paymentType} 
+                      onChange={(e) => handlePaymentTypeChange(e.target.value)}
+                    >
+                      <option value="">All Payment Types</option>
+                      {options.paymentTypes.map(pt => (
+                        <option key={pt._id} value={pt._id}>{pt.description}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="unified-row">
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Value Type *</label>
-                      <select 
-                        className="unified-input"
-                        name="valueType" 
-                        value={form.valueType} 
-                        onChange={handleChange} 
-                        required
-                      >
-                        <option value="amount">Fixed Amount (₹)</option>
-                        <option value="percentage">Percentage (%)</option>
-                      </select>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Surgical Category (Optional)
+                    </label>
+                    <select 
+                      className="unified-search-input"
+                      name="category" 
+                      value={form.category} 
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                    >
+                      <option value="">All Categories</option>
+                      {options.categories.map(cat => (
+                        <option key={cat._id} value={cat._id}>{cat.description}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Value *</label>
-                      <input 
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={form.valueType === 'percentage' ? '100' : undefined}
-                        className="unified-input"
-                        name="value" 
-                        value={form.value} 
-                        onChange={handleChange} 
-                        placeholder={form.valueType === 'percentage' ? 'Enter percentage (0-100)' : 'Enter amount in ₹'}
-                        required 
-                        style={{
-                          '::placeholder': {
-                            opacity: '0.5',
-                            color: 'var(--text-muted)'
-                          }
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Procedure (Optional)
+                    </label>
+                    <select 
+                      className="unified-search-input"
+                      name="procedure" 
+                      value={form.procedure} 
+                      onChange={handleChange}
+                    >
+                      <option value="">All Procedures</option>
+                      {options.procedures.map(proc => (
+                        <option key={proc._id} value={proc._id}>{proc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Value Type *
+                    </label>
+                    <select 
+                      className="unified-search-input"
+                      name="valueType" 
+                      value={form.valueType} 
+                      onChange={handleChange} 
+                      required
+                    >
+                      <option value="amount">Fixed Amount (₹)</option>
+                      <option value="percentage">Percentage (%)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Value *
+                    </label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={form.valueType === 'percentage' ? '100' : undefined}
+                      className="unified-search-input"
+                      name="value" 
+                      value={form.value} 
+                      onChange={handleChange} 
+                      placeholder={form.valueType === 'percentage' ? 'Enter percentage (0-100)' : 'Enter amount in ₹'}
+                      required 
+                    />
                   </div>
                 </div>
 
                 {form.valueType === 'percentage' && (
-                  <div className="unified-row">
-                    <div className="unified-col-md-6">
-                      <div className="unified-form-group">
-                        <label className="unified-label">Tax Basis *</label>
-                        <select 
-                          className="unified-input"
-                          name="taxBasis" 
-                          value={form.taxBasis} 
-                          onChange={handleChange} 
-                          required
-                        >
-                          <option value="">Select Tax Basis</option>
-                          <option value="pre-gst">Pre-GST</option>
-                          <option value="post-gst">Post-GST</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="unified-col-md-6">
-                      {/* Empty div to maintain grid alignment */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '2rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                        Tax Basis *
+                      </label>
+                      <select 
+                        className="unified-search-input"
+                        name="taxBasis" 
+                        value={form.taxBasis} 
+                        onChange={handleChange} 
+                        required
+                      >
+                        <option value="">Select Tax Basis</option>
+                        <option value="pre-gst">Pre-GST</option>
+                        <option value="post-gst">Post-GST</option>
+                      </select>
                     </div>
                   </div>
                 )}
 
-                <div className="unified-row">
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Valid From *</label>
-                      <input 
-                        type="date"
-                        className="unified-input"
-                        name="validityFrom" 
-                        value={form.validityFrom} 
-                        onChange={handleChange} 
-                        min={`${new Date().getFullYear()}-01-01`}
-                        title="Start date for this assignment (defaults to current year Jan 1st)"
-                        required 
-                        style={{
-                          colorScheme: 'light',
-                          opacity: form.validityFrom ? '1' : '0.5'
-                        }}
-                      />
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Valid From *
+                    </label>
+                    <input 
+                      type="date"
+                      className="unified-search-input"
+                      name="validityFrom" 
+                      value={form.validityFrom} 
+                      onChange={handleChange} 
+                      min={`${new Date().getFullYear()}-01-01`}
+                      required 
+                    />
                   </div>
 
-                  <div className="unified-col-md-6">
-                    <div className="unified-form-group">
-                      <label className="unified-label">Valid To *</label>
-                      <input 
-                        type="date"
-                        className="unified-input"
-                        name="validityTo" 
-                        value={form.validityTo} 
-                        onChange={handleChange} 
-                        min={form.validityFrom || `${new Date().getFullYear()}-01-01`}
-                        title="End date for this assignment (defaults to 9999-12-31 for indefinite)"
-                        required 
-                        style={{
-                          colorScheme: 'light',
-                          opacity: form.validityTo ? '1' : '0.5'
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                      Valid To *
+                    </label>
+                    <input 
+                      type="date"
+                      className="unified-search-input"
+                      name="validityTo" 
+                      value={form.validityTo} 
+                      onChange={handleChange} 
+                      min={form.validityFrom || `${new Date().getFullYear()}-01-01`}
+                      required 
+                    />
                   </div>
                 </div>
 
-                <div className="unified-form-actions">
+                <div style={{ display: 'flex', gap: '1rem' }}>
                   <button 
                     type="submit" 
                     className="unified-btn unified-btn-primary"
