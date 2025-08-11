@@ -113,3 +113,13 @@ public
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Temporary and debug files
+*.tmp
+*.temp
+debug*.js
+test-*.js
+check-*.js
+fix-*.js
+create-*-user*.js
+*-debug-*.js
