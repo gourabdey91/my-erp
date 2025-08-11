@@ -74,21 +74,6 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
     fetchOptions(form.paymentType, categoryId);
   };
 
-  const handleEdit = assignment => {
-    setEditingId(assignment._id);
-    setForm({
-      expenseType: assignment.expenseType?._id || '',
-      value: assignment.value,
-      valueType: assignment.valueType || 'amount',
-      taxBasis: assignment.taxBasis || '',
-      paymentType: assignment.paymentType?._id || '',
-      category: assignment.category?._id || '',
-      procedure: assignment.procedure?._id || '',
-      validityFrom: assignment.validityFrom ? dayjs(assignment.validityFrom).format('YYYY-MM-DD') : '',
-      validityTo: assignment.validityTo ? dayjs(assignment.validityTo).format('YYYY-MM-DD') : ''
-    });
-  };
-
   const handleCancel = () => {
     setEditingId(null);
     setForm({ expenseType: '', value: '', valueType: 'amount', taxBasis: '', paymentType: '', category: '', procedure: '', validityFrom: '', validityTo: '' });

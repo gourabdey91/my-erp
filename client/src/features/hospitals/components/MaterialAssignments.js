@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { hospitalAPI } from '../services/hospitalAPI';
 import './MaterialAssignments.css';
@@ -39,7 +39,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
         fetchAvailableMaterials();
       }
     }
-  }, [isOpen, hospital, showAddForm]);
+  }, [isOpen, hospital, showAddForm, fetchAvailableMaterials]);
 
   // Filter materials based on search term
   useEffect(() => {
@@ -64,7 +64,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
     }
   }, [materials, searchTerm]);
 
-  const fetchAvailableMaterials = async () => {
+  const fetchAvailableMaterials = useCallback(async () => {
     try {
       setLoading(true);
       const data = await hospitalAPI.getAvailableMaterials(hospital._id);
@@ -75,7 +75,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [hospital._id]);
 
   const handleMaterialSelect = (materialId) => {
     setSelectedMaterial(materialId);
@@ -246,11 +246,6 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
       style: 'currency',
       currency: 'INR'
     }).format(amount);
-  };
-
-  const clearMessages = () => {
-    setError('');
-    setSuccess('');
   };
 
   if (!isOpen) return null;
