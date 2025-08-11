@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../../../shared/styles/unified-design.css';
 import './BusinessUnitForm.css';
 
 const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
@@ -158,19 +159,20 @@ const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
           )}
         </div>
 
-        <div className="form-group">
-          <label>
+        <div className="unified-checkbox-container">
+          <label className="unified-checkbox-label">
             <input
               type="checkbox"
               name="isActive"
               checked={formData.isActive}
               onChange={handleInputChange}
+              className="unified-checkbox"
             />
-            {' '}Active
+            Active
           </label>
-          <small className="form-text">
+          <div className="unified-help-text">
             If unchecked, this business unit will be deactivated and hidden from most operations
-          </small>
+          </div>
         </div>
 
         <div className="form-actions">

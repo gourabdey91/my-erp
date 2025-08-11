@@ -544,13 +544,10 @@ const Hospitals = () => {
               </div>
             </div>
 
-            <div className="unified-form-field">
+            <div className="unified-form-field" style={{ marginBottom: '2rem' }}>
               <label className="unified-form-label">
                 Surgical Categories *
               </label>
-              <div className="unified-help-text" style={{ marginBottom: '0.75rem' }}>
-                Categories loaded: {surgicalCategories.length}
-              </div>
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
@@ -558,7 +555,8 @@ const Hospitals = () => {
                 background: '#f8f9fa',
                 border: '1px solid #ced4da',
                 borderRadius: '6px',
-                padding: '1rem'
+                padding: '1rem',
+                marginTop: '0.75rem'
               }}>
                 {surgicalCategories.map(category => (
                   <label key={category._id} className="unified-checkbox-label">
