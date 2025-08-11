@@ -306,7 +306,7 @@ const Doctors = () => {
               <option value="">All Hospitals</option>
               {hospitals.map(hospital => (
                 <option key={hospital._id} value={hospital._id}>
-                  {hospital.name} ({hospital.code})
+                  {hospital.shortName || hospital.legalName} ({hospital.hospitalId})
                 </option>
               ))}
             </select>
@@ -481,7 +481,7 @@ const Doctors = () => {
                                 color: 'var(--primary-color)',
                                 fontWeight: '500'
                               }}>
-                                {hospital.name} ({hospital.code})
+                                {hospital.shortName || hospital.legalName} ({hospital.hospitalId})
                               </span>
                             ))
                           ) : (
@@ -561,8 +561,8 @@ const Doctors = () => {
                       title: 'Assigned Hospitals',
                       items: doctor.assignedHospitals && doctor.assignedHospitals.length > 0
                         ? doctor.assignedHospitals.map(hospital => ({
-                            label: hospital.code,
-                            value: hospital.name
+                            label: hospital.hospitalId,
+                            value: hospital.shortName || hospital.legalName
                           }))
                         : [{ label: 'No assignments', value: 'Not assigned to any hospital' }]
                     },

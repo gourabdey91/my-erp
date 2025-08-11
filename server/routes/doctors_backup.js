@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
           validityFrom: { $lte: new Date() },
           validityTo: { $gte: new Date() }
         })
-        .populate('hospital', 'shortName legalName hospitalId address');
+        .populate('hospital', 'name code address');
 
         // Extract unique hospitals
         const uniqueHospitals = [];
@@ -71,7 +71,7 @@ router.get('/hospitals', async (req, res) => {
       validityFrom: { $lte: new Date() },
       validityTo: { $gte: new Date() }
     })
-    .populate('hospital', 'shortName legalName hospitalId address');
+    .populate('hospital', 'name code address');
 
     // Extract unique hospitals
     const uniqueHospitals = [];
@@ -86,12 +86,8 @@ router.get('/hospitals', async (req, res) => {
 
     // Sort by name
     const hospitals = uniqueHospitals
-      .filter(hospital => hospital && (hospital.shortName || hospital.legalName))
-      .sort((a, b) => {
-        const aName = a.shortName || a.legalName || '';
-        const bName = b.shortName || b.legalName || '';
-        return aName.localeCompare(bName);
-      });
+      .filter(hospital => hospital && hospital.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     res.json(hospitals);
   } catch (error) {
@@ -144,7 +140,7 @@ router.get('/by-hospital/:hospitalId', async (req, res) => {
           validityFrom: { $lte: new Date() },
           validityTo: { $gte: new Date() }
         })
-        .populate('hospital', 'shortName legalName hospitalId address');
+        .populate('hospital', 'name code address');
 
         // Extract unique hospitals
         const uniqueHospitals = [];
@@ -191,7 +187,7 @@ router.get('/by-hospital', async (req, res) => {
           validityFrom: { $lte: new Date() },
           validityTo: { $gte: new Date() }
         })
-        .populate('hospital', 'shortName legalName hospitalId address');
+        .populate('hospital', 'name code address');
 
         // Extract unique hospitals
         const uniqueHospitals = [];
@@ -500,4 +496,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
-

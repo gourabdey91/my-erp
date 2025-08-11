@@ -23,6 +23,9 @@ export const doctorAPI = {
 
   // Get doctors by hospital filter
   getByHospital: async (hospitalId = 'all') => {
+    if (hospitalId === 'all' || !hospitalId) {
+      return await apiRequest('/api/doctors/by-hospital');
+    }
     return await apiRequest(`/api/doctors/by-hospital/${hospitalId}`);
   },
 
