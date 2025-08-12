@@ -19,6 +19,7 @@ import DeliveryChallanDetails from './features/delivery-challan-details/Delivery
 import SalesOrders from './features/sales-orders/SalesOrders';
 import FileUpload from './features/file-upload/FileUpload';
 import MaterialMasterUpload from './features/file-upload/MaterialMasterUpload';
+import MaterialMasterValidation from './features/file-upload/MaterialMasterValidation';
 import MaterialAssignmentUpload from './features/material-assignment-upload/MaterialAssignmentUpload';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
@@ -84,6 +85,8 @@ function AppContent() {
         return <FileUpload />;
       case 'material-master-upload':
         return <MaterialMasterUpload />;
+      case 'material-master-validation':
+        return <MaterialMasterValidation />;
       case 'material-assignment-upload':
         return <MaterialAssignmentUpload onBack={() => setCurrentView('dashboard')} />;
       case 'company-details':

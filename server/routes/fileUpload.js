@@ -548,4 +548,144 @@ router.post('/save-material-master', async (req, res) => {
   }
 });
 
+// Material Master Validation endpoint
+router.post('/material-validation', upload.single('excelFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Read Excel file
+    const workbook = xlsx.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+
+    if (jsonData.length === 0) {
+      return res.status(400).json({ message: 'No data found in Excel file' });
+    }
+
+    const validationResults = [];
+    let validCount = 0;
+    let invalidCount = 0;
+
+    for (let i = 0; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      const rowIndex = i + 2; // Excel rows start from 2 (after header)
+      
+      // Extract data from row
+      const materialNumber = row['Material Number'] || row['material number'] || row['materialNumber'] || '';
+      const description = row['Description'] || row['description'] || '';
+      const hsnCode = row['HSN Code'] || row['hsn code'] || row['hsnCode'] || '';
+      const gstPercent = parseFloat(row['GST %'] || row['gst %'] || row['gstPercent'] || 0);
+      const mrp = parseFloat(row['MRP'] || row['mrp'] || 0);
+      const institutionalPrice = parseFloat(row['Institutional Price'] || row['institutional price'] || row['institutionalPrice'] || 0);
+
+      const validationItem = {
+        rowIndex,
+        materialNumber: materialNumber.toString().trim(),
+        description: description.toString().trim(),
+        hsnCode: hsnCode.toString().trim(),
+        gstPercent,
+        mrp,
+        institutionalPrice,
+        isValid: true,
+        errors: []
+      };
+
+      // Skip empty rows
+      if (!materialNumber.toString().trim()) {
+        continue;
+      }
+
+      try {
+        // Find material in database
+        const dbMaterial = await MaterialMaster.findOne({ 
+          materialNumber: materialNumber.toString().trim() 
+        }).lean();
+
+        if (!dbMaterial) {
+          validationItem.isValid = false;
+          validationItem.errors.push('Material not found in database');
+          invalidCount++;
+        } else {
+          // Store database values for comparison
+          validationItem.dbMaterialNumber = dbMaterial.materialNumber;
+          validationItem.dbDescription = dbMaterial.description;
+          validationItem.dbHsnCode = dbMaterial.hsnCode;
+          validationItem.dbGstPercent = dbMaterial.gstPercentage;
+          validationItem.dbMrp = dbMaterial.mrp;
+          validationItem.dbInstitutionalPrice = dbMaterial.institutionalPrice;
+
+          // Compare each field
+          if (validationItem.description !== dbMaterial.description) {
+            validationItem.isValid = false;
+            validationItem.errors.push('Description mismatch');
+          }
+
+          if (validationItem.hsnCode !== dbMaterial.hsnCode) {
+            validationItem.isValid = false;
+            validationItem.errors.push('HSN Code mismatch');
+          }
+
+          if (Math.abs(validationItem.gstPercent - dbMaterial.gstPercentage) > 0.01) {
+            validationItem.isValid = false;
+            validationItem.errors.push('GST % mismatch');
+          }
+
+          if (Math.abs(validationItem.mrp - dbMaterial.mrp) > 0.01) {
+            validationItem.isValid = false;
+            validationItem.errors.push('MRP mismatch');
+          }
+
+          if (Math.abs(validationItem.institutionalPrice - dbMaterial.institutionalPrice) > 0.01) {
+            validationItem.isValid = false;
+            validationItem.errors.push('Institutional Price mismatch');
+          }
+
+          if (validationItem.isValid) {
+            validCount++;
+          } else {
+            invalidCount++;
+          }
+        }
+
+      } catch (error) {
+        console.error(`Error validating row ${rowIndex}:`, error);
+        validationItem.isValid = false;
+        validationItem.errors.push('Database validation error');
+        invalidCount++;
+      }
+
+      validationResults.push(validationItem);
+    }
+
+    res.json({
+      success: true,
+      data: validationResults,
+      totalRows: validationResults.length,
+      validRows: validCount,
+      invalidRows: invalidCount,
+      message: `Validation complete. ${validCount} valid records, ${invalidCount} invalid records`
+    });
+
+  } catch (error) {
+    console.error('Error validating material data:', error);
+    
+    // Clean up uploaded file in case of error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      message: 'Error validating material data', 
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

@@ -283,6 +283,15 @@ const Dashboard = ({ onViewChange }) => {
             count: 'XLSX',
             onClick: () => onViewChange('material-assignment-upload'),
             enabled: true
+          },
+          {
+            id: 'material-master-validation',
+            title: 'Material Master Validation',
+            subtitle: 'Validate Material Data',
+            icon: '🔍',
+            count: 'XLSX',
+            onClick: () => onViewChange('material-master-validation'),
+            enabled: true
           }
         ]
       }
