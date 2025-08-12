@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { expenseTypeAssignmentAPI } from '../services/expenseTypeAssignmentAPI';
 import './ExpenseTypeAssignments.css';
@@ -174,19 +173,18 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
             </button>
           </div>
 
-        {/* Add/Edit Form */}
-        {editingId && (
-          <div className="unified-card" style={{marginBottom: '1.5rem'}}>
-            <div className="unified-card-header">
-              <h3>{editingId === 'new' ? 'Add Expense Type Assignment' : 'Edit Expense Type Assignment'}</h3>
-            </div>
-            <div className="unified-card-body">
-              <form onSubmit={handleSubmit} className="unified-form">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Expense Type *
-                    </label>
+          {/* Add/Edit Form */}
+          {editingId && (
+            <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
+              <div style={{borderBottom: '2px solid var(--gray-200)', paddingBottom: '1rem', marginBottom: '1.5rem'}}>
+                <h2 style={{margin: 0, color: 'var(--primary-color)', fontSize: '1.25rem', fontWeight: '600'}}>
+                  {editingId === 'new' ? 'Add Expense Type Assignment' : 'Edit Expense Type Assignment'}
+                </h2>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Expense Type *</label>
                     <select 
                       className="unified-search-input"
                       name="expenseType" 
@@ -201,10 +199,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                     </select>
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Payment Type (Optional)
-                    </label>
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Payment Type (Optional)</label>
                     <select 
                       className="unified-search-input"
                       name="paymentType" 
@@ -219,11 +215,9 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Surgical Category (Optional)
-                    </label>
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Surgical Category (Optional)</label>
                     <select 
                       className="unified-search-input"
                       name="category" 
@@ -237,10 +231,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                     </select>
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Procedure (Optional)
-                    </label>
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Procedure (Optional)</label>
                     <select 
                       className="unified-search-input"
                       name="procedure" 
@@ -255,11 +247,9 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Value Type *
-                    </label>
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Value Type *</label>
                     <select 
                       className="unified-search-input"
                       name="valueType" 
@@ -272,10 +262,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                     </select>
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Value *
-                    </label>
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Value *</label>
                     <input 
                       type="number"
                       step="0.01"
@@ -292,11 +280,9 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                 </div>
 
                 {form.valueType === 'percentage' && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '2rem' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                        Tax Basis *
-                      </label>
+                  <div className="unified-form-grid">
+                    <div className="unified-form-field">
+                      <label className="unified-form-label">Tax Basis *</label>
                       <select 
                         className="unified-search-input"
                         name="taxBasis" 
@@ -305,33 +291,28 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                         required
                       >
                         <option value="">Select Tax Basis</option>
-                        <option value="pre-gst">Pre-GST</option>
-                        <option value="post-gst">Post-GST</option>
+                        <option value="pre-gst">Pre-GST Amount</option>
+                        <option value="post-gst">Post-GST Amount</option>
                       </select>
                     </div>
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Valid From *
-                    </label>
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Valid From *</label>
                     <input 
                       type="date"
                       className="unified-search-input"
                       name="validityFrom" 
                       value={form.validityFrom} 
                       onChange={handleChange} 
-                      min={`${new Date().getFullYear()}-01-01`}
                       required 
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                      Valid To *
-                    </label>
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Valid To *</label>
                     <input 
                       type="date"
                       className="unified-search-input"
@@ -344,7 +325,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="unified-form-actions">
                   <button 
                     type="submit" 
                     className="unified-btn unified-btn-primary"
@@ -362,23 +343,19 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                 </div>
               </form>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Assignments List */}
-        <div className="unified-card">
-          <div className="unified-card-header">
-            <h3>Current Expense Type Assignments ({assignments.length})</h3>
-          </div>
-          <div className="unified-card-body">
+          {/* Assignments List */}
+          <div className="unified-content" style={{background: 'var(--white)', borderRadius: 'var(--border-radius)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)'}}>
             {assignments.length === 0 ? (
-              <div className="unified-empty-state">
+              <div className="unified-empty">
+                <h3>No Expense Type Assignments</h3>
                 <p>No expense type assignments found for this hospital.</p>
               </div>
             ) : (
               <>
-                {/* Desktop Table */}
-                <div className="unified-table-responsive d-none d-md-block">
+                {/* Desktop Table View */}
+                <div className="expense-assignments-table" style={{display: 'block'}}>
                   <table className="unified-table">
                     <thead>
                       <tr>
@@ -394,33 +371,35 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                     <tbody>
                       {assignments.map(assignment => (
                         <tr key={assignment._id}>
-                          <td>{assignment.expenseType?.name}</td>
-                          <td>
+                          <td data-label="Expense Type">{assignment.expenseType?.name}</td>
+                          <td data-label="Value">
                             {assignment.valueType === 'percentage' 
                               ? `${assignment.value}% (${assignment.taxBasis})`
                               : `₹${assignment.value}`
                             }
                           </td>
-                          <td>{assignment.paymentType?.description || 'All'}</td>
-                          <td>{assignment.category?.description || 'All'}</td>
-                          <td>{assignment.procedure?.name || 'All'}</td>
-                          <td>
+                          <td data-label="Payment Type">{assignment.paymentType?.description || 'All'}</td>
+                          <td data-label="Category">{assignment.category?.description || 'All'}</td>
+                          <td data-label="Procedure">{assignment.procedure?.name || 'All'}</td>
+                          <td data-label="Valid Period">
                             {new Date(assignment.validityFrom).toLocaleDateString()} to{' '}
                             {new Date(assignment.validityTo).toLocaleDateString()}
                           </td>
-                          <td>
-                            <div className="unified-btn-group">
+                          <td data-label="Actions">
+                            <div className="unified-table-actions">
                               <button
                                 onClick={() => setEditingId(assignment._id)}
-                                className="unified-btn unified-btn-sm unified-btn-outline-primary"
+                                className="unified-table-action edit"
+                                title="Edit assignment"
                               >
-                                Edit
+                                ✏️
                               </button>
                               <button
                                 onClick={() => handleDelete(assignment._id)}
-                                className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                                className="unified-table-action delete"
+                                title="Delete assignment"
                               >
-                                Delete
+                                🗑️
                               </button>
                             </div>
                           </td>
@@ -430,45 +409,47 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                   </table>
                 </div>
 
-                {/* Mobile Cards */}
-                <div className="d-block d-md-none">
+                {/* Mobile Card View */}
+                <div className="expense-assignments-cards" style={{display: 'none'}}>
                   {assignments.map(assignment => (
-                    <div key={assignment._id} className="unified-card-mobile">
-                      <div className="unified-card-mobile-header">
-                        <h4>{assignment.expenseType?.name}</h4>
-                        <span className="unified-badge unified-badge-primary">
+                    <div key={assignment._id} className="unified-mobile-card">
+                      <div className="unified-card-header">
+                        <div className="unified-card-title">
+                          {assignment.expenseType?.name}
+                        </div>
+                        <div className="unified-card-badge">
                           {assignment.valueType === 'percentage' 
                             ? `${assignment.value}% (${assignment.taxBasis})`
                             : `₹${assignment.value}`
                           }
-                        </span>
-                      </div>
-                      <div className="unified-card-mobile-body">
-                        <div className="unified-card-mobile-item">
-                          <strong>Payment Type:</strong> {assignment.paymentType?.description || 'All'}
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Category:</strong> {assignment.category?.description || 'All'}
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Procedure:</strong> {assignment.procedure?.name || 'All'}
-                        </div>
-                        <div className="unified-card-mobile-item">
-                          <strong>Valid Period:</strong> {' '}
-                          {new Date(assignment.validityFrom).toLocaleDateString()} to{' '}
-                          {new Date(assignment.validityTo).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="unified-card-mobile-actions">
+
+                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                        <strong style={{fontSize: '0.85rem', color: 'var(--gray-600)'}}>Applies to:</strong>
+                        <div style={{marginTop: '0.25rem', background: 'var(--gray-50)', padding: '0.5rem', borderRadius: 'var(--border-radius)', fontSize: '0.9rem'}}>
+                          Payment: {assignment.paymentType?.description || 'All'}<br/>
+                          Category: {assignment.category?.description || 'All'}<br/>
+                          Procedure: {assignment.procedure?.name || 'All'}
+                        </div>
+                      </div>
+
+                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                        <strong>Valid:</strong> {new Date(assignment.validityFrom).toLocaleDateString()} - {new Date(assignment.validityTo).toLocaleDateString()}
+                      </div>
+
+                      <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
                         <button
                           onClick={() => setEditingId(assignment._id)}
-                          className="unified-btn unified-btn-sm unified-btn-outline-primary"
+                          className="unified-btn unified-btn-secondary"
+                          style={{flex: 1}}
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(assignment._id)}
-                          className="unified-btn unified-btn-sm unified-btn-outline-danger"
+                          className="unified-btn unified-btn-danger"
+                          style={{flex: 1}}
                         >
                           Delete
                         </button>
@@ -479,7 +460,6 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
               </>
             )}
           </div>
-        </div>
         </div>
       </div>
     </div>

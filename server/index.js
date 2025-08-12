@@ -161,9 +161,10 @@ const salesOrderRoutes = require('./routes/salesOrders');
 
 // Health check endpoint for production monitoring
 app.get('/api/health', (req, res) => {
+  const packageJson = require('./package.json');
   res.status(200).json({
     status: 'healthy',
-    version: '1.0.0',
+    version: packageJson.version,
     environment: NODE_ENV,
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
