@@ -163,22 +163,9 @@ const InquiryForm = ({
             submitLabel={inquiry ? 'Update Inquiry' : 'Create Inquiry'}
             isLoading={loading}
           >
-            {/* Row 1: Inquiry No, Date, Hospital, Status */}
+            {/* Group 1: Inquiry date, hospital, Status */}
             <div className="form-section">
-              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-                <FormField label="Inquiry Number" error={errors.inquiryNumber}>
-                  <input
-                    type="text"
-                    name="inquiryNumber"
-                    value={formData.inquiryNumber || 'Auto-generated'}
-                    onChange={handleChange}
-                    className="unified-search-input"
-                    placeholder="Auto-generated"
-                    readOnly
-                    style={{ backgroundColor: 'var(--gray-100)', cursor: 'not-allowed' }}
-                  />
-                </FormField>
-
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                 <FormField label="Date" required error={errors.inquiryDate}>
                   <input
                     type="date"
@@ -223,7 +210,7 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Row 2: Patient Name, UHID */}
+            {/* Group 2: Patient Name, UHID */}
             <div className="form-section">
               <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                 <FormField label="Patient Name" required error={errors.patientName}>
@@ -260,9 +247,9 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Row 3: Surgical Category, Payment Method, Procedure */}
+            {/* Group 3: Surgical Category, Payment Types, Surgical Procedure, Surgeon, Consulting Doctor */}
             <div className="form-section">
-              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
                 <FormField label="Surgical Category" error={errors.surgicalCategory}>
                   <select
                     name="surgicalCategory"
@@ -313,12 +300,7 @@ const InquiryForm = ({
                     ))}
                   </select>
                 </FormField>
-              </div>
-            </div>
 
-            {/* Row 4: Surgeon, Consulting Doctor */}
-            <div className="form-section">
-              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                 <FormField label="Surgeon" error={errors.surgeon}>
                   <select
                     name="surgeon"
