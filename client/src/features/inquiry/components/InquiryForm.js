@@ -22,7 +22,7 @@ const InquiryForm = ({
     surgicalCategory: '',
     paymentMethod: '',
     surgicalProcedure: '',
-    comments: ''
+    notes: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -43,7 +43,7 @@ const InquiryForm = ({
         surgicalCategory: inquiry.surgicalCategory?._id || '',
         paymentMethod: inquiry.paymentMethod?._id || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || '',
-        comments: inquiry.comments || ''
+        notes: inquiry.notes || ''
       });
     }
   }, [inquiry]);
@@ -324,10 +324,10 @@ const InquiryForm = ({
             <div className="form-section">
               <h3 className="form-section-title">Comments</h3>
               <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-                <FormField label="Comments" error={errors.comments}>
+                <FormField label="Comments" error={errors.notes}>
                   <textarea
-                    name="comments"
-                    value={formData.comments}
+                    name="notes"
+                    value={formData.notes}
                     onChange={handleChange}
                     className="unified-search-input"
                     placeholder="Enter any additional comments or notes..."
@@ -336,7 +336,7 @@ const InquiryForm = ({
                     style={{ resize: 'vertical', minHeight: '100px' }}
                   />
                   <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
-                    {formData.comments.length}/500 characters
+                    {formData.notes.length}/500 characters
                   </small>
                 </FormField>
               </div>
