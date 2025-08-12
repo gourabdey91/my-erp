@@ -99,7 +99,7 @@ router.get('/dropdown-data', async (req, res) => {
       Category.find({ isActive: true }).select('description').sort({ description: 1 }).lean(),
       PaymentType.find({ isActive: true }).select('description').sort({ description: 1 }).lean(),
       Procedure.find({ isActive: true }).select('name surgicalCategory').sort({ name: 1 }).lean(),
-      Doctor.find({ isActive: true }).select('name specialization').sort({ name: 1 }).lean(),
+      Doctor.find({ isActive: true }).select('name surgicalCategories consultingDoctor').populate('consultingDoctor', 'name').sort({ name: 1 }).lean(),
       MaterialMaster.find({ isActive: true }).select('code description unitOfMeasure').sort({ code: 1 }).lean(),
       ImplantType.find({ isActive: true }).select('name description').sort({ name: 1 }).lean()
     ]);

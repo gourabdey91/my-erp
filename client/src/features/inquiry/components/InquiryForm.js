@@ -27,6 +27,7 @@ const InquiryForm = ({
 
   const [errors, setErrors] = useState({});
   const [filteredProcedures, setFilteredProcedures] = useState([]);
+  const [consultingDoctors, setConsultingDoctors] = useState([]);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -69,6 +70,35 @@ const InquiryForm = ({
       }
     }
   }, [formData.surgicalCategory, dropdownData.procedures, formData.surgicalProcedure]);
+
+  // Update consulting doctors when surgeon changes or doctors data is available
+  useEffect(() => {
+    const availableConsultingDoctors = [];
+    
+    // Add selected surgeon to consulting doctor options
+    if (formData.surgeon && dropdownData.doctors) {
+      const selectedSurgeon = dropdownData.doctors.find(d => d._id === formData.surgeon);
+      if (selectedSurgeon) {
+        availableConsultingDoctors.push(selectedSurgeon);
+      }
+    }
+    
+    // Add doctors who have consulting doctor assignments
+    if (dropdownData.doctors) {
+      const consultingDoctorsFromMaster = dropdownData.doctors.filter(doctor => 
+        doctor.consultingDoctor !== null && doctor.consultingDoctor !== undefined
+      );
+      
+      // Merge without duplicates
+      consultingDoctorsFromMaster.forEach(doctor => {
+        if (!availableConsultingDoctors.find(d => d._id === doctor._id)) {
+          availableConsultingDoctors.push(doctor);
+        }
+      });
+    }
+    
+    setConsultingDoctors(availableConsultingDoctors);
+  }, [formData.surgeon, dropdownData.doctors]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,7 +163,7 @@ const InquiryForm = ({
             submitLabel={inquiry ? 'Update Inquiry' : 'Create Inquiry'}
             isLoading={loading}
           >
-            {/* First Group - Inquiry Details */}
+            {/* Group 1: Inquiry Details */}
             <div className="form-section">
               <h3 className="form-section-title">Inquiry Details</h3>
               <div className="form-grid">
@@ -197,9 +227,9 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Second Group - Patient & Doctor Information */}
+            {/* Group 2: Patient Information */}
             <div className="form-section">
-              <h3 className="form-section-title">Patient & Doctor Information</h3>
+              <h3 className="form-section-title">Patient Information</h3>
               <div className="form-grid">
                 <FormField label="Patient Name" required error={errors.patientName}>
                   <input
@@ -232,42 +262,10 @@ const InquiryForm = ({
                     {formData.patientUHID.length}/50 characters
                   </small>
                 </FormField>
-
-                <FormField label="Surgeon" error={errors.surgeon}>
-                  <select
-                    name="surgeon"
-                    value={formData.surgeon}
-                    onChange={handleChange}
-                    className="unified-search-input"
-                  >
-                    <option value="">Select Surgeon</option>
-                    {(dropdownData.doctors || []).map(doctor => (
-                      <option key={doctor._id} value={doctor._id}>
-                        {doctor.name}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-
-                <FormField label="Consulting Doctor" error={errors.consultingDoctor}>
-                  <select
-                    name="consultingDoctor"
-                    value={formData.consultingDoctor}
-                    onChange={handleChange}
-                    className="unified-search-input"
-                  >
-                    <option value="">Select Consulting Doctor</option>
-                    {(dropdownData.doctors || []).map(doctor => (
-                      <option key={doctor._id} value={doctor._id}>
-                        {doctor.name}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
               </div>
             </div>
 
-            {/* Third Group - Surgical Information */}
+            {/* Group 3: Surgical Information */}
             <div className="form-section">
               <h3 className="form-section-title">Surgical Information</h3>
               <div className="form-grid">
@@ -324,7 +322,46 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Comments Section */}
+            {/* Group 4: Doctor Information */}
+            <div className="form-section">
+              <h3 className="form-section-title">Doctor Information</h3>
+              <div className="form-grid">
+                <FormField label="Surgeon" error={errors.surgeon}>
+                  <select
+                    name="surgeon"
+                    value={formData.surgeon}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Surgeon</option>
+                    {(dropdownData.doctors || []).map(doctor => (
+                      <option key={doctor._id} value={doctor._id}>
+                        {doctor.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Consulting Doctor" error={errors.consultingDoctor}>
+                  <select
+                    name="consultingDoctor"
+                    value={formData.consultingDoctor}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Consulting Doctor</option>
+                    {consultingDoctors.map(doctor => (
+                      <option key={doctor._id} value={doctor._id}>
+                        {doctor.name}
+                        {doctor._id === formData.surgeon ? ' (Selected Surgeon)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            </div>
+
+            {/* Group 5: Comments */}
             <div className="form-section">
               <h3 className="form-section-title">Comments</h3>
               <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
