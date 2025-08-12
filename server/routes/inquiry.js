@@ -7,6 +7,7 @@ const Procedure = require('../models/Procedure');
 const Doctor = require('../models/Doctor');
 const MaterialMaster = require('../models/MaterialMaster');
 const ImplantType = require('../models/ImplantType');
+const DoctorAssignment = require('../models/DoctorAssignment');
 
 const router = express.Router();
 
@@ -390,6 +391,134 @@ router.get('/dropdown-data', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching dropdown data',
+      error: error.message
+    });
+  }
+});
+
+//
+
+// Get cascading dropdown data
+router.get('/cascading-data/:type', async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { hospitalId, surgicalCategoryId } = req.query;
+
+    let data = [];
+
+    switch (type) {
+      case 'procedures':
+        const procedureFilter = { isActive: true };
+        if (surgicalCategoryId) {
+          procedureFilter.surgicalCategory = surgicalCategoryId;
+        }
+        data = await Procedure.find(procedureFilter)
+          .select('name description surgicalCategory')
+          .populate('surgicalCategory', 'description')
+          .sort({ name: 1 })
+          .lean();
+        break;
+
+      case 'surgeons':
+        if (hospitalId) {
+          // Get doctors assigned to the hospital through DoctorAssignment
+          const assignments = await DoctorAssignment.find({
+            hospital: hospitalId,
+            isActive: true,
+            validityFrom: { $lte: new Date() },
+            validityTo: { $gte: new Date() }
+          })
+          .populate({
+            path: 'doctor',
+            select: 'name surgicalCategories',
+            populate: {
+              path: 'surgicalCategories',
+              select: 'description'
+            }
+          })
+          .lean();
+
+          // Extract unique doctors and filter by surgical category if provided
+          const doctorMap = new Map();
+          assignments.forEach(assignment => {
+            if (assignment.doctor && assignment.doctor.name) {
+              const doctor = assignment.doctor;
+              
+              // Filter by surgical category if provided
+              if (surgicalCategoryId) {
+                const hasMatchingCategory = doctor.surgicalCategories?.some(
+                  cat => cat._id.toString() === surgicalCategoryId
+                );
+                if (!hasMatchingCategory) return;
+              }
+              
+              doctorMap.set(doctor._id.toString(), doctor);
+            }
+          });
+          
+          data = Array.from(doctorMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+          // If no hospital selected, return empty array
+          data = [];
+        }
+        break;
+
+      case 'consulting-doctors':
+        if (hospitalId) {
+          // Get doctors assigned to the hospital through DoctorAssignment
+          const assignments = await DoctorAssignment.find({
+            hospital: hospitalId,
+            isActive: true,
+            validityFrom: { $lte: new Date() },
+            validityTo: { $gte: new Date() }
+          })
+          .populate({
+            path: 'doctor',
+            select: 'name surgicalCategories',
+            populate: {
+              path: 'surgicalCategories',
+              select: 'description'
+            }
+          })
+          .lean();
+
+          // Extract unique doctors
+          const doctorMap = new Map();
+          assignments.forEach(assignment => {
+            if (assignment.doctor && assignment.doctor.name) {
+              const doctor = assignment.doctor;
+              doctorMap.set(doctor._id.toString(), doctor);
+            }
+          });
+          
+          data = Array.from(doctorMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+          // If no hospital selected, return empty array
+          data = [];
+        }
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid cascading data type'
+        });
+    }
+
+    res.json({
+      success: true,
+      data,
+      filters: {
+        hospitalId,
+        surgicalCategoryId
+      }
+    });
+
+  } catch (error) {
+    console.error(`Error fetching cascading ${req.params.type} data:`, error);
+    res.status(500).json({
+      success: false,
+      message: `Error fetching cascading ${req.params.type} data`,
       error: error.message
     });
   }

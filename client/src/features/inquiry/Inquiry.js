@@ -57,13 +57,19 @@ const Inquiry = () => {
       setLoading(true);
       setError('');
       
-      const response = await inquiryAPI.getInquiries(pagination.page, pagination.limit, filters);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      };
+      
+      const response = await inquiryAPI.getInquiries(params);
       
       setInquiries(response.data || []);
       setPagination(prev => ({
         ...prev,
-        total: response.total || 0,
-        totalPages: response.totalPages || 0
+        total: response.pagination?.total || 0,
+        totalPages: response.pagination?.totalPages || 0
       }));
       
     } catch (err) {
@@ -77,7 +83,7 @@ const Inquiry = () => {
   // Fetch dropdown data
   const fetchDropdownData = async () => {
     try {
-      const response = await inquiryAPI.getDropdownData();
+      const response = await getDropdownData();
       setDropdownData(response);
     } catch (err) {
       console.error('Error fetching dropdown data:', err);

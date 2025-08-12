@@ -61,6 +61,10 @@ export const inquiryAPI = {
   // Get inquiry statistics
   getStats: () => 
     api.get('/inquiries/stats'),
+
+  // Get cascading dropdown data
+  getCascadingData: (type, filters = {}) => 
+    api.get(`/inquiries/cascading-data/${type}`, { params: filters }),
 };
 
 // Get dropdown data for forms
