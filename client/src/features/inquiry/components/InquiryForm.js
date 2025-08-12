@@ -14,13 +14,15 @@ const InquiryForm = ({
     inquiryNumber: '',
     inquiryDate: new Date().toISOString().split('T')[0],
     hospital: '',
-    surgicalCategory: '',
-    paymentMethod: '',
-    surgicalProcedure: '',
+    status: 'Pending',
     patientName: '',
     patientUHID: '',
     surgeon: '',
-    consultingDoctor: ''
+    consultingDoctor: '',
+    surgicalCategory: '',
+    paymentMethod: '',
+    surgicalProcedure: '',
+    comments: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -33,13 +35,15 @@ const InquiryForm = ({
         inquiryNumber: inquiry.inquiryNumber || '',
         inquiryDate: inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toISOString().split('T')[0] : '',
         hospital: inquiry.hospital?._id || '',
-        surgicalCategory: inquiry.surgicalCategory?._id || '',
-        paymentMethod: inquiry.paymentMethod?._id || '',
-        surgicalProcedure: inquiry.surgicalProcedure?._id || '',
+        status: inquiry.status || 'Pending',
         patientName: inquiry.patientName || '',
         patientUHID: inquiry.patientUHID || '',
         surgeon: inquiry.surgeon?._id || '',
-        consultingDoctor: inquiry.consultingDoctor?._id || ''
+        consultingDoctor: inquiry.consultingDoctor?._id || '',
+        surgicalCategory: inquiry.surgicalCategory?._id || '',
+        paymentMethod: inquiry.paymentMethod?._id || '',
+        surgicalProcedure: inquiry.surgicalProcedure?._id || '',
+        comments: inquiry.comments || ''
       });
     }
   }, [inquiry]);
@@ -129,7 +133,7 @@ const InquiryForm = ({
             submitLabel={inquiry ? 'Update Inquiry' : 'Create Inquiry'}
             isLoading={loading}
           >
-            {/* Inquiry Details Section */}
+            {/* First Group - Inquiry Details */}
             <div className="form-section">
               <h3 className="form-section-title">Inquiry Details</h3>
               <div className="form-grid">
@@ -155,13 +159,7 @@ const InquiryForm = ({
                     required
                   />
                 </FormField>
-              </div>
-            </div>
 
-            {/* Hospital & Surgical Information Section */}
-            <div className="form-section">
-              <h3 className="form-section-title">Hospital & Surgical Information</h3>
-              <div className="form-grid">
                 <FormField label="Hospital" required error={errors.hospital}>
                   <select
                     name="hospital"
@@ -179,60 +177,23 @@ const InquiryForm = ({
                   </select>
                 </FormField>
 
-                <FormField label="Surgical Category" error={errors.surgicalCategory}>
+                <FormField label="Status" error={errors.status}>
                   <select
-                    name="surgicalCategory"
-                    value={formData.surgicalCategory}
+                    name="status"
+                    value={formData.status}
                     onChange={handleChange}
                     className="unified-search-input"
                   >
-                    <option value="">Select Surgical Category</option>
-                    {(dropdownData.surgicalCategories || []).map(category => (
-                      <option key={category._id} value={category._id}>
-                        {category.description}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-
-                <FormField label="Payment Method" error={errors.paymentMethod}>
-                  <select
-                    name="paymentMethod"
-                    value={formData.paymentMethod}
-                    onChange={handleChange}
-                    className="unified-search-input"
-                  >
-                    <option value="">Select Payment Method</option>
-                    {(dropdownData.paymentMethods || []).map(method => (
-                      <option key={method._id} value={method._id}>
-                        {method.description}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-
-                <FormField label="Surgical Procedure" error={errors.surgicalProcedure}>
-                  <select
-                    name="surgicalProcedure"
-                    value={formData.surgicalProcedure}
-                    onChange={handleChange}
-                    className="unified-search-input"
-                    disabled={!formData.surgicalCategory}
-                  >
-                    <option value="">
-                      {formData.surgicalCategory ? 'Select Surgical Procedure' : 'Select Category First'}
-                    </option>
-                    {filteredProcedures.map(procedure => (
-                      <option key={procedure._id} value={procedure._id}>
-                        {procedure.name}
-                      </option>
-                    ))}
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                 </FormField>
               </div>
             </div>
 
-            {/* Patient & Doctor Information Section */}
+            {/* Second Group - Patient & Doctor Information */}
             <div className="form-section">
               <h3 className="form-section-title">Patient & Doctor Information</h3>
               <div className="form-grid">
@@ -298,6 +259,85 @@ const InquiryForm = ({
                       </option>
                     ))}
                   </select>
+                </FormField>
+              </div>
+            </div>
+
+            {/* Third Group - Surgical Information */}
+            <div className="form-section">
+              <h3 className="form-section-title">Surgical Information</h3>
+              <div className="form-grid">
+                <FormField label="Surgical Category" error={errors.surgicalCategory}>
+                  <select
+                    name="surgicalCategory"
+                    value={formData.surgicalCategory}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Surgical Category</option>
+                    {(dropdownData.surgicalCategories || []).map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.description}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Payment Method" error={errors.paymentMethod}>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Payment Method</option>
+                    {(dropdownData.paymentMethods || []).map(method => (
+                      <option key={method._id} value={method._id}>
+                        {method.description}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Surgical Procedure" error={errors.surgicalProcedure}>
+                  <select
+                    name="surgicalProcedure"
+                    value={formData.surgicalProcedure}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    disabled={!formData.surgicalCategory}
+                  >
+                    <option value="">
+                      {formData.surgicalCategory ? 'Select Surgical Procedure' : 'Select Category First'}
+                    </option>
+                    {filteredProcedures.map(procedure => (
+                      <option key={procedure._id} value={procedure._id}>
+                        {procedure.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="form-section">
+              <h3 className="form-section-title">Comments</h3>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <FormField label="Comments" error={errors.comments}>
+                  <textarea
+                    name="comments"
+                    value={formData.comments}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    placeholder="Enter any additional comments or notes..."
+                    rows="4"
+                    maxLength={500}
+                    style={{ resize: 'vertical', minHeight: '100px' }}
+                  />
+                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
+                    {formData.comments.length}/500 characters
+                  </small>
                 </FormField>
               </div>
             </div>
