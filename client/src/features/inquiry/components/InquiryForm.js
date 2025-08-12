@@ -57,7 +57,7 @@ const InquiryForm = ({
       );
       setFilteredProcedures(filtered);
     } else {
-      setFilteredProcedures(dropdownData.procedures || []);
+      setFilteredProcedures([]);
     }
     
     // Reset procedure selection if category changes
