@@ -33,8 +33,19 @@ router.get('/options/:hospitalId', async (req, res) => {
   try {
     const { hospitalId } = req.params;
     const { paymentType, category } = req.query;
+    
+    console.log(`[ExpenseTypeAssignment Options] Request for hospitalId: ${hospitalId}`);
+    console.log(`[ExpenseTypeAssignment Options] Query params - paymentType: ${paymentType}, category: ${category}`);
+    
     const hospital = await Hospital.findById(hospitalId).populate('surgicalCategories');
-    if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+    
+    if (!hospital) {
+      console.log(`[ExpenseTypeAssignment Options] Hospital not found for ID: ${hospitalId}`);
+      return res.status(404).json({ message: 'Hospital not found' });
+    }
+    
+    console.log(`[ExpenseTypeAssignment Options] Hospital found: ${hospital.shortName}, Categories: ${hospital.surgicalCategories?.length || 0}`);
+    
     const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id ? cat._id : cat);
     const procedureFilter = { isActive: true };
     let categoryQuery = { isActive: true };
@@ -44,6 +55,9 @@ router.get('/options/:hospitalId', async (req, res) => {
     }
     if (paymentType && paymentType !== '') procedureFilter.paymentTypeId = paymentType;
     if (category && category !== '') procedureFilter.categoryId = category;
+    
+    console.log(`[ExpenseTypeAssignment Options] Executing queries...`);
+    
     const [expenseTypes, paymentTypes, categories, procedures] = await Promise.all([
       ExpenseType.find({ 
         isActive: true, 
@@ -54,9 +68,12 @@ router.get('/options/:hospitalId', async (req, res) => {
       Category.find(categoryQuery).select('_id code description').sort({ description: 1 }),
       Procedure.find(procedureFilter).select('_id code name').sort({ name: 1 })
     ]);
+    
+    console.log(`[ExpenseTypeAssignment Options] Results - ExpenseTypes: ${expenseTypes.length}, PaymentTypes: ${paymentTypes.length}, Categories: ${categories.length}, Procedures: ${procedures.length}`);
+    
     res.json({ expenseTypes, paymentTypes, categories, procedures });
   } catch (error) {
-    console.error('Error fetching options:', error);
+    console.error('[ExpenseTypeAssignment Options] Error fetching options:', error);
     res.status(500).json({ message: 'Server error while fetching options' });
   }
 });
