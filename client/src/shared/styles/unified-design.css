@@ -688,6 +688,65 @@
   }
 }
 
+/* ========== Form Sections ========== */
+.form-section {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-section-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-section-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: var(--accent-color);
+  border-radius: 2px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .form-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-section-title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ========== File Upload Styles ========== */
 .unified-file-input {
   display: none;

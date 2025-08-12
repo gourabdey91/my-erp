@@ -11,15 +11,16 @@ const InquiryForm = ({
   loading = false 
 }) => {
   const [formData, setFormData] = useState({
-    hospital: '',
+    inquiryNumber: '',
     inquiryDate: new Date().toISOString().split('T')[0],
+    hospital: '',
     surgicalCategory: '',
     paymentMethod: '',
     surgicalProcedure: '',
-    surgeon: '',
-    consultingDoctor: '',
     patientName: '',
-    patientUHID: ''
+    patientUHID: '',
+    surgeon: '',
+    consultingDoctor: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -29,15 +30,16 @@ const InquiryForm = ({
   useEffect(() => {
     if (inquiry) {
       setFormData({
-        hospital: inquiry.hospital?._id || '',
+        inquiryNumber: inquiry.inquiryNumber || '',
         inquiryDate: inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toISOString().split('T')[0] : '',
+        hospital: inquiry.hospital?._id || '',
         surgicalCategory: inquiry.surgicalCategory?._id || '',
         paymentMethod: inquiry.paymentMethod?._id || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || '',
-        surgeon: inquiry.surgeon?._id || '',
-        consultingDoctor: inquiry.consultingDoctor?._id || '',
         patientName: inquiry.patientName || '',
-        patientUHID: inquiry.patientUHID || ''
+        patientUHID: inquiry.patientUHID || '',
+        surgeon: inquiry.surgeon?._id || '',
+        consultingDoctor: inquiry.consultingDoctor?._id || ''
       });
     }
   }, [inquiry]);
@@ -127,152 +129,178 @@ const InquiryForm = ({
             submitLabel={inquiry ? 'Update Inquiry' : 'Create Inquiry'}
             isLoading={loading}
           >
-            {/* Hospital and Date */}
-            <FormField label="Hospital" required error={errors.hospital}>
-              <select
-                name="hospital"
-                value={formData.hospital}
-                onChange={handleChange}
-                className="unified-search-input"
-                required
-              >
-                <option value="">Select Hospital</option>
-                {(dropdownData.hospitals || []).map(hospital => (
-                  <option key={hospital._id} value={hospital._id}>
-                    {hospital.shortName || hospital.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+            {/* Inquiry Details Section */}
+            <div className="form-section">
+              <h3 className="form-section-title">Inquiry Details</h3>
+              <div className="form-grid">
+                <FormField label="Inquiry Number" error={errors.inquiryNumber}>
+                  <input
+                    type="text"
+                    name="inquiryNumber"
+                    value={formData.inquiryNumber}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    placeholder="Auto-generated"
+                    readOnly={!!inquiry}
+                  />
+                </FormField>
 
-            <FormField label="Inquiry Date" required error={errors.inquiryDate}>
-              <input
-                type="date"
-                name="inquiryDate"
-                value={formData.inquiryDate}
-                onChange={handleChange}
-                className="unified-search-input"
-                required
-              />
-            </FormField>
+                <FormField label="Inquiry Date" required error={errors.inquiryDate}>
+                  <input
+                    type="date"
+                    name="inquiryDate"
+                    value={formData.inquiryDate}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    required
+                  />
+                </FormField>
+              </div>
+            </div>
 
-            {/* Patient Information */}
-            <FormField label="Patient Name" required error={errors.patientName}>
-              <input
-                type="text"
-                name="patientName"
-                value={formData.patientName}
-                onChange={handleChange}
-                className="unified-search-input"
-                placeholder="Enter patient full name"
-                maxLength={80}
-                required
-              />
-              <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
-                {formData.patientName.length}/80 characters
-              </small>
-            </FormField>
+            {/* Hospital & Surgical Information Section */}
+            <div className="form-section">
+              <h3 className="form-section-title">Hospital & Surgical Information</h3>
+              <div className="form-grid">
+                <FormField label="Hospital" required error={errors.hospital}>
+                  <select
+                    name="hospital"
+                    value={formData.hospital}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    required
+                  >
+                    <option value="">Select Hospital</option>
+                    {(dropdownData.hospitals || []).map(hospital => (
+                      <option key={hospital._id} value={hospital._id}>
+                        {hospital.shortName || hospital.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
 
-            <FormField label="Patient UHID" required error={errors.patientUHID}>
-              <input
-                type="text"
-                name="patientUHID"
-                value={formData.patientUHID}
-                onChange={handleChange}
-                className="unified-search-input"
-                placeholder="Enter patient UHID"
-                maxLength={50}
-                required
-              />
-              <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
-                {formData.patientUHID.length}/50 characters
-              </small>
-            </FormField>
+                <FormField label="Surgical Category" error={errors.surgicalCategory}>
+                  <select
+                    name="surgicalCategory"
+                    value={formData.surgicalCategory}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Surgical Category</option>
+                    {(dropdownData.surgicalCategories || []).map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.description}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
 
-            {/* Surgical Information */}
-            <FormField label="Surgical Category" error={errors.surgicalCategory}>
-              <select
-                name="surgicalCategory"
-                value={formData.surgicalCategory}
-                onChange={handleChange}
-                className="unified-search-input"
-              >
-                <option value="">Select Surgical Category</option>
-                {(dropdownData.surgicalCategories || []).map(category => (
-                  <option key={category._id} value={category._id}>
-                    {category.description}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+                <FormField label="Payment Method" error={errors.paymentMethod}>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Payment Method</option>
+                    {(dropdownData.paymentMethods || []).map(method => (
+                      <option key={method._id} value={method._id}>
+                        {method.description}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
 
-            <FormField label="Payment Method" error={errors.paymentMethod}>
-              <select
-                name="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={handleChange}
-                className="unified-search-input"
-              >
-                <option value="">Select Payment Method</option>
-                {(dropdownData.paymentMethods || []).map(method => (
-                  <option key={method._id} value={method._id}>
-                    {method.description}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+                <FormField label="Surgical Procedure" error={errors.surgicalProcedure}>
+                  <select
+                    name="surgicalProcedure"
+                    value={formData.surgicalProcedure}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    disabled={!formData.surgicalCategory}
+                  >
+                    <option value="">
+                      {formData.surgicalCategory ? 'Select Surgical Procedure' : 'Select Category First'}
+                    </option>
+                    {filteredProcedures.map(procedure => (
+                      <option key={procedure._id} value={procedure._id}>
+                        {procedure.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            </div>
 
-            <FormField label="Surgical Procedure" error={errors.surgicalProcedure}>
-              <select
-                name="surgicalProcedure"
-                value={formData.surgicalProcedure}
-                onChange={handleChange}
-                className="unified-search-input"
-                disabled={!formData.surgicalCategory}
-              >
-                <option value="">
-                  {formData.surgicalCategory ? 'Select Surgical Procedure' : 'Select Category First'}
-                </option>
-                {filteredProcedures.map(procedure => (
-                  <option key={procedure._id} value={procedure._id}>
-                    {procedure.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+            {/* Patient & Doctor Information Section */}
+            <div className="form-section">
+              <h3 className="form-section-title">Patient & Doctor Information</h3>
+              <div className="form-grid">
+                <FormField label="Patient Name" required error={errors.patientName}>
+                  <input
+                    type="text"
+                    name="patientName"
+                    value={formData.patientName}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    placeholder="Enter patient full name"
+                    maxLength={80}
+                    required
+                  />
+                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
+                    {formData.patientName.length}/80 characters
+                  </small>
+                </FormField>
 
-            {/* Doctor Information */}
-            <FormField label="Surgeon" error={errors.surgeon}>
-              <select
-                name="surgeon"
-                value={formData.surgeon}
-                onChange={handleChange}
-                className="unified-search-input"
-              >
-                <option value="">Select Surgeon</option>
-                {(dropdownData.doctors || []).map(doctor => (
-                  <option key={doctor._id} value={doctor._id}>
-                    {doctor.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+                <FormField label="Patient UHID" required error={errors.patientUHID}>
+                  <input
+                    type="text"
+                    name="patientUHID"
+                    value={formData.patientUHID}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    placeholder="Enter patient UHID"
+                    maxLength={50}
+                    required
+                  />
+                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
+                    {formData.patientUHID.length}/50 characters
+                  </small>
+                </FormField>
 
-            <FormField label="Consulting Doctor" error={errors.consultingDoctor}>
-              <select
-                name="consultingDoctor"
-                value={formData.consultingDoctor}
-                onChange={handleChange}
-                className="unified-search-input"
-              >
-                <option value="">Select Consulting Doctor</option>
-                {(dropdownData.doctors || []).map(doctor => (
-                  <option key={doctor._id} value={doctor._id}>
-                    {doctor.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+                <FormField label="Surgeon" error={errors.surgeon}>
+                  <select
+                    name="surgeon"
+                    value={formData.surgeon}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Surgeon</option>
+                    {(dropdownData.doctors || []).map(doctor => (
+                      <option key={doctor._id} value={doctor._id}>
+                        {doctor.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Consulting Doctor" error={errors.consultingDoctor}>
+                  <select
+                    name="consultingDoctor"
+                    value={formData.consultingDoctor}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                  >
+                    <option value="">Select Consulting Doctor</option>
+                    {(dropdownData.doctors || []).map(doctor => (
+                      <option key={doctor._id} value={doctor._id}>
+                        {doctor.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            </div>
           </TransactionForm>
         </div>
       </div>
