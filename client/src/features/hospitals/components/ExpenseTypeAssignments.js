@@ -355,7 +355,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
             ) : (
               <>
                 {/* Desktop Table View */}
-                <div className="expense-assignments-table" style={{display: 'block'}}>
+                <div className="unified-table-responsive">
                   <table className="unified-table">
                     <thead>
                       <tr>
@@ -410,7 +410,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="expense-assignments-cards" style={{display: 'none'}}>
+                <div className="unified-mobile-cards">
                   {assignments.map(assignment => (
                     <div key={assignment._id} className="unified-mobile-card">
                       <div className="unified-card-header">
@@ -425,34 +425,36 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                         </div>
                       </div>
 
-                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
-                        <strong style={{fontSize: '0.85rem', color: 'var(--gray-600)'}}>Applies to:</strong>
-                        <div style={{marginTop: '0.25rem', background: 'var(--gray-50)', padding: '0.5rem', borderRadius: 'var(--border-radius)', fontSize: '0.9rem'}}>
-                          Payment: {assignment.paymentType?.description || 'All'}<br/>
-                          Category: {assignment.category?.description || 'All'}<br/>
-                          Procedure: {assignment.procedure?.name || 'All'}
+                      <div className="unified-card-content">
+                        <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                          <strong style={{fontSize: '0.85rem', color: 'var(--gray-600)'}}>Applies to:</strong>
+                          <div style={{marginTop: '0.25rem', background: 'var(--gray-50)', padding: '0.5rem', borderRadius: 'var(--border-radius)', fontSize: '0.9rem'}}>
+                            Payment: {assignment.paymentType?.description || 'All'}<br/>
+                            Category: {assignment.category?.description || 'All'}<br/>
+                            Procedure: {assignment.procedure?.name || 'All'}
+                          </div>
                         </div>
-                      </div>
 
-                      <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
-                        <strong>Valid:</strong> {new Date(assignment.validityFrom).toLocaleDateString()} - {new Date(assignment.validityTo).toLocaleDateString()}
-                      </div>
+                        <div style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--gray-600)'}}>
+                          <strong>Valid:</strong> {new Date(assignment.validityFrom).toLocaleDateString()} - {new Date(assignment.validityTo).toLocaleDateString()}
+                        </div>
 
-                      <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
-                        <button
-                          onClick={() => setEditingId(assignment._id)}
-                          className="unified-btn unified-btn-secondary"
-                          style={{flex: 1}}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(assignment._id)}
-                          className="unified-btn unified-btn-danger"
-                          style={{flex: 1}}
-                        >
-                          Delete
-                        </button>
+                        <div style={{display: 'flex', gap: '0.5rem', marginTop: '1rem'}}>
+                          <button
+                            onClick={() => setEditingId(assignment._id)}
+                            className="unified-btn unified-btn-secondary"
+                            style={{flex: 1}}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(assignment._id)}
+                            className="unified-btn unified-btn-danger"
+                            style={{flex: 1}}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
