@@ -6,7 +6,8 @@ const CascadedMaterialFilter = ({
   onFilterChange, 
   className = '',
   showClearButton = true,
-  disabled = false
+  disabled = false,
+  hospitalSpecificCategories = null  // When provided, use these instead of fetching all categories
 }) => {
   const [categories, setCategories] = useState([]);
   const [implantTypes, setImplantTypes] = useState([]);
@@ -17,6 +18,13 @@ const CascadedMaterialFilter = ({
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
+      if (hospitalSpecificCategories) {
+        // Use hospital-specific categories if provided
+        setCategories(hospitalSpecificCategories);
+        return;
+      }
+      
+      // Otherwise, fetch all categories from API
       try {
         const response = await materialMasterAPI.getDropdownData();
         setCategories(response.categories || []);
@@ -26,7 +34,7 @@ const CascadedMaterialFilter = ({
     };
     
     fetchCategories();
-  }, []);
+  }, [hospitalSpecificCategories]);
 
   // Handle Surgical Category change
   const handleSurgicalCategoryChange = useCallback(async (surgicalCategoryId) => {
@@ -48,8 +56,17 @@ const CascadedMaterialFilter = ({
     if (surgicalCategoryId) {
       try {
         setLoading(true);
-        const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
-        setImplantTypes(filteredTypes);
+        
+        if (hospitalSpecificCategories) {
+          // For hospital-specific filtering, we need to get implant types from the parent component
+          // For now, we'll fetch from API but this should be improved
+          const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
+          setImplantTypes(filteredTypes);
+        } else {
+          // Normal behavior - fetch from API
+          const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
+          setImplantTypes(filteredTypes);
+        }
       } catch (err) {
         console.error('Error fetching filtered implant types:', err);
         setImplantTypes([]);
@@ -57,7 +74,7 @@ const CascadedMaterialFilter = ({
         setLoading(false);
       }
     }
-  }, [filters, onFilterChange]);
+  }, [filters, onFilterChange, hospitalSpecificCategories]);
 
   // Handle Implant Type change
   const handleImplantTypeChange = useCallback(async (implantTypeId) => {

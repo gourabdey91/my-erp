@@ -56,6 +56,25 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
     }
   }, [hospital._id]);
 
+  // Extract unique categories from assigned materials
+  const getHospitalSpecificCategories = useCallback(() => {
+    const categoryMap = new Map();
+    
+    materials.forEach(assignment => {
+      const category = assignment.material?.surgicalCategory;
+      if (category && category._id && category.description) {
+        categoryMap.set(category._id, {
+          _id: category._id,
+          description: category.description
+        });
+      }
+    });
+    
+    return Array.from(categoryMap.values()).sort((a, b) => 
+      a.description.localeCompare(b.description)
+    );
+  }, [materials]);
+
   useEffect(() => {
     if (isOpen && hospital) {
       const activeMaterials = hospital.materialAssignments?.filter(assignment => assignment.isActive) || [];
@@ -435,6 +454,7 @@ const MaterialAssignments = ({ hospital, isOpen, onClose, onUpdate }) => {
               filters={filters}
               onFilterChange={handleFilterChange}
               disabled={loading}
+              hospitalSpecificCategories={getHospitalSpecificCategories()}
             />
 
             {filteredMaterials.length === 0 ? (
