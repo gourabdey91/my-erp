@@ -1,26 +1,28 @@
-import axios from 'axios';
-
-const API_BASE = process.env.REACT_APP_API_BASE || '/api';
+import { apiRequest } from '../../../services/api';
 
 export const expenseTypeAssignmentAPI = {
   getAssignmentsByHospital: async (hospitalId) => {
-    const res = await axios.get(`${API_BASE}/expense-type-assignments/hospital/${hospitalId}`);
-    return res.data;
+    return await apiRequest(`/api/expense-type-assignments/hospital/${hospitalId}`);
   },
   getOptions: async (hospitalId) => {
-    const res = await axios.get(`${API_BASE}/expense-type-assignments/options/${hospitalId}`);
-    return res.data;
+    return await apiRequest(`/api/expense-type-assignments/options/${hospitalId}`);
   },
   createAssignment: async (payload) => {
-    const res = await axios.post(`${API_BASE}/expense-type-assignments`, payload);
-    return res.data;
+    return await apiRequest('/api/expense-type-assignments', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   },
   updateAssignment: async (id, payload) => {
-    const res = await axios.put(`${API_BASE}/expense-type-assignments/${id}`, payload);
-    return res.data;
+    return await apiRequest(`/api/expense-type-assignments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
   },
   deleteAssignment: async (id, updatedBy) => {
-    const res = await axios.delete(`${API_BASE}/expense-type-assignments/${id}`, { data: { updatedBy } });
-    return res.data;
+    return await apiRequest(`/api/expense-type-assignments/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ updatedBy })
+    });
   }
 };
