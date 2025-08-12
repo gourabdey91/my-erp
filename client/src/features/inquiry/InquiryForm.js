@@ -224,16 +224,32 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       submitLabel={inquiry ? 'Update' : 'Create'}
       isLoading={loading}
     >
-      {/* Basic Information Section */}
+      {/* Group 1: Date, Hospital, Status */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Basic Information</h3>
+        <h3 className="inquiry-section-title">Group 1</h3>
         <div className="inquiry-form-grid">
-          {/* Hospital Selection - Full Width */}
+          {/* Inquiry Date */}
+          <FormField
+            label="Date"
+            required
+            error={errors.inquiryDate}
+            className="inquiry-field-third"
+          >
+            <input
+              type="date"
+              className="unified-form-control"
+              value={formData.inquiryDate}
+              onChange={(e) => handleChange('inquiryDate', e.target.value)}
+              disabled={loading}
+            />
+          </FormField>
+
+          {/* Hospital Selection */}
           <FormField
             label="Hospital"
             required
             error={errors.hospital}
-            className="inquiry-field-full"
+            className="inquiry-field-third"
           >
             <select
               className="unified-form-control"
@@ -250,27 +266,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             </select>
           </FormField>
 
-          {/* Inquiry Date */}
-          <FormField
-            label="Inquiry Date"
-            required
-            error={errors.inquiryDate}
-            className="inquiry-field-half"
-          >
-            <input
-              type="date"
-              className="unified-form-control"
-              value={formData.inquiryDate}
-              onChange={(e) => handleChange('inquiryDate', e.target.value)}
-              disabled={loading}
-            />
-          </FormField>
-
           {/* Status */}
           <FormField
             label="Status"
             error={errors.status}
-            className="inquiry-field-half"
+            className="inquiry-field-third"
           >
             <select
               className="unified-form-control"
@@ -288,9 +288,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         </div>
       </div>
 
-      {/* Patient Information Section */}
+      {/* Group 2: Patient Name, UHID */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Patient Information</h3>
+        <h3 className="inquiry-section-title">Group 2</h3>
         <div className="inquiry-form-grid">
           {/* Patient Name */}
           <FormField
@@ -311,7 +311,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
 
           {/* Patient UHID */}
           <FormField
-            label="Patient UHID"
+            label="UHID"
             required
             error={errors.patientUHID}
             className="inquiry-field-half"
@@ -328,15 +328,15 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         </div>
       </div>
 
-      {/* Medical Information Section */}
+      {/* Group 3: Surgical Category, Payment Types, Surgical Procedure, Surgeon, Consulting Doctor */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Medical Information</h3>
+        <h3 className="inquiry-section-title">Group 3</h3>
         <div className="inquiry-form-grid">
           {/* Surgical Category */}
           <FormField
             label="Surgical Category"
             error={errors.surgicalCategory}
-            className="inquiry-field-half"
+            className="inquiry-field-fifth"
           >
             <select
               className="unified-form-control"
@@ -353,11 +353,32 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             </select>
           </FormField>
 
+          {/* Payment Method */}
+          <FormField
+            label="Payment Method"
+            error={errors.paymentMethod}
+            className="inquiry-field-fifth"
+          >
+            <select
+              className="unified-form-control"
+              value={formData.paymentMethod}
+              onChange={(e) => handleChange('paymentMethod', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Payment Method</option>
+              {dropdownData.paymentMethods?.map(method => (
+                <option key={method._id} value={method._id}>
+                  {method.description}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
           {/* Surgical Procedure */}
           <FormField
             label="Surgical Procedure"
             error={errors.surgicalProcedure}
-            className="inquiry-field-half"
+            className="inquiry-field-fifth"
           >
             <select
               className="unified-form-control"
@@ -385,7 +406,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           <FormField
             label="Surgeon"
             error={errors.surgeon}
-            className="inquiry-field-half"
+            className="inquiry-field-fifth"
           >
             <select
               className="unified-form-control"
@@ -413,7 +434,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           <FormField
             label="Consulting Doctor"
             error={errors.consultingDoctor}
-            className="inquiry-field-half"
+            className="inquiry-field-fifth"
           >
             <select
               className="unified-form-control"
@@ -435,33 +456,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </option>
               ))}
               <option value="__other__">+ Add New Consulting Doctor</option>
-            </select>
-          </FormField>
-        </div>
-      </div>
-
-      {/* Payment Information Section */}
-      <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Payment Information</h3>
-        <div className="inquiry-form-grid">
-          {/* Payment Method */}
-          <FormField
-            label="Payment Method"
-            error={errors.paymentMethod}
-            className="inquiry-field-half"
-          >
-            <select
-              className="unified-form-control"
-              value={formData.paymentMethod}
-              onChange={(e) => handleChange('paymentMethod', e.target.value)}
-              disabled={loading}
-            >
-              <option value="">Select Payment Method</option>
-              {dropdownData.paymentMethods?.map(method => (
-                <option key={method._id} value={method._id}>
-                  {method.description}
-                </option>
-              ))}
             </select>
           </FormField>
         </div>

@@ -41,6 +41,23 @@
   grid-column: span 1;
 }
 
+.inquiry-field-third {
+  grid-column: span 1;
+}
+
+.inquiry-field-fifth {
+  grid-column: span 1;
+}
+
+/* Override grid for different field counts */
+.inquiry-form-grid:has(.inquiry-field-third) {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.inquiry-form-grid:has(.inquiry-field-fifth) {
+  grid-template-columns: repeat(5, 1fr);
+}
+
 /* Unified Form Controls */
 .unified-form-control {
   width: 100%;
