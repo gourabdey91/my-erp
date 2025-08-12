@@ -163,27 +163,23 @@ const InquiryForm = ({
             submitLabel={inquiry ? 'Update Inquiry' : 'Create Inquiry'}
             isLoading={loading}
           >
-            {/* Group 1: Inquiry Details */}
+            {/* Row 1: Inquiry No, Date, Hospital, Status */}
             <div className="form-section">
-              <h3 className="form-section-title">Inquiry Details</h3>
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                 <FormField label="Inquiry Number" error={errors.inquiryNumber}>
                   <input
                     type="text"
                     name="inquiryNumber"
-                    value={formData.inquiryNumber || 'Auto-generated after saving'}
+                    value={formData.inquiryNumber || 'Auto-generated'}
                     onChange={handleChange}
                     className="unified-search-input"
-                    placeholder="Auto-generated after saving"
+                    placeholder="Auto-generated"
                     readOnly
                     style={{ backgroundColor: 'var(--gray-100)', cursor: 'not-allowed' }}
                   />
-                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
-                    Inquiry number will be generated automatically when the inquiry is saved
-                  </small>
                 </FormField>
 
-                <FormField label="Inquiry Date" required error={errors.inquiryDate}>
+                <FormField label="Date" required error={errors.inquiryDate}>
                   <input
                     type="date"
                     name="inquiryDate"
@@ -227,10 +223,9 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Group 2: Patient Information */}
+            {/* Row 2: Patient Name, UHID */}
             <div className="form-section">
-              <h3 className="form-section-title">Patient Information</h3>
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                 <FormField label="Patient Name" required error={errors.patientName}>
                   <input
                     type="text"
@@ -247,7 +242,7 @@ const InquiryForm = ({
                   </small>
                 </FormField>
 
-                <FormField label="Patient UHID" required error={errors.patientUHID}>
+                <FormField label="UHID" required error={errors.patientUHID}>
                   <input
                     type="text"
                     name="patientUHID"
@@ -265,10 +260,9 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Group 3: Surgical Information */}
+            {/* Row 3: Surgical Category, Payment Method, Procedure */}
             <div className="form-section">
-              <h3 className="form-section-title">Surgical Information</h3>
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                 <FormField label="Surgical Category" error={errors.surgicalCategory}>
                   <select
                     name="surgicalCategory"
@@ -301,7 +295,7 @@ const InquiryForm = ({
                   </select>
                 </FormField>
 
-                <FormField label="Surgical Procedure" error={errors.surgicalProcedure}>
+                <FormField label="Procedure" error={errors.surgicalProcedure}>
                   <select
                     name="surgicalProcedure"
                     value={formData.surgicalProcedure}
@@ -322,10 +316,9 @@ const InquiryForm = ({
               </div>
             </div>
 
-            {/* Group 4: Doctor Information */}
+            {/* Row 4: Surgeon, Consulting Doctor */}
             <div className="form-section">
-              <h3 className="form-section-title">Doctor Information</h3>
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                 <FormField label="Surgeon" error={errors.surgeon}>
                   <select
                     name="surgeon"
@@ -357,6 +350,27 @@ const InquiryForm = ({
                       </option>
                     ))}
                   </select>
+                </FormField>
+              </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="form-section">
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <FormField label="Comments" error={errors.notes}>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    className="unified-search-input"
+                    placeholder="Enter any additional comments or notes..."
+                    rows="4"
+                    maxLength={500}
+                    style={{ resize: 'vertical', minHeight: '100px' }}
+                  />
+                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
+                    {formData.notes.length}/500 characters
+                  </small>
                 </FormField>
               </div>
             </div>
