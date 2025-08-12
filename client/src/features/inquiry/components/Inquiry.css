@@ -1,0 +1,271 @@
+/* Inquiry Module Styles */
+
+.inquiry-container {
+  padding: 2rem;
+  background: var(--light-bg);
+  min-height: calc(100vh - 60px);
+}
+
+/* Form Specific Styles */
+.inquiry-form {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.inquiry-form-header {
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.inquiry-form-header h2 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Character Counter */
+.character-counter {
+  display: block;
+  color: var(--gray-600);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.character-counter.warning {
+  color: var(--warning-color);
+}
+
+.character-counter.danger {
+  color: var(--danger-color);
+}
+
+/* Patient Information Section */
+.patient-info-section {
+  background: var(--gray-50);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--accent-color);
+}
+
+.patient-info-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+/* Medical Information Section */
+.medical-info-section {
+  background: var(--gray-50);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--success-color);
+}
+
+.medical-info-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+/* Doctor Information Section */
+.doctor-info-section {
+  background: var(--gray-50);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--info-color);
+}
+
+.doctor-info-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+/* Status Badge */
+.inquiry-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.inquiry-status.draft {
+  background: rgba(108, 117, 125, 0.1);
+  color: var(--gray-700);
+}
+
+.inquiry-status.active {
+  background: rgba(52, 152, 219, 0.1);
+  color: var(--accent-color);
+}
+
+.inquiry-status.completed {
+  background: rgba(39, 174, 96, 0.1);
+  color: var(--success-color);
+}
+
+.inquiry-status.cancelled {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger-color);
+}
+
+/* Filter Section */
+.inquiry-filters {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.inquiry-filters h3 {
+  margin: 0 0 1rem 0;
+  color: var(--primary-color);
+}
+
+/* Stats Cards */
+.inquiry-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.inquiry-stat-card {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--accent-color);
+}
+
+.inquiry-stat-card.today {
+  border-left-color: var(--success-color);
+}
+
+.inquiry-stat-card.pending {
+  border-left-color: var(--warning-color);
+}
+
+.inquiry-stat-card.completed {
+  border-left-color: var(--info-color);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Loading States */
+.inquiry-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--gray-600);
+}
+
+.inquiry-loading .spinner {
+  margin-right: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.inquiry-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--gray-600);
+}
+
+.inquiry-empty h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.inquiry-empty .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .inquiry-container {
+    padding: 1rem;
+  }
+  
+  .inquiry-form {
+    padding: 1rem;
+  }
+  
+  .inquiry-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .inquiry-stat-card {
+    padding: 1rem;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .patient-info-section,
+  .medical-info-section,
+  .doctor-info-section {
+    padding: 1rem;
+    margin: 0.75rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .inquiry-container {
+    padding: 0.5rem;
+  }
+  
+  .inquiry-form {
+    padding: 0.75rem;
+  }
+  
+  .inquiry-form-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .inquiry-stat-card {
+    padding: 0.75rem;
+  }
+  
+  .stat-number {
+    font-size: 1.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+  }
+}
