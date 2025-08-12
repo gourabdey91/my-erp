@@ -243,7 +243,7 @@ const MaterialMasterValidation = () => {
       {validationData.length > 0 && (
         <div className="unified-content">
           <div className="unified-filters-row">
-            <div className="unified-filter-group" style={{flex: 2}}>
+            <div className="unified-filter-group" style={{flex: '2 1 300px'}}>
               <label>Search Records</label>
               <input
                 type="text"
@@ -253,7 +253,7 @@ const MaterialMasterValidation = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="unified-filter-group">
+            <div className="unified-filter-group" style={{flex: '1 1 250px', minWidth: '250px'}}>
               <label>Filter by Status</label>
               <div className="unified-checkbox">
                 <input
