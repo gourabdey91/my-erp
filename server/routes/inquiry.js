@@ -5,6 +5,8 @@ const Category = require('../models/Category');
 const PaymentType = require('../models/PaymentType');
 const Procedure = require('../models/Procedure');
 const Doctor = require('../models/Doctor');
+const MaterialMaster = require('../models/MaterialMaster');
+const ImplantType = require('../models/ImplantType');
 
 const router = express.Router();
 
@@ -362,12 +364,14 @@ router.get('/stats', async (req, res) => {
 // Get dropdown data for forms
 router.get('/dropdown-data', async (req, res) => {
   try {
-    const [hospitals, surgicalCategories, paymentMethods, procedures, doctors] = await Promise.all([
+    const [hospitals, surgicalCategories, paymentMethods, procedures, doctors, materials, implantTypes] = await Promise.all([
       Hospital.find({ isActive: true }).select('name shortName').sort({ name: 1 }).lean(),
       Category.find({ isActive: true }).select('description').sort({ description: 1 }).lean(),
       PaymentType.find({ isActive: true }).select('description').sort({ description: 1 }).lean(),
       Procedure.find({ isActive: true }).select('name surgicalCategory').sort({ name: 1 }).lean(),
-      Doctor.find({ isActive: true }).select('name specialization').sort({ name: 1 }).lean()
+      Doctor.find({ isActive: true }).select('name specialization').sort({ name: 1 }).lean(),
+      MaterialMaster.find({ isActive: true }).select('code description unitOfMeasure').sort({ code: 1 }).lean(),
+      ImplantType.find({ isActive: true }).select('name description').sort({ name: 1 }).lean()
     ]);
 
     res.json({
@@ -376,7 +380,9 @@ router.get('/dropdown-data', async (req, res) => {
       surgicalCategories,
       paymentMethods,
       procedures,
-      doctors
+      doctors,
+      materials,
+      implantTypes
     });
 
   } catch (error) {

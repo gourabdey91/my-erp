@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TransactionForm from '../../shared/components/transaction/TransactionForm';
 import FormField from '../../shared/components/transaction/FormField';
+import ItemManagement from './ItemManagement';
 import '../../shared/styles/unified-design.css';
 
 const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
@@ -15,7 +16,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     surgeon: '',
     consultingDoctor: '',
     notes: '',
-    status: 'Pending'
+    status: 'Pending',
+    items: []
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -34,7 +36,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         surgeon: inquiry.surgeon?._id || inquiry.surgeon || '',
         consultingDoctor: inquiry.consultingDoctor?._id || inquiry.consultingDoctor || '',
         notes: inquiry.notes || '',
-        status: inquiry.status || 'Pending'
+        status: inquiry.status || 'Pending',
+        items: inquiry.items || []
       });
     } else {
       // Reset form for new inquiry
@@ -49,7 +52,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         surgeon: '',
         consultingDoctor: '',
         notes: '',
-        status: 'Pending'
+        status: 'Pending',
+        items: []
       });
     }
     setErrors({});
@@ -90,6 +94,13 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   };
 
+  const handleItemsChange = (items) => {
+    setFormData(prev => ({
+      ...prev,
+      items
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -116,199 +127,258 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       submitLabel={inquiry ? 'Update' : 'Create'}
       isLoading={loading}
     >
-      <div className="form-grid">
-        {/* Hospital Selection */}
-        <FormField
-          label="Hospital"
-          required
-          error={errors.hospital}
-          className="form-field-full"
-        >
-          <select
-            value={formData.hospital}
-            onChange={(e) => handleChange('hospital', e.target.value)}
-            disabled={loading}
+      {/* Basic Information Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Basic Information</h3>
+        <div className="inquiry-form-grid">
+          {/* Hospital Selection - Full Width */}
+          <FormField
+            label="Hospital"
+            required
+            error={errors.hospital}
+            className="inquiry-field-full"
           >
-            <option value="">Select Hospital</option>
-            {dropdownData.hospitals?.map(hospital => (
-              <option key={hospital._id} value={hospital._id}>
-                {hospital.name} {hospital.shortName && `(${hospital.shortName})`}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <select
+              className="unified-form-control"
+              value={formData.hospital}
+              onChange={(e) => handleChange('hospital', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Hospital</option>
+              {dropdownData.hospitals?.map(hospital => (
+                <option key={hospital._id} value={hospital._id}>
+                  {hospital.name} {hospital.shortName && `(${hospital.shortName})`}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
-        {/* Inquiry Date */}
-        <FormField
-          label="Inquiry Date"
-          required
-          error={errors.inquiryDate}
-        >
-          <input
-            type="date"
-            value={formData.inquiryDate}
-            onChange={(e) => handleChange('inquiryDate', e.target.value)}
-            disabled={loading}
-          />
-        </FormField>
-
-        {/* Patient Name */}
-        <FormField
-          label="Patient Name"
-          required
-          error={errors.patientName}
-        >
-          <input
-            type="text"
-            value={formData.patientName}
-            onChange={(e) => handleChange('patientName', e.target.value)}
-            placeholder="Enter patient name"
-            disabled={loading}
-          />
-        </FormField>
-
-        {/* Patient UHID */}
-        <FormField
-          label="Patient UHID"
-          required
-          error={errors.patientUHID}
-        >
-          <input
-            type="text"
-            value={formData.patientUHID}
-            onChange={(e) => handleChange('patientUHID', e.target.value)}
-            placeholder="Enter patient UHID"
-            disabled={loading}
-          />
-        </FormField>
-
-        {/* Surgical Category */}
-        <FormField
-          label="Surgical Category"
-          error={errors.surgicalCategory}
-        >
-          <select
-            value={formData.surgicalCategory}
-            onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-            disabled={loading}
+          {/* Inquiry Date */}
+          <FormField
+            label="Inquiry Date"
+            required
+            error={errors.inquiryDate}
+            className="inquiry-field-half"
           >
-            <option value="">Select Category</option>
-            {dropdownData.surgicalCategories?.map(category => (
-              <option key={category._id} value={category._id}>
-                {category.description}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <input
+              type="date"
+              className="unified-form-control"
+              value={formData.inquiryDate}
+              onChange={(e) => handleChange('inquiryDate', e.target.value)}
+              disabled={loading}
+            />
+          </FormField>
 
-        {/* Payment Method */}
-        <FormField
-          label="Payment Method"
-          error={errors.paymentMethod}
-        >
-          <select
-            value={formData.paymentMethod}
-            onChange={(e) => handleChange('paymentMethod', e.target.value)}
-            disabled={loading}
+          {/* Status */}
+          <FormField
+            label="Status"
+            error={errors.status}
+            className="inquiry-field-half"
           >
-            <option value="">Select Payment Method</option>
-            {dropdownData.paymentMethods?.map(method => (
-              <option key={method._id} value={method._id}>
-                {method.description}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <select
+              className="unified-form-control"
+              value={formData.status}
+              onChange={(e) => handleChange('status', e.target.value)}
+              disabled={loading}
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </FormField>
+        </div>
+      </div>
 
-        {/* Surgical Procedure */}
-        <FormField
-          label="Surgical Procedure"
-          error={errors.surgicalProcedure}
-        >
-          <select
-            value={formData.surgicalProcedure}
-            onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-            disabled={loading}
+      {/* Patient Information Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Patient Information</h3>
+        <div className="inquiry-form-grid">
+          {/* Patient Name */}
+          <FormField
+            label="Patient Name"
+            required
+            error={errors.patientName}
+            className="inquiry-field-half"
           >
-            <option value="">Select Procedure</option>
-            {dropdownData.procedures?.map(procedure => (
-              <option key={procedure._id} value={procedure._id}>
-                {procedure.name}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <input
+              type="text"
+              className="unified-form-control"
+              value={formData.patientName}
+              onChange={(e) => handleChange('patientName', e.target.value)}
+              placeholder="Enter patient full name"
+              disabled={loading}
+            />
+          </FormField>
 
-        {/* Surgeon */}
-        <FormField
-          label="Surgeon"
-          error={errors.surgeon}
-        >
-          <select
-            value={formData.surgeon}
-            onChange={(e) => handleChange('surgeon', e.target.value)}
-            disabled={loading}
+          {/* Patient UHID */}
+          <FormField
+            label="Patient UHID"
+            required
+            error={errors.patientUHID}
+            className="inquiry-field-half"
           >
-            <option value="">Select Surgeon</option>
-            {dropdownData.doctors?.map(doctor => (
-              <option key={doctor._id} value={doctor._id}>
-                {doctor.name} {doctor.specialization && `(${doctor.specialization})`}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <input
+              type="text"
+              className="unified-form-control"
+              value={formData.patientUHID}
+              onChange={(e) => handleChange('patientUHID', e.target.value)}
+              placeholder="Enter unique patient ID"
+              disabled={loading}
+            />
+          </FormField>
+        </div>
+      </div>
 
-        {/* Consulting Doctor */}
-        <FormField
-          label="Consulting Doctor"
-          error={errors.consultingDoctor}
-        >
-          <select
-            value={formData.consultingDoctor}
-            onChange={(e) => handleChange('consultingDoctor', e.target.value)}
-            disabled={loading}
+      {/* Medical Information Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Medical Information</h3>
+        <div className="inquiry-form-grid">
+          {/* Surgical Category */}
+          <FormField
+            label="Surgical Category"
+            error={errors.surgicalCategory}
+            className="inquiry-field-half"
           >
-            <option value="">Select Consulting Doctor</option>
-            {dropdownData.doctors?.map(doctor => (
-              <option key={doctor._id} value={doctor._id}>
-                {doctor.name} {doctor.specialization && `(${doctor.specialization})`}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            <select
+              className="unified-form-control"
+              value={formData.surgicalCategory}
+              onChange={(e) => handleChange('surgicalCategory', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Category</option>
+              {dropdownData.surgicalCategories?.map(category => (
+                <option key={category._id} value={category._id}>
+                  {category.description}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
-        {/* Status */}
-        <FormField
-          label="Status"
-          error={errors.status}
-        >
-          <select
-            value={formData.status}
-            onChange={(e) => handleChange('status', e.target.value)}
-            disabled={loading}
+          {/* Surgical Procedure */}
+          <FormField
+            label="Surgical Procedure"
+            error={errors.surgicalProcedure}
+            className="inquiry-field-half"
           >
-            <option value="Pending">Pending</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Scheduled">Scheduled</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-        </FormField>
+            <select
+              className="unified-form-control"
+              value={formData.surgicalProcedure}
+              onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Procedure</option>
+              {dropdownData.procedures?.map(procedure => (
+                <option key={procedure._id} value={procedure._id}>
+                  {procedure.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
-        {/* Notes */}
-        <FormField
-          label="Notes"
-          error={errors.notes}
-          className="form-field-full"
-        >
-          <textarea
-            value={formData.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            placeholder="Enter any additional notes..."
-            rows={4}
-            disabled={loading}
-          />
-        </FormField>
+          {/* Surgeon */}
+          <FormField
+            label="Surgeon"
+            error={errors.surgeon}
+            className="inquiry-field-half"
+          >
+            <select
+              className="unified-form-control"
+              value={formData.surgeon}
+              onChange={(e) => handleChange('surgeon', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Surgeon</option>
+              {dropdownData.doctors?.map(doctor => (
+                <option key={doctor._id} value={doctor._id}>
+                  {doctor.name} {doctor.specialization && `(${doctor.specialization})`}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          {/* Consulting Doctor */}
+          <FormField
+            label="Consulting Doctor"
+            error={errors.consultingDoctor}
+            className="inquiry-field-half"
+          >
+            <select
+              className="unified-form-control"
+              value={formData.consultingDoctor}
+              onChange={(e) => handleChange('consultingDoctor', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Consulting Doctor</option>
+              {dropdownData.doctors?.map(doctor => (
+                <option key={doctor._id} value={doctor._id}>
+                  {doctor.name} {doctor.specialization && `(${doctor.specialization})`}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+      </div>
+
+      {/* Payment Information Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Payment Information</h3>
+        <div className="inquiry-form-grid">
+          {/* Payment Method */}
+          <FormField
+            label="Payment Method"
+            error={errors.paymentMethod}
+            className="inquiry-field-half"
+          >
+            <select
+              className="unified-form-control"
+              value={formData.paymentMethod}
+              onChange={(e) => handleChange('paymentMethod', e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Select Payment Method</option>
+              {dropdownData.paymentMethods?.map(method => (
+                <option key={method._id} value={method._id}>
+                  {method.description}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+      </div>
+
+      {/* Additional Information Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Additional Information</h3>
+        <div className="inquiry-form-grid">
+          {/* Notes */}
+          <FormField
+            label="Notes & Comments"
+            error={errors.notes}
+            className="inquiry-field-full"
+          >
+            <textarea
+              className="unified-form-control"
+              value={formData.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              placeholder="Enter any additional notes, special instructions, or comments..."
+              rows={4}
+              disabled={loading}
+            />
+          </FormField>
+        </div>
+      </div>
+
+      {/* Items Section */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Items & Materials</h3>
+        <ItemManagement
+          items={formData.items}
+          onItemsChange={handleItemsChange}
+          dropdownData={dropdownData}
+          disabled={loading}
+        />
       </div>
     </TransactionForm>
   );

@@ -58,8 +58,8 @@ const inquirySchema = new mongoose.Schema({
   // Status and Workflow
   status: {
     type: String,
-    enum: ['draft', 'active', 'converted', 'cancelled'],
-    default: 'draft',
+    enum: ['Pending', 'In Progress', 'Scheduled', 'Completed', 'Cancelled'],
+    default: 'Pending',
     index: true
   },
   
@@ -67,6 +67,57 @@ const inquirySchema = new mongoose.Schema({
   notes: {
     type: String,
     maxlength: 1000
+  },
+
+  // Items/Materials for the inquiry
+  items: [{
+    materialMaster: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MaterialMaster'
+    },
+    implantType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ImplantType'
+    },
+    description: {
+      type: String,
+      maxlength: 200
+    },
+    quantity: {
+      type: Number,
+      min: 0,
+      default: 1
+    },
+    unitPrice: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    totalAmount: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    notes: {
+      type: String,
+      maxlength: 300
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    }
+  }],
+
+  // Calculated totals
+  totalQuantity: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  totalAmount: {
+    type: Number,
+    min: 0,
+    default: 0
   },
   
   // References to related documents
@@ -122,9 +173,35 @@ inquirySchema.virtual('inquiryNumber').get(function() {
   return `INQ${year}${month}${idStr}`;
 });
 
-// Pre-save middleware to update timestamp
+// Pre-save middleware to update timestamp and calculate totals
 inquirySchema.pre('save', function(next) {
   this.updatedAt = new Date();
+  
+  // Calculate totals from items
+  if (this.items && this.items.length > 0) {
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    
+    this.items.forEach(item => {
+      if (item.isActive !== false) {
+        totalQuantity += item.quantity || 0;
+        
+        // Calculate item total if not provided
+        if (!item.totalAmount && item.quantity && item.unitPrice) {
+          item.totalAmount = item.quantity * item.unitPrice;
+        }
+        
+        totalAmount += item.totalAmount || 0;
+      }
+    });
+    
+    this.totalQuantity = totalQuantity;
+    this.totalAmount = totalAmount;
+  } else {
+    this.totalQuantity = 0;
+    this.totalAmount = 0;
+  }
+  
   next();
 });
 
