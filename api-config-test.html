@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Configuration Test</title>
+</head>
+<body>
+    <h1>API Configuration Debug</h1>
+    <div id="config-info"></div>
+    <button onclick="testAPI()">Test API Configuration</button>
+    <div id="test-result"></div>
+
+    <script>
+        // Replicate the logic from our services/api.js
+        const isProduction = process?.env?.NODE_ENV === 'production' || 
+                            window.location.hostname === 'my-erp.onrender.com' ||
+                            window.location.hostname !== 'localhost';
+
+        const API_BASE_URL = isProduction
+            ? 'https://myerp-backend.onrender.com'
+            : 'http://localhost:5000';
+
+        const configInfo = {
+            hostname: window.location.hostname,
+            NODE_ENV: process?.env?.NODE_ENV || 'undefined',
+            isProduction,
+            API_BASE_URL,
+            currentURL: window.location.href
+        };
+
+        document.getElementById('config-info').innerHTML = 
+            '<pre>' + JSON.stringify(configInfo, null, 2) + '</pre>';
+
+        async function testAPI() {
+            const hospitalId = '6898df092bb025f38289ad91';
+            const endpoint = `/api/expense-type-assignments/options/${hospitalId}`;
+            const fullURL = API_BASE_URL + endpoint;
+            
+            document.getElementById('test-result').innerHTML = 
+                `<p>Testing: <strong>${fullURL}</strong></p><p>Loading...</p>`;
+            
+            try {
+                const response = await fetch(fullURL);
+                const data = await response.json();
+                
+                document.getElementById('test-result').innerHTML = 
+                    `<p>✅ Success: ${response.status}</p>
+                     <pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('test-result').innerHTML = 
+                    `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

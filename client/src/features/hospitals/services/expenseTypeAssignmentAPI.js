@@ -4,8 +4,15 @@ export const expenseTypeAssignmentAPI = {
   getAssignmentsByHospital: async (hospitalId) => {
     return await apiRequest(`/api/expense-type-assignments/hospital/${hospitalId}`);
   },
-  getOptions: async (hospitalId) => {
-    return await apiRequest(`/api/expense-type-assignments/options/${hospitalId}`);
+  getOptions: async (hospitalId, paymentTypeFilter = '', categoryFilter = '') => {
+    const params = new URLSearchParams();
+    if (paymentTypeFilter) params.append('paymentType', paymentTypeFilter);
+    if (categoryFilter) params.append('category', categoryFilter);
+    
+    const queryString = params.toString();
+    const url = `/api/expense-type-assignments/options/${hospitalId}${queryString ? `?${queryString}` : ''}`;
+    
+    return await apiRequest(url);
   },
   createAssignment: async (payload) => {
     return await apiRequest('/api/expense-type-assignments', {

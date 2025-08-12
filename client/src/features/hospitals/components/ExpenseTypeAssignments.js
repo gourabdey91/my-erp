@@ -1,10 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { expenseTypeAssignmentAPI } from '../services/expenseTypeAssignmentAPI';
 import './ExpenseTypeAssignments.css';
 import '../../../shared/styles/unified-design.css';
-
-const API_BASE = process.env.REACT_APP_API_BASE || '/api';
 
 function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
   const [assignments, setAssignments] = useState([]);
@@ -35,8 +33,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
   const fetchAssignments = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/expense-type-assignments/hospital/${hospital._id}`);
-      setAssignments(res.data);
+      const data = await expenseTypeAssignmentAPI.getAssignmentsByHospital(hospital._id);
+      setAssignments(data);
     } catch (err) {
       setError('Failed to load assignments');
     } finally {
@@ -46,13 +44,8 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
 
   const fetchOptions = async (paymentTypeId = '', categoryId = '') => {
     try {
-      const params = new URLSearchParams();
-      if (paymentTypeId) params.append('paymentType', paymentTypeId);
-      if (categoryId) params.append('category', categoryId);
-      const queryString = params.toString();
-      const url = `${API_BASE}/expense-type-assignments/options/${hospital._id}${queryString ? `?${queryString}` : ''}`;
-      const res = await axios.get(url);
-      setOptions(res.data);
+      const data = await expenseTypeAssignmentAPI.getOptions(hospital._id, paymentTypeId, categoryId);
+      setOptions(data);
     } catch (err) {
       setError('Failed to load options');
     }
@@ -122,9 +115,9 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
         updatedBy: currentUser?._id
       };
       if (editingId && editingId !== 'new') {
-        await axios.put(`${API_BASE}/expense-type-assignments/${editingId}`, { ...payload, updatedBy: currentUser?._id });
+        await expenseTypeAssignmentAPI.updateAssignment(editingId, { ...payload, updatedBy: currentUser?._id });
       } else {
-        await axios.post(`${API_BASE}/expense-type-assignments`, payload);
+        await expenseTypeAssignmentAPI.createAssignment(payload);
       }
       fetchAssignments();
       handleCancel();
@@ -140,7 +133,7 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
     if (!window.confirm('Delete this assignment?')) return;
     setLoading(true);
     try {
-      await axios.delete(`${API_BASE}/expense-type-assignments/${id}`, { data: { updatedBy: currentUser?._id } });
+      await expenseTypeAssignmentAPI.deleteAssignment(id, currentUser?._id);
       fetchAssignments();
     } catch (err) {
       setError('Failed to delete assignment');
