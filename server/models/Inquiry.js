@@ -2,13 +2,6 @@ const mongoose = require('mongoose');
 
 const inquirySchema = new mongoose.Schema({
   // Basic Information
-  inquiryNumber: {
-    type: String,
-    unique: true,
-    sparse: true,
-    trim: true,
-    maxlength: 50
-  },
   hospital: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Hospital',

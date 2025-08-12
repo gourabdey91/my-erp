@@ -141,12 +141,16 @@ const InquiryForm = ({
                   <input
                     type="text"
                     name="inquiryNumber"
-                    value={formData.inquiryNumber}
+                    value={formData.inquiryNumber || 'Auto-generated after saving'}
                     onChange={handleChange}
                     className="unified-search-input"
-                    placeholder="Auto-generated"
-                    readOnly={!!inquiry}
+                    placeholder="Auto-generated after saving"
+                    readOnly
+                    style={{ backgroundColor: 'var(--gray-100)', cursor: 'not-allowed' }}
                   />
+                  <small style={{color: 'var(--gray-600)', fontSize: '0.8rem'}}>
+                    Inquiry number will be generated automatically when the inquiry is saved
+                  </small>
                 </FormField>
 
                 <FormField label="Inquiry Date" required error={errors.inquiryDate}>
