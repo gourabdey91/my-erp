@@ -100,9 +100,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       setFormData(prev => ({ ...prev, surgicalCategory: '', surgicalProcedure: '' }));
     }
     
-    // Fetch procedures filtered by selected payment method
-    if (paymentMethod) {
-      fetchCascadingData('procedures', { paymentMethodId: paymentMethod });
+    // Fetch procedures filtered by selected surgical category
+    if (surgicalCategory) {
+      fetchCascadingData('procedures', { surgicalCategoryId: surgicalCategory });
     } else {
       setCascadingData(prev => ({ ...prev, procedures: [] }));
       setFormData(prev => ({ ...prev, surgicalProcedure: '' }));
@@ -380,11 +380,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               className="unified-form-control"
               value={formData.surgicalProcedure}
               onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-              disabled={loading || cascadingLoading.procedures || !formData.paymentMethod}
+              disabled={loading || cascadingLoading.procedures || !formData.surgicalCategory}
             >
               <option value="">
-                {!formData.paymentMethod 
-                  ? "Select Payment Method First" 
+                {!formData.surgicalCategory 
+                  ? "Select Surgical Category First" 
                   : cascadingLoading.procedures 
                     ? "Loading..." 
                     : "Select Procedure"
