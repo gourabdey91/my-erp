@@ -158,7 +158,6 @@ const materialMasterRoutes = require('./routes/materialMaster');
 const deliveryChallanDetailsRoutes = require('./routes/deliveryChallanDetails');
 const fileUploadRoutes = require('./routes/fileUpload');
 const salesOrderRoutes = require('./routes/salesOrders');
-const inquiryRoutes = require('./routes/inquiry');
 
 // Health check endpoint for production monitoring
 app.get('/api/health', (req, res) => {
@@ -192,7 +191,6 @@ app.use('/api/material-master', materialMasterRoutes);
 app.use('/api/delivery-challan-details', deliveryChallanDetailsRoutes);
 app.use('/api/file-upload', fileUploadRoutes);
 app.use('/api/sales-orders', salesOrderRoutes);
-app.use('/api/inquiries', inquiryRoutes);
 
 // MongoDB connection with environment awareness
 mongoose.connect(decodedMongoUri);

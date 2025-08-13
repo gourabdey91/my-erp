@@ -158,15 +158,6 @@ const Dashboard = ({ onViewChange }) => {
         title: 'Transactional Data',
         tiles: [
           {
-            id: 'inquiry',
-            title: 'Inquiry',
-            subtitle: 'Manage Patient Inquiries',
-            icon: '🔍',
-            count: stats?.inquiries?.count || '...',
-            onClick: () => onViewChange('inquiry'),
-            enabled: true
-          },
-          {
             id: 'delivery-challan-details',
             title: 'Challan Details',
             subtitle: 'Track Challans',
