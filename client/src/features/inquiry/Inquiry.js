@@ -219,7 +219,7 @@ const Inquiry = () => {
           <div className="unified-filter-group">
             <label className="unified-form-label">Hospital</label>
             <select
-              className="unified-form-control"
+              className="unified-filter-select"
               value={filters.hospital}
               onChange={(e) => handleFilterChange('hospital', e.target.value)}
             >
@@ -234,7 +234,7 @@ const Inquiry = () => {
           <div className="unified-filter-group">
             <label className="unified-form-label">Surgical Category</label>
             <select
-              className="unified-form-control"
+              className="unified-filter-select"
               value={filters.surgicalCategory}
               onChange={(e) => handleFilterChange('surgicalCategory', e.target.value)}
             >
@@ -249,14 +249,14 @@ const Inquiry = () => {
           <div className="unified-filter-group">
             <label className="unified-form-label">Payment Method</label>
             <select
-              className="unified-form-control"
+              className="unified-filter-select"
               value={filters.paymentMethod}
               onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
             >
               <option value="">All Payment Methods</option>
               {dropdownData.paymentMethods.map(method => (
                 <option key={method._id} value={method._id}>
-                  {method.name}
+                  {method.description}
                 </option>
               ))}
             </select>
@@ -303,8 +303,8 @@ const Inquiry = () => {
             </div>
           </div>
         ) : (
-          <div className="data-table-container">
-            <table className="data-table">
+          <div className="unified-table-responsive">
+            <table className="unified-table">
               <thead>
                 <tr>
                   <th>Inquiry #</th>
@@ -322,7 +322,9 @@ const Inquiry = () => {
               <tbody>
                 {inquiries.map(inquiry => (
                   <tr key={inquiry._id}>
-                    <td data-label="Inquiry #">{inquiry.inquiryNumber}</td>
+                    <td data-label="Inquiry #">
+                      <span className="unified-code-badge">{inquiry.inquiryNumber}</span>
+                    </td>
                     <td data-label="Date">{formatDate(inquiry.inquiryDate)}</td>
                     <td data-label="Patient Name">{inquiry.patientName}</td>
                     <td data-label="Patient UHID">{inquiry.patientUHID}</td>
@@ -334,30 +336,30 @@ const Inquiry = () => {
                           {inquiry.surgicalProcedure.code} - {inquiry.surgicalProcedure.name}
                         </span>
                       ) : (
-                        <span className="text-muted">-</span>
+                        <span className="unified-text-muted">-</span>
                       )}
                     </td>
                     <td data-label="Payment Method">{inquiry.paymentMethod?.description}</td>
                     <td data-label="Status">
-                      <span className={`status-badge ${inquiry.isActive ? 'status-active' : 'status-inactive'}`}>
+                      <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
                         {inquiry.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td data-label="Actions">
-                      <div className="action-buttons">
+                      <div className="unified-table-actions">
                         <button
-                          className="btn btn-sm btn-outline-primary"
+                          className="unified-table-action edit"
                           onClick={() => handleEdit(inquiry)}
                           title="Edit"
                         >
-                          Edit
+                          ✏️
                         </button>
                         <button
-                          className="btn btn-sm btn-outline-danger"
+                          className="unified-table-action delete"
                           onClick={() => handleDelete(inquiry._id)}
                           title="Delete"
                         >
-                          Delete
+                          🗑️
                         </button>
                       </div>
                     </td>
@@ -367,13 +369,13 @@ const Inquiry = () => {
             </table>
 
             {/* Pagination */}
-            <div className="data-table-pagination">
-              <div className="pagination-info">
+            <div className="unified-pagination">
+              <div className="unified-pagination-info">
                 Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} inquiries
               </div>
-              <div className="pagination-controls">
+              <div className="unified-pagination-controls">
                 <button
-                  className="btn btn-sm btn-outline-primary"
+                  className="unified-btn unified-btn-sm unified-btn-secondary"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => prev - 1)}
                 >
@@ -389,7 +391,7 @@ const Inquiry = () => {
                   return (
                     <button
                       key={page}
-                      className={`btn btn-sm ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'}`}
+                      className={`unified-btn unified-btn-sm ${currentPage === page ? 'unified-btn-primary' : 'unified-btn-secondary'}`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}
@@ -398,7 +400,7 @@ const Inquiry = () => {
                 })}
                 
                 <button
-                  className="btn btn-sm btn-outline-primary"
+                  className="unified-btn unified-btn-sm unified-btn-secondary"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => prev + 1)}
                 >

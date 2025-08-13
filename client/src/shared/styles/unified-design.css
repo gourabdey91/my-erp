@@ -157,6 +157,96 @@
   transform: translateY(-1px);
 }
 
+/* ========== Badge Styles ========== */
+.unified-code-badge {
+  background: var(--accent-color);
+  color: var(--white);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.unified-status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.unified-status-active {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.unified-status-inactive {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.unified-text-muted {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* ========== Loading States ========== */
+.unified-loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray-600);
+  font-size: 1rem;
+}
+
+.unified-empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray-600);
+}
+
+.unified-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.unified-empty-message {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--gray-700);
+}
+
+.unified-empty-submessage {
+  color: var(--gray-500);
+}
+
+/* ========== Pagination Styles ========== */
+.unified-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.unified-pagination-info {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+.unified-pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ========== Card Header ========== */
 .unified-card-header {
   padding: 1rem 1.5rem;
   background: var(--gray-50);
@@ -644,6 +734,19 @@
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: var(--gray-700);
+}
+
+.unified-error-text {
+  color: var(--danger-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.unified-optional {
+  color: var(--gray-500);
+  font-weight: 400;
+  font-size: 0.875rem;
 }
 
 .unified-checkbox-container {

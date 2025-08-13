@@ -219,8 +219,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   };
 
   return (
-    <div className="unified-overlay">
-      <div className="unified-modal">
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container">
         <div className="unified-modal-header">
           <h2>{inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}</h2>
           <button 
@@ -232,149 +232,157 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="unified-form">
-          <div className="unified-form-grid">
-            <div className="unified-form-field">
-              <label className="unified-form-label">Inquiry Date *</label>
-              <input
-                type="date"
-                className="unified-search-input"
-                value={formData.inquiryDate}
-                onChange={(e) => handleChange('inquiryDate', e.target.value)}
-              />
-              {errors.inquiryDate && (
-                <span className="error-text">{errors.inquiryDate}</span>
-              )}
+        <div className="unified-modal-body">
+          <form onSubmit={handleSubmit}>
+            <div className="form-section">
+              <div className="form-section-title">
+                Inquiry Details
+              </div>
+              
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Inquiry Date *</label>
+                  <input
+                    type="date"
+                    className="unified-search-input"
+                    value={formData.inquiryDate}
+                    onChange={(e) => handleChange('inquiryDate', e.target.value)}
+                  />
+                  {errors.inquiryDate && (
+                    <span className="unified-error-text">{errors.inquiryDate}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Hospital *</label>
+                  <select
+                    className="unified-search-input"
+                    value={formData.hospital}
+                    onChange={(e) => handleChange('hospital', e.target.value)}
+                  >
+                    <option value="">Select Hospital</option>
+                    {dropdownData.hospitals?.map(hospital => (
+                      <option key={hospital._id} value={hospital._id}>
+                        {hospital.shortName || hospital.legalName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.hospital && (
+                    <span className="unified-error-text">{errors.hospital}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Patient Name *</label>
+                  <input
+                    type="text"
+                    className="unified-search-input"
+                    placeholder="Enter patient name"
+                    value={formData.patientName}
+                    onChange={(e) => handleChange('patientName', e.target.value)}
+                  />
+                  {errors.patientName && (
+                    <span className="unified-error-text">{errors.patientName}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Patient UHID *</label>
+                  <input
+                    type="text"
+                    className="unified-search-input"
+                    placeholder="Enter patient UHID"
+                    value={formData.patientUHID}
+                    onChange={(e) => handleChange('patientUHID', e.target.value)}
+                  />
+                  {errors.patientUHID && (
+                    <span className="unified-error-text">{errors.patientUHID}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Surgical Category *</label>
+                  <select
+                    className="unified-search-input"
+                    value={formData.surgicalCategory}
+                    onChange={(e) => handleChange('surgicalCategory', e.target.value)}
+                    disabled={!formData.hospital}
+                  >
+                    <option value="">
+                      {!formData.hospital ? 'Select Hospital First' : 'Select Surgical Category'}
+                    </option>
+                    {filteredSurgicalCategories.map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.description}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.surgicalCategory && (
+                    <span className="unified-error-text">{errors.surgicalCategory}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Payment Method *</label>
+                  <select
+                    className="unified-search-input"
+                    value={formData.paymentMethod}
+                    onChange={(e) => handleChange('paymentMethod', e.target.value)}
+                  >
+                    <option value="">Select Payment Method</option>
+                    {dropdownData.paymentMethods?.map(payment => (
+                      <option key={payment._id} value={payment._id}>
+                        {payment.description}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.paymentMethod && (
+                    <span className="unified-error-text">{errors.paymentMethod}</span>
+                  )}
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Surgical Procedure <span className="unified-optional">(Optional)</span></label>
+                  <select
+                    className="unified-search-input"
+                    value={formData.surgicalProcedure}
+                    onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
+                    disabled={!formData.hospital}
+                  >
+                    <option value="">
+                      {!formData.hospital ? 'Select Hospital First' : 
+                       (!formData.surgicalCategory && !formData.paymentMethod) ? 'Select Category or Payment Method' : 
+                       'Select Procedure (Optional)'}
+                    </option>
+                    {filteredSurgicalProcedures.map(procedure => (
+                      <option key={procedure._id} value={procedure._id}>
+                        {procedure.code} - {procedure.name} ({procedure.amount} {procedure.currency})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
-            <div className="unified-form-field">
-              <label className="unified-form-label">Patient Name *</label>
-              <input
-                type="text"
-                className="unified-search-input"
-                placeholder="Enter patient name"
-                value={formData.patientName}
-                onChange={(e) => handleChange('patientName', e.target.value)}
-              />
-              {errors.patientName && (
-                <span className="error-text">{errors.patientName}</span>
-              )}
-            </div>
-
-            <div className="unified-form-field">
-              <label className="unified-form-label">Patient UHID *</label>
-              <input
-                type="text"
-                className="unified-search-input"
-                placeholder="Enter patient UHID"
-                value={formData.patientUHID}
-                onChange={(e) => handleChange('patientUHID', e.target.value)}
-              />
-              {errors.patientUHID && (
-                <span className="error-text">{errors.patientUHID}</span>
-              )}
-            </div>
-
-            <div className="unified-form-field">
-              <label className="unified-form-label">Hospital *</label>
-              <select
-                className="unified-search-input"
-                value={formData.hospital}
-                onChange={(e) => handleChange('hospital', e.target.value)}
+            <div className="unified-modal-actions">
+              <button
+                type="button"
+                className="unified-btn unified-btn-secondary"
+                onClick={onCancel}
+                disabled={loading}
               >
-                <option value="">Select Hospital</option>
-                {dropdownData.hospitals?.map(hospital => (
-                  <option key={hospital._id} value={hospital._id}>
-                    {hospital.shortName || hospital.legalName}
-                  </option>
-                ))}
-              </select>
-              {errors.hospital && (
-                <span className="error-text">{errors.hospital}</span>
-              )}
-            </div>
-
-            <div className="unified-form-field">
-              <label className="unified-form-label">Surgical Category *</label>
-              <select
-                className="unified-search-input"
-                value={formData.surgicalCategory}
-                onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-                disabled={!formData.hospital}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="unified-btn unified-btn-primary"
+                disabled={loading}
               >
-                <option value="">
-                  {!formData.hospital ? 'Select Hospital First' : 'Select Surgical Category'}
-                </option>
-                {filteredSurgicalCategories.map(category => (
-                  <option key={category._id} value={category._id}>
-                    {category.description}
-                  </option>
-                ))}
-              </select>
-              {errors.surgicalCategory && (
-                <span className="error-text">{errors.surgicalCategory}</span>
-              )}
+                {loading ? 'Saving...' : (inquiry ? 'Update' : 'Create')} Inquiry
+              </button>
             </div>
-
-            <div className="unified-form-field">
-              <label className="unified-form-label">Surgical Procedure</label>
-              <select
-                className="unified-search-input"
-                value={formData.surgicalProcedure}
-                onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-                disabled={!formData.hospital}
-              >
-                <option value="">
-                  {!formData.hospital ? 'Select Hospital First' : 
-                   (!formData.surgicalCategory && !formData.paymentMethod) ? 'Select Category or Payment Method' : 
-                   'Select Procedure (Optional)'}
-                </option>
-                {filteredSurgicalProcedures.map(procedure => (
-                  <option key={procedure._id} value={procedure._id}>
-                    {procedure.code} - {procedure.name} ({procedure.amount} {procedure.currency})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="unified-form-field">
-              <label className="unified-form-label">Payment Method *</label>
-              <select
-                className="unified-search-input"
-                value={formData.paymentMethod}
-                onChange={(e) => handleChange('paymentMethod', e.target.value)}
-              >
-                <option value="">Select Payment Method</option>
-                {dropdownData.paymentMethods?.map(payment => (
-                  <option key={payment._id} value={payment._id}>
-                    {payment.description}
-                  </option>
-                ))}
-              </select>
-              {errors.paymentMethod && (
-                <span className="error-text">{errors.paymentMethod}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="unified-form-actions">
-            <button
-              type="button"
-              className="unified-btn unified-btn-secondary"
-              onClick={onCancel}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="unified-btn unified-btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (inquiry ? 'Update' : 'Create')} Inquiry
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
