@@ -63,6 +63,15 @@ export const inquiryAPI = {
   getSurgicalCategoriesByHospital: (hospitalId) =>
     api.get(`/inquiries/hospital/${hospitalId}/surgical-categories`).then(response => response.data),
 
+  // Get procedures filtered by hospital, category, and payment method
+  getProceduresByHospital: (hospitalId, filters = {}) =>
+    api.get(`/inquiries/procedures/${hospitalId}`, { 
+      params: { 
+        category: filters.category, 
+        paymentMethod: filters.paymentMethod 
+      } 
+    }).then(response => response.data),
+
   // Get inquiry statistics
   getInquiryStats: () =>
     api.get('/inquiries/stats/overview').then(response => response.data)

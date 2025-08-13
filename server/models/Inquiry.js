@@ -34,6 +34,11 @@ const inquirySchema = new mongoose.Schema({
     ref: 'Category',
     required: true
   },
+  surgicalProcedure: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Procedure'
+    // Note: Optional field, not required
+  },
   paymentMethod: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PaymentType',

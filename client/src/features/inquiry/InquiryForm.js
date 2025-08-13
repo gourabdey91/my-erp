@@ -10,11 +10,37 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     patientUHID: '',
     hospital: '',
     surgicalCategory: '',
+    surgicalProcedure: '',
     paymentMethod: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [filteredSurgicalCategories, setFilteredSurgicalCategories] = useState([]);
+  const [filteredSurgicalProcedures, setFilteredSurgicalProcedures] = useState([]);
+
+  // Fetch surgical procedures when category or payment method changes
+  const fetchSurgicalProcedures = useCallback(async (hospitalId, categoryId, paymentMethodId) => {
+    if (!hospitalId) {
+      setFilteredSurgicalProcedures([]);
+      return;
+    }
+
+    try {
+      const response = await inquiryAPI.getProceduresByHospital(hospitalId, {
+        category: categoryId,
+        paymentMethod: paymentMethodId
+      });
+      
+      if (response && response.success && response.data) {
+        setFilteredSurgicalProcedures(response.data);
+      } else {
+        setFilteredSurgicalProcedures([]);
+      }
+    } catch (error) {
+      console.error('Error fetching surgical procedures:', error);
+      setFilteredSurgicalProcedures([]);
+    }
+  }, []);
 
   // Fetch surgical categories when hospital changes
   const fetchSurgicalCategories = useCallback(async (hospitalId) => {
@@ -47,6 +73,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientUHID: inquiry.patientUHID || '',
         hospital: inquiry.hospital?._id || inquiry.hospital || '',
         surgicalCategory: inquiry.surgicalCategory?._id || inquiry.surgicalCategory || '',
+        surgicalProcedure: inquiry.surgicalProcedure?._id || inquiry.surgicalProcedure || '',
         paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || ''
       };
       
@@ -55,6 +82,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       // Fetch surgical categories for the hospital
       if (newFormData.hospital) {
         fetchSurgicalCategories(newFormData.hospital);
+        
+        // If both category and payment method are available, fetch procedures
+        if (newFormData.surgicalCategory || newFormData.paymentMethod) {
+          fetchSurgicalProcedures(newFormData.hospital, newFormData.surgicalCategory, newFormData.paymentMethod);
+        }
       }
     } else {
       // New inquiry
@@ -64,27 +96,60 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientUHID: '',
         hospital: '',
         surgicalCategory: '',
+        surgicalProcedure: '',
         paymentMethod: ''
       });
       setFilteredSurgicalCategories([]);
+      setFilteredSurgicalProcedures([]);
     }
-  }, [inquiry, fetchSurgicalCategories]);
+  }, [inquiry, fetchSurgicalCategories, fetchSurgicalProcedures]);
 
-  // Handle input changes - SIMPLE CASCADING LOGIC LIKE MATERIAL MASTER
+  // Handle input changes - CASCADING LOGIC LIKE MATERIAL MASTER
   const handleChange = (field, value) => {
     if (field === 'hospital') {
-      // Hospital changed - clear surgical category and fetch new categories
+      // Hospital changed - clear surgical category, procedure, and fetch new categories
       setFormData(prev => ({
         ...prev,
         hospital: value,
-        surgicalCategory: '' // Clear surgical category when hospital changes
+        surgicalCategory: '', // Clear surgical category when hospital changes
+        surgicalProcedure: ''   // Clear surgical procedure when hospital changes
       }));
       
       // Fetch new surgical categories
       if (value) {
         fetchSurgicalCategories(value);
+        setFilteredSurgicalProcedures([]); // Clear procedures when hospital changes
       } else {
         setFilteredSurgicalCategories([]);
+        setFilteredSurgicalProcedures([]);
+      }
+    } else if (field === 'surgicalCategory') {
+      // Category changed - clear procedure and fetch new procedures
+      setFormData(prev => ({
+        ...prev,
+        surgicalCategory: value,
+        surgicalProcedure: '' // Clear surgical procedure when category changes
+      }));
+      
+      // Fetch new procedures based on category and current payment method
+      if (formData.hospital && (value || formData.paymentMethod)) {
+        fetchSurgicalProcedures(formData.hospital, value, formData.paymentMethod);
+      } else {
+        setFilteredSurgicalProcedures([]);
+      }
+    } else if (field === 'paymentMethod') {
+      // Payment method changed - clear procedure and fetch new procedures
+      setFormData(prev => ({
+        ...prev,
+        paymentMethod: value,
+        surgicalProcedure: '' // Clear surgical procedure when payment method changes
+      }));
+      
+      // Fetch new procedures based on current category and payment method
+      if (formData.hospital && (formData.surgicalCategory || value)) {
+        fetchSurgicalProcedures(formData.hospital, formData.surgicalCategory, value);
+      } else {
+        setFilteredSurgicalProcedures([]);
       }
     } else {
       // Regular field update
@@ -249,6 +314,27 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               {errors.surgicalCategory && (
                 <span className="error-text">{errors.surgicalCategory}</span>
               )}
+            </div>
+
+            <div className="unified-form-field">
+              <label className="unified-form-label">Surgical Procedure</label>
+              <select
+                className="unified-search-input"
+                value={formData.surgicalProcedure}
+                onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
+                disabled={!formData.hospital}
+              >
+                <option value="">
+                  {!formData.hospital ? 'Select Hospital First' : 
+                   (!formData.surgicalCategory && !formData.paymentMethod) ? 'Select Category or Payment Method' : 
+                   'Select Procedure (Optional)'}
+                </option>
+                {filteredSurgicalProcedures.map(procedure => (
+                  <option key={procedure._id} value={procedure._id}>
+                    {procedure.code} - {procedure.name} ({procedure.amount} {procedure.currency})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="unified-form-field">

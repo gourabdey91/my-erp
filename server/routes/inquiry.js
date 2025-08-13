@@ -4,6 +4,7 @@ const Inquiry = require('../models/Inquiry');
 const Hospital = require('../models/Hospital');
 const Category = require('../models/Category');
 const PaymentType = require('../models/PaymentType');
+const Procedure = require('../models/Procedure');
 
 // Get all inquiries with pagination and search
 router.get('/', async (req, res) => {
@@ -43,6 +44,7 @@ router.get('/', async (req, res) => {
       populate: [
         { path: 'hospital', select: 'shortName legalName code' },
         { path: 'surgicalCategory', select: 'description code' },
+        { path: 'surgicalProcedure', select: 'name code amount currency' },
         { path: 'paymentMethod', select: 'description code' },
         { path: 'createdBy', select: 'name email' },
         { path: 'updatedBy', select: 'name email' }
@@ -79,6 +81,7 @@ router.get('/:id', async (req, res) => {
     const inquiry = await Inquiry.findById(req.params.id)
       .populate('hospital', 'shortName legalName code')
       .populate('surgicalCategory', 'description code')
+      .populate('surgicalProcedure', 'name code amount currency')
       .populate('paymentMethod', 'description code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
@@ -118,6 +121,7 @@ router.post('/', async (req, res) => {
     await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
+      { path: 'surgicalProcedure', select: 'name code amount currency' },
       { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' }
     ]);
@@ -170,6 +174,7 @@ router.put('/:id', async (req, res) => {
     ).populate([
       { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
+      { path: 'surgicalProcedure', select: 'name code amount currency' },
       { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' },
       { path: 'updatedBy', select: 'name email' }
@@ -277,6 +282,72 @@ router.get('/hospital/:hospitalId/surgical-categories', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching surgical categories',
+      error: error.message
+    });
+  }
+});
+
+// Get procedures filtered by category and payment method
+router.get('/procedures/:hospitalId', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    const { category, paymentMethod } = req.query;
+    
+    console.log('=== PROCEDURES ENDPOINT ===');
+    console.log('Hospital ID:', hospitalId);
+    console.log('Category:', category);
+    console.log('Payment Method:', paymentMethod);
+    
+    // Get hospital with surgical categories to filter procedures
+    const hospital = await Hospital.findById(hospitalId).populate('surgicalCategories');
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
+    
+    const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id.toString());
+    console.log('Hospital category IDs:', hospitalCategoryIds);
+    
+    // Build procedure filter
+    const procedureFilter = { isActive: true };
+    
+    // Filter by selected category (if specified)
+    if (category && category !== '') {
+      procedureFilter.categoryId = category;
+    } else {
+      // If no specific category, filter by hospital's categories
+      if (hospitalCategoryIds.length > 0) {
+        procedureFilter.categoryId = { $in: hospitalCategoryIds };
+      }
+    }
+    
+    // Filter by payment method (if specified)
+    if (paymentMethod && paymentMethod !== '') {
+      procedureFilter.paymentTypeId = paymentMethod;
+    }
+    
+    console.log('Procedure filter:', procedureFilter);
+    
+    // Fetch procedures with population
+    const procedures = await Procedure.find(procedureFilter)
+      .populate('categoryId', 'code description')
+      .populate('paymentTypeId', 'code description')
+      .select('_id code name amount currency')
+      .sort({ name: 1 });
+    
+    console.log('Found procedures:', procedures.length);
+    
+    res.json({
+      success: true,
+      data: procedures
+    });
+  } catch (error) {
+    console.error('Error fetching procedures:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching procedures',
       error: error.message
     });
   }

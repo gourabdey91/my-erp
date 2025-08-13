@@ -313,6 +313,7 @@ const Inquiry = () => {
                   <th>Patient UHID</th>
                   <th>Hospital</th>
                   <th>Surgical Category</th>
+                  <th>Surgical Procedure</th>
                   <th>Payment Method</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -327,6 +328,15 @@ const Inquiry = () => {
                     <td data-label="Patient UHID">{inquiry.patientUHID}</td>
                     <td data-label="Hospital">{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
                     <td data-label="Surgical Category">{inquiry.surgicalCategory?.description}</td>
+                    <td data-label="Surgical Procedure">
+                      {inquiry.surgicalProcedure ? (
+                        <span title={`${inquiry.surgicalProcedure.amount} ${inquiry.surgicalProcedure.currency}`}>
+                          {inquiry.surgicalProcedure.code} - {inquiry.surgicalProcedure.name}
+                        </span>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
                     <td data-label="Payment Method">{inquiry.paymentMethod?.description}</td>
                     <td data-label="Status">
                       <span className={`status-badge ${inquiry.isActive ? 'status-active' : 'status-inactive'}`}>
