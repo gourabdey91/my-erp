@@ -89,8 +89,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   };
 
   // Update cascading dropdowns when hospital, payment method, or surgeon changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const { hospital, surgicalCategory, paymentMethod } = formData;
+    const { hospital, surgicalCategory } = formData;
     
     // Fetch surgical categories filtered by selected hospital
     if (hospital) {
@@ -119,9 +120,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       setCascadingData(prev => ({ ...prev, surgeons: [] }));
       setFormData(prev => ({ ...prev, surgeon: '', consultingDoctor: '' }));
     }
-  }, [formData.hospital, formData.surgicalCategory, formData.paymentMethod, fetchCascadingData]);
+  }, [formData.hospital, formData.surgicalCategory, fetchCascadingData, setCascadingData, setFormData]);
 
   // Update consulting doctors when surgeon changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const { surgeon } = formData;
     const availableConsultingDoctors = [];
@@ -153,7 +155,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
     
     setCascadingData(prev => ({ ...prev, consultingDoctors: availableConsultingDoctors }));
-  }, [formData.surgeon, dropdownData.doctors, formData.consultingDoctor]);
+  }, [formData.surgeon, dropdownData.doctors, formData.consultingDoctor, setCascadingData]);
 
   const validateForm = () => {
     const newErrors = {};
