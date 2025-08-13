@@ -261,7 +261,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 <option value="">Select Payment Method</option>
                 {dropdownData.paymentMethods?.map(payment => (
                   <option key={payment._id} value={payment._id}>
-                    {payment.name}
+                    {payment.description}
                   </option>
                 ))}
               </select>
