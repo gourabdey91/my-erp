@@ -25,21 +25,16 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
 
   // Cascading dropdown state
   const [cascadingData, setCascadingData] = useState({
+    surgicalCategories: [],
     procedures: [],
     surgeons: [],
     consultingDoctors: []
   });
   const [cascadingLoading, setCascadingLoading] = useState({
+    surgicalCategories: false,
     procedures: false,
     surgeons: false,
     consultingDoctors: false
-  });
-  
-  // New consulting doctor state
-  const [showNewDoctorForm, setShowNewDoctorForm] = useState(false);
-  const [newDoctorData, setNewDoctorData] = useState({
-    name: '',
-    specialization: ''
   });
 
   // Initialize form data when inquiry changes
@@ -93,43 +88,72 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   };
 
-  // Update cascading dropdowns when hospital or surgical category changes
+  // Update cascading dropdowns when hospital, payment method, or surgeon changes
   useEffect(() => {
-    const { hospital, surgicalCategory } = formData;
+    const { hospital, surgicalCategory, paymentMethod } = formData;
     
-    if (surgicalCategory) {
-      // Fetch procedures filtered by surgical category
-      fetchCascadingData('procedures', { surgicalCategoryId: surgicalCategory });
+    // Fetch surgical categories filtered by selected hospital
+    if (hospital) {
+      fetchCascadingData('surgical-categories', { hospitalId: hospital });
+    } else {
+      setCascadingData(prev => ({ ...prev, surgicalCategories: [] }));
+      setFormData(prev => ({ ...prev, surgicalCategory: '', surgicalProcedure: '' }));
+    }
+    
+    // Fetch procedures filtered by selected payment method
+    if (paymentMethod) {
+      fetchCascadingData('procedures', { paymentMethodId: paymentMethod });
     } else {
       setCascadingData(prev => ({ ...prev, procedures: [] }));
       setFormData(prev => ({ ...prev, surgicalProcedure: '' }));
     }
 
+    // Fetch surgeons filtered by hospital and surgical category
     if (hospital) {
-      // Fetch surgeons filtered by hospital and surgical category
       const surgeonFilters = { hospitalId: hospital };
       if (surgicalCategory) {
         surgeonFilters.surgicalCategoryId = surgicalCategory;
       }
       fetchCascadingData('surgeons', surgeonFilters);
-
-      // Fetch consulting doctors filtered by hospital
-      fetchCascadingData('consulting-doctors', { hospitalId: hospital });
     } else {
-      setCascadingData(prev => ({ ...prev, surgeons: [], consultingDoctors: [] }));
+      setCascadingData(prev => ({ ...prev, surgeons: [] }));
       setFormData(prev => ({ ...prev, surgeon: '', consultingDoctor: '' }));
     }
-  }, [formData.hospital, formData.surgicalCategory]);
+  }, [formData.hospital, formData.surgicalCategory, formData.paymentMethod, fetchCascadingData]);
 
-  // Auto-set consulting doctor if only one available and different from surgeon
+  // Update consulting doctors when surgeon changes
   useEffect(() => {
     const { surgeon } = formData;
-    const { consultingDoctors } = cascadingData;
+    const availableConsultingDoctors = [];
     
-    if (consultingDoctors.length === 1 && consultingDoctors[0]._id !== surgeon) {
-      setFormData(prev => ({ ...prev, consultingDoctor: consultingDoctors[0]._id }));
+    if (surgeon && dropdownData.doctors) {
+      // Add selected surgeon to consulting doctor options
+      const selectedSurgeon = dropdownData.doctors.find(d => d._id === surgeon);
+      if (selectedSurgeon) {
+        availableConsultingDoctors.push(selectedSurgeon);
+        
+        // Auto-select the surgeon as consulting doctor by default
+        if (formData.consultingDoctor !== surgeon) {
+          setFormData(prev => ({ ...prev, consultingDoctor: surgeon }));
+        }
+      }
+      
+      // Add doctors who have consulting doctor assignments to the selected surgeon
+      const assignedConsultingDoctors = dropdownData.doctors.filter(doctor => 
+        doctor.consultingDoctor === surgeon || 
+        (doctor.consultingDoctors && doctor.consultingDoctors.includes(surgeon))
+      );
+      
+      // Merge without duplicates
+      assignedConsultingDoctors.forEach(doctor => {
+        if (!availableConsultingDoctors.find(d => d._id === doctor._id)) {
+          availableConsultingDoctors.push(doctor);
+        }
+      });
     }
-  }, [cascadingData.consultingDoctors, formData.surgeon]);
+    
+    setCascadingData(prev => ({ ...prev, consultingDoctors: availableConsultingDoctors }));
+  }, [formData.surgeon, dropdownData.doctors, formData.consultingDoctor]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -152,42 +176,27 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   };
 
   const handleChange = (field, value) => {
-    // Handle special case for adding new consulting doctor
-    if (field === 'consultingDoctor' && value === '__other__') {
-      setShowNewDoctorForm(true);
-      return;
-    }
-    
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
       // Clear dependent fields when parent changes
       if (field === 'hospital') {
-        newData.surgeon = '';
-        newData.consultingDoctor = '';
-        if (!value) {
-          newData.surgicalProcedure = '';
-        }
-      }
-      
-      if (field === 'surgicalCategory') {
+        newData.surgicalCategory = '';
         newData.surgicalProcedure = '';
         newData.surgeon = '';
-      }
-      
-      if (field === 'surgeon' && newData.consultingDoctor === value) {
         newData.consultingDoctor = '';
+      } else if (field === 'paymentMethod') {
+        newData.surgicalProcedure = '';
+      } else if (field === 'surgeon') {
+        // Consulting doctor will be auto-set in useEffect
       }
       
       return newData;
     });
     
-    // Clear error when user starts typing
+    // Clear errors when user starts changing values
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -322,10 +331,17 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               className="unified-form-control"
               value={formData.surgicalCategory}
               onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-              disabled={loading}
+              disabled={loading || cascadingLoading.surgicalCategories || !formData.hospital}
             >
-              <option value="">Select Category</option>
-              {dropdownData.surgicalCategories?.map(category => (
+              <option value="">
+                {!formData.hospital 
+                  ? "Select Hospital First" 
+                  : cascadingLoading.surgicalCategories 
+                    ? "Loading..." 
+                    : "Select Category"
+                }
+              </option>
+              {cascadingData.surgicalCategories?.map(category => (
                 <option key={category._id} value={category._id}>
                   {category.description}
                 </option>
@@ -364,11 +380,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               className="unified-form-control"
               value={formData.surgicalProcedure}
               onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-              disabled={loading || cascadingLoading.procedures || !formData.surgicalCategory}
+              disabled={loading || cascadingLoading.procedures || !formData.paymentMethod}
             >
               <option value="">
-                {!formData.surgicalCategory 
-                  ? "Select Category First" 
+                {!formData.paymentMethod 
+                  ? "Select Payment Method First" 
                   : cascadingLoading.procedures 
                     ? "Loading..." 
                     : "Select Procedure"
@@ -426,22 +442,21 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               className="unified-form-control"
               value={formData.consultingDoctor}
               onChange={(e) => handleChange('consultingDoctor', e.target.value)}
-              disabled={loading || cascadingLoading.consultingDoctors || !formData.hospital}
+              disabled={loading || !formData.surgeon}
             >
               <option value="">
-                {!formData.hospital 
-                  ? "Select Hospital First" 
-                  : cascadingLoading.consultingDoctors 
-                    ? "Loading..." 
-                    : "Select Consulting Doctor"
+                {!formData.surgeon 
+                  ? "Select Surgeon First" 
+                  : "Select Consulting Doctor"
                 }
               </option>
               {cascadingData.consultingDoctors?.map(doctor => (
                 <option key={doctor._id} value={doctor._id}>
-                  {doctor.name} {doctor.surgicalCategories?.length > 0 && `(${doctor.surgicalCategories.map(cat => cat.description).join(', ')})`}
+                  {doctor.name}
+                  {doctor._id === formData.surgeon ? ' (Selected Surgeon)' : ''}
+                  {doctor.surgicalCategories?.length > 0 && ` (${doctor.surgicalCategories.map(cat => cat.description).join(', ')})`}
                 </option>
               ))}
-              <option value="__other__">+ Add New Consulting Doctor</option>
             </select>
           </FormField>
         </div>
@@ -479,83 +494,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           disabled={loading}
         />
       </div>
-      
-      {/* New Doctor Modal */}
-      {showNewDoctorForm && (
-        <div className="unified-modal-overlay">
-          <div className="unified-modal">
-            <div className="unified-modal-header">
-              <h3>Add New Consulting Doctor</h3>
-              <button
-                type="button"
-                className="unified-modal-close"
-                onClick={() => {
-                  setShowNewDoctorForm(false);
-                  setNewDoctorData({ name: '', specialization: '' });
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div className="unified-modal-body">
-              <FormField
-                label="Doctor Name"
-                required
-                className="inquiry-field-full"
-              >
-                <input
-                  type="text"
-                  className="unified-form-control"
-                  value={newDoctorData.name}
-                  onChange={(e) => setNewDoctorData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter doctor full name"
-                />
-              </FormField>
-              
-              <FormField
-                label="Specialization"
-                className="inquiry-field-full"
-              >
-                <input
-                  type="text"
-                  className="unified-form-control"
-                  value={newDoctorData.specialization}
-                  onChange={(e) => setNewDoctorData(prev => ({ ...prev, specialization: e.target.value }))}
-                  placeholder="Enter specialization (optional)"
-                />
-              </FormField>
-            </div>
-            <div className="unified-modal-footer">
-              <button
-                type="button"
-                className="unified-button-secondary"
-                onClick={() => {
-                  setShowNewDoctorForm(false);
-                  setNewDoctorData({ name: '', specialization: '' });
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="unified-button-primary"
-                onClick={() => {
-                  if (newDoctorData.name.trim()) {
-                    // For now, just set the name as the value
-                    // In a real app, you'd create the doctor record first
-                    setFormData(prev => ({ ...prev, consultingDoctor: newDoctorData.name }));
-                    setShowNewDoctorForm(false);
-                    setNewDoctorData({ name: '', specialization: '' });
-                  }
-                }}
-                disabled={!newDoctorData.name.trim()}
-              >
-                Add Doctor
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </TransactionForm>
   );
 };

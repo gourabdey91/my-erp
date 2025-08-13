@@ -129,18 +129,63 @@ router.get('/dropdown-data', async (req, res) => {
 router.get('/cascading-data/:type', async (req, res) => {
   try {
     const { type } = req.params;
-    const { hospitalId, surgicalCategoryId } = req.query;
+    const { hospitalId, surgicalCategoryId, paymentMethodId } = req.query;
 
     let data = [];
 
     switch (type) {
+      case 'surgical-categories':
+        if (hospitalId) {
+          // Get surgical categories assigned to the hospital through DoctorAssignment
+          const assignments = await DoctorAssignment.find({
+            hospital: hospitalId,
+            isActive: true,
+            validityFrom: { $lte: new Date() },
+            validityTo: { $gte: new Date() }
+          })
+          .populate({
+            path: 'doctor',
+            select: 'surgicalCategories',
+            populate: {
+              path: 'surgicalCategories',
+              select: 'description'
+            }
+          })
+          .lean();
+
+          // Extract unique surgical categories
+          const categoryMap = new Map();
+          assignments.forEach(assignment => {
+            if (assignment.doctor && assignment.doctor.surgicalCategories) {
+              assignment.doctor.surgicalCategories.forEach(category => {
+                if (category && category._id) {
+                  categoryMap.set(category._id.toString(), category);
+                }
+              });
+            }
+          });
+          
+          data = Array.from(categoryMap.values()).sort((a, b) => a.description.localeCompare(b.description));
+        } else {
+          // If no hospital selected, return empty array
+          data = [];
+        }
+        break;
+
       case 'procedures':
         const procedureFilter = { isActive: true };
         if (surgicalCategoryId) {
           procedureFilter.surgicalCategory = surgicalCategoryId;
         }
+        if (paymentMethodId) {
+          // Assuming procedures have paymentMethod field or paymentMethods array
+          procedureFilter.$or = [
+            { paymentMethod: paymentMethodId },
+            { paymentMethods: paymentMethodId }
+          ];
+        }
         data = await Procedure.find(procedureFilter)
-          .select('name description surgicalCategory')
+          .select('name description surgicalCategory paymentMethod paymentMethods')
           .populate('surgicalCategory', 'description')
           .sort({ name: 1 })
           .lean();
@@ -237,7 +282,8 @@ router.get('/cascading-data/:type', async (req, res) => {
       data,
       filters: {
         hospitalId,
-        surgicalCategoryId
+        surgicalCategoryId,
+        paymentMethodId
       }
     });
 
