@@ -49,6 +49,10 @@
   grid-column: span 1;
 }
 
+.inquiry-field-responsive {
+  grid-column: span 1;
+}
+
 /* Override grid for different field counts */
 .inquiry-form-grid:has(.inquiry-field-third) {
   grid-template-columns: repeat(3, 1fr);
@@ -56,6 +60,44 @@
 
 .inquiry-form-grid:has(.inquiry-field-fifth) {
   grid-template-columns: repeat(5, 1fr);
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .inquiry-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  
+  .inquiry-field-full,
+  .inquiry-field-half,
+  .inquiry-field-third,
+  .inquiry-field-fifth,
+  .inquiry-field-responsive {
+    grid-column: 1 / -1;
+  }
+  
+  .inquiry-form-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .inquiry-section-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inquiry-form-section {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .unified-form-control {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevent zoom on mobile */
+  }
 }
 
 /* Unified Form Controls */

@@ -224,16 +224,16 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       submitLabel={inquiry ? 'Update' : 'Create'}
       isLoading={loading}
     >
-      {/* Group 1: Date, Hospital, Status */}
+      {/* Basic Information */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Group 1</h3>
-        <div className="inquiry-form-grid">
+        <h3 className="inquiry-section-title">Basic Information</h3>
+        <div className="inquiry-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {/* Inquiry Date */}
           <FormField
-            label="Date"
+            label="Inquiry Date"
             required
             error={errors.inquiryDate}
-            className="inquiry-field-third"
+            className="inquiry-field-responsive"
           >
             <input
               type="date"
@@ -249,7 +249,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             label="Hospital"
             required
             error={errors.hospital}
-            className="inquiry-field-third"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
@@ -265,39 +265,19 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               ))}
             </select>
           </FormField>
-
-          {/* Status */}
-          <FormField
-            label="Status"
-            error={errors.status}
-            className="inquiry-field-third"
-          >
-            <select
-              className="unified-form-control"
-              value={formData.status}
-              onChange={(e) => handleChange('status', e.target.value)}
-              disabled={loading}
-            >
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Scheduled">Scheduled</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </FormField>
         </div>
       </div>
 
-      {/* Group 2: Patient Name, UHID */}
+      {/* Patient Information */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Group 2</h3>
-        <div className="inquiry-form-grid">
+        <h3 className="inquiry-section-title">Patient Information</h3>
+        <div className="inquiry-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {/* Patient Name */}
           <FormField
             label="Patient Name"
             required
             error={errors.patientName}
-            className="inquiry-field-half"
+            className="inquiry-field-responsive"
           >
             <input
               type="text"
@@ -311,10 +291,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
 
           {/* Patient UHID */}
           <FormField
-            label="UHID"
+            label="Patient UHID"
             required
             error={errors.patientUHID}
-            className="inquiry-field-half"
+            className="inquiry-field-responsive"
           >
             <input
               type="text"
@@ -328,15 +308,15 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         </div>
       </div>
 
-      {/* Group 3: Surgical Category, Payment Types, Surgical Procedure, Surgeon, Consulting Doctor */}
+      {/* Medical & Payment Information */}
       <div className="inquiry-form-section">
-        <h3 className="inquiry-section-title">Group 3</h3>
-        <div className="inquiry-form-grid">
+        <h3 className="inquiry-section-title">Medical & Payment Information</h3>
+        <div className="inquiry-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
           {/* Surgical Category */}
           <FormField
             label="Surgical Category"
             error={errors.surgicalCategory}
-            className="inquiry-field-fifth"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
@@ -357,7 +337,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           <FormField
             label="Payment Method"
             error={errors.paymentMethod}
-            className="inquiry-field-fifth"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
@@ -378,7 +358,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           <FormField
             label="Surgical Procedure"
             error={errors.surgicalProcedure}
-            className="inquiry-field-fifth"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
@@ -401,12 +381,18 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               ))}
             </select>
           </FormField>
+        </div>
+      </div>
 
+      {/* Doctor Information */}
+      <div className="inquiry-form-section">
+        <h3 className="inquiry-section-title">Doctor Information</h3>
+        <div className="inquiry-form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {/* Surgeon */}
           <FormField
             label="Surgeon"
             error={errors.surgeon}
-            className="inquiry-field-fifth"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
@@ -434,7 +420,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           <FormField
             label="Consulting Doctor"
             error={errors.consultingDoctor}
-            className="inquiry-field-fifth"
+            className="inquiry-field-responsive"
           >
             <select
               className="unified-form-control"
