@@ -44,6 +44,19 @@ const inquirySchema = new mongoose.Schema({
     ref: 'PaymentType',
     required: true
   },
+  limit: {
+    amount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    currency: {
+      type: String,
+      required: true,
+      default: 'INR',
+      enum: ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD']
+    }
+  },
   isActive: {
     type: Boolean,
     default: true

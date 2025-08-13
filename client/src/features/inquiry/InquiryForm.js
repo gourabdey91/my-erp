@@ -11,7 +11,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     hospital: '',
     surgicalCategory: '',
     surgicalProcedure: '',
-    paymentMethod: ''
+    paymentMethod: '',
+    limit: {
+      amount: '',
+      currency: 'INR'
+    }
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -74,7 +78,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         hospital: inquiry.hospital?._id || inquiry.hospital || '',
         surgicalCategory: inquiry.surgicalCategory?._id || inquiry.surgicalCategory || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || inquiry.surgicalProcedure || '',
-        paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || ''
+        paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || '',
+        limit: {
+          amount: inquiry.limit?.amount || '',
+          currency: inquiry.limit?.currency || 'INR'
+        }
       };
       
       setFormData(newFormData);
@@ -97,7 +105,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         hospital: '',
         surgicalCategory: '',
         surgicalProcedure: '',
-        paymentMethod: ''
+        paymentMethod: '',
+        limit: {
+          amount: '',
+          currency: 'INR'
+        }
       });
       setFilteredSurgicalCategories([]);
       setFilteredSurgicalProcedures([]);
@@ -151,6 +163,43 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       } else {
         setFilteredSurgicalProcedures([]);
       }
+    } else if (field === 'surgicalProcedure') {
+      // Surgical procedure changed - update limit from selected procedure
+      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === value);
+      
+      setFormData(prev => ({
+        ...prev,
+        surgicalProcedure: value,
+        limit: selectedProcedure ? {
+          amount: selectedProcedure.amount,
+          currency: selectedProcedure.currency
+        } : {
+          amount: '',
+          currency: 'INR'
+        }
+      }));
+    } else if (field === 'limit.amount') {
+      // Only allow manual edit of limit if no procedure is selected
+      if (!formData.surgicalProcedure) {
+        setFormData(prev => ({
+          ...prev,
+          limit: {
+            ...prev.limit,
+            amount: value
+          }
+        }));
+      }
+    } else if (field === 'limit.currency') {
+      // Only allow manual edit of limit currency if no procedure is selected
+      if (!formData.surgicalProcedure) {
+        setFormData(prev => ({
+          ...prev,
+          limit: {
+            ...prev.limit,
+            currency: value
+          }
+        }));
+      }
     } else {
       // Regular field update
       setFormData(prev => ({
@@ -194,6 +243,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     if (!formData.paymentMethod) {
       newErrors.paymentMethod = 'Payment method is required';
     }
+    if (!formData.limit.amount || formData.limit.amount <= 0) {
+      newErrors.limit = 'Limit amount is required and must be greater than 0';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -210,7 +262,16 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     setLoading(true);
 
     try {
-      await onSubmit(formData);
+      // Clean up form data - convert empty strings to null for ObjectId fields
+      const cleanedFormData = {
+        ...formData,
+        hospital: formData.hospital || null,
+        surgicalCategory: formData.surgicalCategory || null,
+        surgicalProcedure: formData.surgicalProcedure || null,
+        paymentMethod: formData.paymentMethod || null
+      };
+      
+      await onSubmit(cleanedFormData);
     } catch (error) {
       console.error('Error submitting inquiry:', error);
     } finally {
@@ -360,6 +421,45 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Limit Amount *</label>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <input
+                      type="number"
+                      className="unified-search-input"
+                      placeholder="Enter limit amount"
+                      value={formData.limit.amount}
+                      onChange={(e) => handleChange('limit.amount', e.target.value)}
+                      disabled={!!formData.surgicalProcedure}
+                      min="0"
+                      step="0.01"
+                      style={{ flex: '2' }}
+                    />
+                    <select
+                      className="unified-search-input"
+                      value={formData.limit.currency}
+                      onChange={(e) => handleChange('limit.currency', e.target.value)}
+                      disabled={!!formData.surgicalProcedure}
+                      style={{ flex: '1' }}
+                    >
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                      <option value="AUD">AUD</option>
+                      <option value="CAD">CAD</option>
+                    </select>
+                  </div>
+                  {formData.surgicalProcedure && (
+                    <small style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                      Limit is automatically set from selected procedure
+                    </small>
+                  )}
+                  {errors.limit && (
+                    <span className="unified-error-text">{errors.limit}</span>
+                  )}
                 </div>
               </div>
             </div>

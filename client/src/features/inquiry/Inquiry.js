@@ -315,6 +315,7 @@ const Inquiry = () => {
                   <th>Surgical Category</th>
                   <th>Surgical Procedure</th>
                   <th>Payment Method</th>
+                  <th>Limit</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -340,6 +341,15 @@ const Inquiry = () => {
                       )}
                     </td>
                     <td data-label="Payment Method">{inquiry.paymentMethod?.description}</td>
+                    <td data-label="Limit">
+                      {inquiry.limit?.amount ? (
+                        <span className="unified-amount-text">
+                          {parseFloat(inquiry.limit.amount).toLocaleString('en-IN')} {inquiry.limit.currency}
+                        </span>
+                      ) : (
+                        <span className="unified-text-muted">-</span>
+                      )}
+                    </td>
                     <td data-label="Status">
                       <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
                         {inquiry.isActive ? 'Active' : 'Inactive'}

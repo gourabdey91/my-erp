@@ -195,6 +195,12 @@
   font-style: italic;
 }
 
+.unified-amount-text {
+  color: var(--success-color);
+  font-weight: 600;
+  font-family: monospace;
+}
+
 /* ========== Loading States ========== */
 .unified-loading {
   text-align: center;
