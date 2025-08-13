@@ -120,10 +120,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       setCascadingData(prev => ({ ...prev, surgeons: [] }));
       setFormData(prev => ({ ...prev, surgeon: '', consultingDoctor: '' }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.hospital, formData.surgicalCategory, fetchCascadingData, setCascadingData, setFormData]);
 
   // Update consulting doctors when surgeon changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const { surgeon } = formData;
     const availableConsultingDoctors = [];
@@ -155,6 +155,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
     
     setCascadingData(prev => ({ ...prev, consultingDoctors: availableConsultingDoctors }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.surgeon, dropdownData.doctors, formData.consultingDoctor, setCascadingData]);
 
   const validateForm = () => {
