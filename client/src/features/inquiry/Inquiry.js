@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inquiryAPI } from '../../services/inquiryAPI';
+import { hospitalAPI } from '../hospitals/services/hospitalAPI';
+import { categoryAPI } from '../categories/services/categoryAPI';
+import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import InquiryForm from './InquiryForm';
+import '../../shared/styles/unified-design.css';
 import './Inquiry.css';
 
 const Inquiry = () => {
@@ -27,26 +31,34 @@ const Inquiry = () => {
   const fetchDropdownData = useCallback(async () => {
     try {
       const [hospitalsRes, categoriesRes, paymentMethodsRes] = await Promise.all([
-        fetch('/api/hospitals?page=1&limit=1000'),
-        fetch('/api/categories?page=1&limit=1000'),
-        fetch('/api/payment-types?page=1&limit=1000')
+        hospitalAPI.getAllHospitals(),
+        categoryAPI.getAll({ page: 1, limit: 1000 }),
+        paymentTypeAPI.getAll({ page: 1, limit: 1000 })
       ]);
 
-      const [hospitals, categories, paymentMethods] = await Promise.all([
-        hospitalsRes.json(),
-        categoriesRes.json(),
-        paymentMethodsRes.json()
-      ]);
+      console.log('Dropdown data fetched successfully');
+
+      const hospitalsData = Array.isArray(hospitalsRes) ? hospitalsRes : (hospitalsRes.data || []);
 
       setDropdownData({
-        hospitals: hospitals.success ? hospitals.data : [],
-        surgicalCategories: categories.success ? categories.data : [],
-        paymentMethods: paymentMethods.success ? paymentMethods.data : []
+        hospitals: hospitalsData,
+        surgicalCategories: categoriesRes.success ? categoriesRes.data : [],
+        paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : []
       });
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
+      setDropdownData({
+        hospitals: [],
+        surgicalCategories: [],
+        paymentMethods: []
+      });
     }
   }, []);
+
+  // Debug dropdown data changes
+  useEffect(() => {
+    console.log('Dropdown data updated:', dropdownData);
+  }, [dropdownData]);
 
   // Fetch inquiries with current filters and pagination
   const fetchInquiries = useCallback(async () => {
@@ -103,10 +115,14 @@ const Inquiry = () => {
     try {
       setLoading(true);
       
+      console.log('Submitting form data:', formData);
+      
       if (editingInquiry) {
-        await inquiryAPI.updateInquiry(editingInquiry._id, formData);
+        const result = await inquiryAPI.updateInquiry(editingInquiry._id, formData);
+        console.log('Update result:', result);
       } else {
-        await inquiryAPI.createInquiry(formData);
+        const result = await inquiryAPI.createInquiry(formData);
+        console.log('Create result:', result);
       }
       
       setShowForm(false);
@@ -114,6 +130,8 @@ const Inquiry = () => {
       fetchInquiries();
     } catch (error) {
       console.error('Error saving inquiry:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      alert(`Error saving inquiry: ${error.response?.data?.message || error.message}`);
       throw error;
     } finally {
       setLoading(false);
@@ -167,56 +185,56 @@ const Inquiry = () => {
   }
 
   return (
-    <div className="inquiry-container">
+    <div className="unified-container">
       {/* Header */}
-      <div className="inquiry-header">
-        <h1 className="inquiry-title">Inquiries</h1>
-        <div className="inquiry-actions">
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>Inquiries</h1>
+            <p>Manage patient inquiries with surgical categories filtered by hospital assignments. Track inquiry details, patient information, and payment methods.</p>
+          </div>
           <button
-            className="btn-primary"
+            className="unified-btn unified-btn-primary"
             onClick={() => setShowForm(true)}
-          >
-            Add New Inquiry
-          </button>
-          <button
-            className="btn-secondary"
-            onClick={fetchInquiries}
             disabled={loading}
           >
-            Refresh
+            Add New Inquiry
           </button>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="inquiry-search-section">
-        <div className="inquiry-search-grid">
-          <div>
+      <div className="unified-filters">
+        <div className="unified-filters-row">
+          <div className="unified-filter-group">
+            <label className="unified-form-label">Search Inquiries</label>
             <input
               type="text"
               placeholder="Search by inquiry number, patient name, or UHID..."
-              className="inquiry-search-input"
+              className="unified-search-input"
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-          <div>
+          <div className="unified-filter-group">
+            <label className="unified-form-label">Hospital</label>
             <select
-              className="inquiry-filter-select"
+              className="unified-form-control"
               value={filters.hospital}
               onChange={(e) => handleFilterChange('hospital', e.target.value)}
             >
               <option value="">All Hospitals</option>
               {dropdownData.hospitals.map(hospital => (
                 <option key={hospital._id} value={hospital._id}>
-                  {hospital.name}
+                  {hospital.shortName || hospital.legalName}
                 </option>
               ))}
             </select>
           </div>
-          <div>
+          <div className="unified-filter-group">
+            <label className="unified-form-label">Surgical Category</label>
             <select
-              className="inquiry-filter-select"
+              className="unified-form-control"
               value={filters.surgicalCategory}
               onChange={(e) => handleFilterChange('surgicalCategory', e.target.value)}
             >
@@ -228,9 +246,10 @@ const Inquiry = () => {
               ))}
             </select>
           </div>
-          <div>
+          <div className="unified-filter-group">
+            <label className="unified-form-label">Payment Method</label>
             <select
-              className="inquiry-filter-select"
+              className="unified-form-control"
               value={filters.paymentMethod}
               onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
             >
@@ -242,34 +261,41 @@ const Inquiry = () => {
               ))}
             </select>
           </div>
-          <div>
-            <button
-              className="btn-secondary"
-              onClick={() => {
-                setFilters({
-                  hospital: '',
-                  surgicalCategory: '',
-                  paymentMethod: ''
-                });
-                setSearchTerm('');
-                setCurrentPage(1);
-              }}
-            >
-              Clear
-            </button>
-          </div>
+        </div>
+        <div className="unified-filters-row" style={{ gridTemplateColumns: 'auto auto 1fr', justifyContent: 'start' }}>
+          <button
+            className="unified-btn unified-btn-secondary unified-btn-sm"
+            onClick={() => {
+              setFilters({
+                hospital: '',
+                surgicalCategory: '',
+                paymentMethod: ''
+              });
+              setSearchTerm('');
+              setCurrentPage(1);
+            }}
+          >
+            Clear Filters
+          </button>
+          <button
+            className="unified-btn unified-btn-primary unified-btn-sm"
+            onClick={fetchInquiries}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="inquiry-table-container">
+      <div className="unified-content">
         {loading ? (
-          <div className="inquiry-loading">Loading inquiries...</div>
+          <div className="unified-loading">Loading inquiries...</div>
         ) : inquiries.length === 0 ? (
-          <div className="inquiry-empty-state">
-            <div className="inquiry-empty-icon">🔍</div>
-            <div className="inquiry-empty-message">No inquiries found</div>
-            <div className="inquiry-empty-submessage">
+          <div className="unified-empty-state">
+            <div className="unified-empty-icon">🔍</div>
+            <div className="unified-empty-message">No inquiries found</div>
+            <div className="unified-empty-submessage">
               {searchTerm || Object.values(filters).some(f => f) 
                 ? 'Try adjusting your search or filters' 
                 : 'Get started by creating your first inquiry'
@@ -277,8 +303,8 @@ const Inquiry = () => {
             </div>
           </div>
         ) : (
-          <>
-            <table className="inquiry-table">
+          <div className="data-table-container">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>Inquiry #</th>
@@ -295,29 +321,29 @@ const Inquiry = () => {
               <tbody>
                 {inquiries.map(inquiry => (
                   <tr key={inquiry._id}>
-                    <td>{inquiry.inquiryNumber}</td>
-                    <td>{formatDate(inquiry.inquiryDate)}</td>
-                    <td>{inquiry.patientName}</td>
-                    <td>{inquiry.patientUHID}</td>
-                    <td>{inquiry.hospital?.name}</td>
-                    <td>{inquiry.surgicalCategory?.description}</td>
-                    <td>{inquiry.paymentMethod?.name}</td>
-                    <td>
-                      <span className={`inquiry-status-${inquiry.isActive ? 'active' : 'inactive'}`}>
+                    <td data-label="Inquiry #">{inquiry.inquiryNumber}</td>
+                    <td data-label="Date">{formatDate(inquiry.inquiryDate)}</td>
+                    <td data-label="Patient Name">{inquiry.patientName}</td>
+                    <td data-label="Patient UHID">{inquiry.patientUHID}</td>
+                    <td data-label="Hospital">{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
+                    <td data-label="Surgical Category">{inquiry.surgicalCategory?.description}</td>
+                    <td data-label="Payment Method">{inquiry.paymentMethod?.description}</td>
+                    <td data-label="Status">
+                      <span className={`status-badge ${inquiry.isActive ? 'status-active' : 'status-inactive'}`}>
                         {inquiry.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td>
-                      <div className="inquiry-action-buttons">
+                    <td data-label="Actions">
+                      <div className="action-buttons">
                         <button
-                          className="inquiry-action-btn inquiry-action-btn-edit"
+                          className="btn btn-sm btn-outline-primary"
                           onClick={() => handleEdit(inquiry)}
                           title="Edit"
                         >
                           Edit
                         </button>
                         <button
-                          className="inquiry-action-btn inquiry-action-btn-delete"
+                          className="btn btn-sm btn-outline-danger"
                           onClick={() => handleDelete(inquiry._id)}
                           title="Delete"
                         >
@@ -331,13 +357,13 @@ const Inquiry = () => {
             </table>
 
             {/* Pagination */}
-            <div className="inquiry-pagination">
-              <div className="inquiry-pagination-info">
+            <div className="data-table-pagination">
+              <div className="pagination-info">
                 Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} inquiries
               </div>
-              <div className="inquiry-pagination-controls">
+              <div className="pagination-controls">
                 <button
-                  className="inquiry-pagination-btn"
+                  className="btn btn-sm btn-outline-primary"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => prev - 1)}
                 >
@@ -353,7 +379,7 @@ const Inquiry = () => {
                   return (
                     <button
                       key={page}
-                      className={`inquiry-pagination-btn ${currentPage === page ? 'active' : ''}`}
+                      className={`btn btn-sm ${currentPage === page ? 'btn-primary' : 'btn-outline-primary'}`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}
@@ -362,7 +388,7 @@ const Inquiry = () => {
                 })}
                 
                 <button
-                  className="inquiry-pagination-btn"
+                  className="btn btn-sm btn-outline-primary"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => prev + 1)}
                 >
@@ -370,7 +396,7 @@ const Inquiry = () => {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -41,9 +41,9 @@ router.get('/', async (req, res) => {
       limit: parseInt(limit),
       sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
       populate: [
-        { path: 'hospital', select: 'name code' },
+        { path: 'hospital', select: 'shortName legalName code' },
         { path: 'surgicalCategory', select: 'description code' },
-        { path: 'paymentMethod', select: 'name code' },
+        { path: 'paymentMethod', select: 'description code' },
         { path: 'createdBy', select: 'name email' },
         { path: 'updatedBy', select: 'name email' }
       ]
@@ -77,9 +77,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id)
-      .populate('hospital', 'name code')
+      .populate('hospital', 'shortName legalName code')
       .populate('surgicalCategory', 'description code')
-      .populate('paymentMethod', 'name code')
+      .populate('paymentMethod', 'description code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
 
@@ -116,9 +116,9 @@ router.post('/', async (req, res) => {
     await inquiry.save();
 
     await inquiry.populate([
-      { path: 'hospital', select: 'name code' },
+      { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
-      { path: 'paymentMethod', select: 'name code' },
+      { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' }
     ]);
 
@@ -168,9 +168,9 @@ router.put('/:id', async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     ).populate([
-      { path: 'hospital', select: 'name code' },
+      { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
-      { path: 'paymentMethod', select: 'name code' },
+      { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' },
       { path: 'updatedBy', select: 'name email' }
     ]);
@@ -244,17 +244,34 @@ router.delete('/:id', async (req, res) => {
 router.get('/hospital/:hospitalId/surgical-categories', async (req, res) => {
   try {
     const { hospitalId } = req.params;
+    console.log('=== SURGICAL CATEGORIES ENDPOINT ===');
+    console.log('Hospital ID requested:', hospitalId);
     
-    // Find categories assigned to this hospital via doctor assignments
-    const categories = await Category.find({
-      isActive: true,
-      _id: { $in: await getSurgicalCategoriesForHospital(hospitalId) }
-    }).select('description code').sort({ description: 1 });
+    // Get hospital with populated surgical categories
+    const hospital = await Hospital.findById(hospitalId)
+      .populate('surgicalCategories', 'description code')
+      .select('surgicalCategories');
+    
+    console.log('Hospital found:', !!hospital);
+    if (hospital) {
+      console.log('Surgical categories count:', hospital.surgicalCategories.length);
+      console.log('Surgical categories:', hospital.surgicalCategories.map(cat => ({ id: cat._id, description: cat.description, code: cat.code })));
+    }
+    
+    if (!hospital) {
+      console.log('Hospital not found with ID:', hospitalId);
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
 
-    res.json({
+    const response = {
       success: true,
-      data: categories
-    });
+      data: hospital.surgicalCategories || []
+    };
+    console.log('Sending response:', response);
+    res.json(response);
   } catch (error) {
     console.error('Error fetching surgical categories:', error);
     res.status(500).json({
@@ -264,40 +281,6 @@ router.get('/hospital/:hospitalId/surgical-categories', async (req, res) => {
     });
   }
 });
-
-// Helper function to get surgical categories for a hospital
-async function getSurgicalCategoriesForHospital(hospitalId) {
-  try {
-    const DoctorAssignment = require('../models/DoctorAssignment');
-    
-    const assignments = await DoctorAssignment.find({
-      hospital: hospitalId,
-      isActive: true,
-      validityFrom: { $lte: new Date() },
-      validityTo: { $gte: new Date() }
-    }).populate({
-      path: 'doctor',
-      populate: {
-        path: 'surgicalCategories',
-        select: '_id'
-      }
-    });
-
-    const categoryIds = new Set();
-    assignments.forEach(assignment => {
-      if (assignment.doctor && assignment.doctor.surgicalCategories) {
-        assignment.doctor.surgicalCategories.forEach(category => {
-          categoryIds.add(category._id.toString());
-        });
-      }
-    });
-
-    return Array.from(categoryIds);
-  } catch (error) {
-    console.error('Error getting surgical categories for hospital:', error);
-    return [];
-  }
-}
 
 // Get inquiry statistics
 router.get('/stats/overview', async (req, res) => {

@@ -1,0 +1,12 @@
+// Test surgical categories endpoint
+async function testEndpoint() {
+  try {
+    const response = await fetch('http://localhost:5000/api/inquiry/hospital/68931d3fbbf0c2b8481c523f/surgical-categories');
+    const data = await response.json();
+    console.log('Response:', data);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+testEndpoint();

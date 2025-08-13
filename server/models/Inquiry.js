@@ -5,7 +5,6 @@ const inquirySchema = new mongoose.Schema({
   inquiryNumber: {
     type: String,
     unique: true,
-    required: true,
     index: true
   },
   inquiryDate: {
@@ -78,6 +77,7 @@ inquirySchema.pre('save', async function(next) {
       );
       this.inquiryNumber = `INCS${counter.seq.toString().padStart(8, '0')}`;
     } catch (error) {
+      console.error('Error generating inquiry number:', error);
       next(error);
     }
   }

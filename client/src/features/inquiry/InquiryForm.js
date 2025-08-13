@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inquiryAPI } from '../../services/inquiryAPI';
+import '../../shared/styles/unified-design.css';
 import './Inquiry.css';
 
 const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
@@ -15,29 +16,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [filteredSurgicalCategories, setFilteredSurgicalCategories] = useState([]);
 
-  // Initialize form data when inquiry changes
-  useEffect(() => {
-    if (inquiry) {
-      setFormData({
-        inquiryDate: inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toISOString().split('T')[0] : '',
-        patientName: inquiry.patientName || '',
-        patientUHID: inquiry.patientUHID || '',
-        hospital: inquiry.hospital?._id || inquiry.hospital || '',
-        surgicalCategory: inquiry.surgicalCategory?._id || inquiry.surgicalCategory || '',
-        paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || ''
-      });
-    } else {
-      setFormData({
-        inquiryDate: new Date().toISOString().split('T')[0],
-        patientName: '',
-        patientUHID: '',
-        hospital: '',
-        surgicalCategory: '',
-        paymentMethod: ''
-      });
-    }
-  }, [inquiry]);
-
   // Fetch surgical categories when hospital changes
   const fetchSurgicalCategories = useCallback(async (hospitalId) => {
     if (!hospitalId) {
@@ -47,8 +25,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
 
     try {
       const response = await inquiryAPI.getSurgicalCategoriesByHospital(hospitalId);
-      if (response.success) {
+      
+      if (response && response.success && response.data) {
         setFilteredSurgicalCategories(response.data);
+      } else {
+        setFilteredSurgicalCategories([]);
       }
     } catch (error) {
       console.error('Error fetching surgical categories:', error);
@@ -56,32 +37,62 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   }, []);
 
-  // Handle hospital change
+  // Initialize form data when inquiry changes
   useEffect(() => {
-    if (formData.hospital) {
-      fetchSurgicalCategories(formData.hospital);
-      // Clear surgical category when hospital changes
-      if (!inquiry) { // Only clear if not editing an existing inquiry
-        setFormData(prev => ({
-          ...prev,
-          surgicalCategory: ''
-        }));
+    if (inquiry) {
+      // Set form data
+      const newFormData = {
+        inquiryDate: inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toISOString().split('T')[0] : '',
+        patientName: inquiry.patientName || '',
+        patientUHID: inquiry.patientUHID || '',
+        hospital: inquiry.hospital?._id || inquiry.hospital || '',
+        surgicalCategory: inquiry.surgicalCategory?._id || inquiry.surgicalCategory || '',
+        paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || ''
+      };
+      
+      setFormData(newFormData);
+      
+      // Fetch surgical categories for the hospital
+      if (newFormData.hospital) {
+        fetchSurgicalCategories(newFormData.hospital);
       }
     } else {
+      // New inquiry
+      setFormData({
+        inquiryDate: new Date().toISOString().split('T')[0],
+        patientName: '',
+        patientUHID: '',
+        hospital: '',
+        surgicalCategory: '',
+        paymentMethod: ''
+      });
       setFilteredSurgicalCategories([]);
+    }
+  }, [inquiry, fetchSurgicalCategories]);
+
+  // Handle input changes - SIMPLE CASCADING LOGIC LIKE MATERIAL MASTER
+  const handleChange = (field, value) => {
+    if (field === 'hospital') {
+      // Hospital changed - clear surgical category and fetch new categories
       setFormData(prev => ({
         ...prev,
-        surgicalCategory: ''
+        hospital: value,
+        surgicalCategory: '' // Clear surgical category when hospital changes
+      }));
+      
+      // Fetch new surgical categories
+      if (value) {
+        fetchSurgicalCategories(value);
+      } else {
+        setFilteredSurgicalCategories([]);
+      }
+    } else {
+      // Regular field update
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
       }));
     }
-  }, [formData.hospital, fetchSurgicalCategories, inquiry]);
-
-  // Handle input changes
-  const handleChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
 
     // Clear errors when user starts typing
     if (errors[field]) {
@@ -131,171 +142,153 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
       await onSubmit(formData);
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Error saving inquiry. Please try again.');
+      console.error('Error submitting inquiry:', error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="inquiry-container">
-      <div className="inquiry-form-container">
-        <div className="inquiry-form-header">
-          <h2 className="inquiry-form-title">
-            {inquiry ? 'Edit Inquiry' : 'New Inquiry'}
-          </h2>
+    <div className="unified-overlay">
+      <div className="unified-modal">
+        <div className="unified-modal-header">
+          <h2>{inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}</h2>
+          <button 
+            className="unified-modal-close"
+            onClick={onCancel}
+            type="button"
+          >
+            &times;
+          </button>
         </div>
 
-        <div className="inquiry-form-content">
-          <form onSubmit={handleSubmit}>
-            <div className="inquiry-form-grid">
-              {/* Inquiry Date */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Inquiry Date
-                </label>
-                <input
-                  type="date"
-                  className="inquiry-form-input"
-                  value={formData.inquiryDate}
-                  onChange={(e) => handleChange('inquiryDate', e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                />
-                {errors.inquiryDate && (
-                  <span className="inquiry-form-error">{errors.inquiryDate}</span>
-                )}
-              </div>
+        <form onSubmit={handleSubmit} className="unified-form">
+          <div className="unified-form-grid">
+            <div className="unified-form-field">
+              <label className="unified-form-label">Inquiry Date *</label>
+              <input
+                type="date"
+                className="unified-search-input"
+                value={formData.inquiryDate}
+                onChange={(e) => handleChange('inquiryDate', e.target.value)}
+              />
+              {errors.inquiryDate && (
+                <span className="error-text">{errors.inquiryDate}</span>
+              )}
+            </div>
 
-              {/* Patient Name */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Patient Name
-                </label>
-                <input
-                  type="text"
-                  className="inquiry-form-input"
-                  value={formData.patientName}
-                  onChange={(e) => handleChange('patientName', e.target.value)}
-                  placeholder="Enter patient name"
-                  maxLength={80}
-                />
-                {errors.patientName && (
-                  <span className="inquiry-form-error">{errors.patientName}</span>
-                )}
-              </div>
+            <div className="unified-form-field">
+              <label className="unified-form-label">Patient Name *</label>
+              <input
+                type="text"
+                className="unified-search-input"
+                placeholder="Enter patient name"
+                value={formData.patientName}
+                onChange={(e) => handleChange('patientName', e.target.value)}
+              />
+              {errors.patientName && (
+                <span className="error-text">{errors.patientName}</span>
+              )}
+            </div>
 
-              {/* Patient UHID */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Patient UHID
-                </label>
-                <input
-                  type="text"
-                  className="inquiry-form-input"
-                  value={formData.patientUHID}
-                  onChange={(e) => handleChange('patientUHID', e.target.value)}
-                  placeholder="Enter patient UHID"
-                  maxLength={50}
-                />
-                {errors.patientUHID && (
-                  <span className="inquiry-form-error">{errors.patientUHID}</span>
-                )}
-              </div>
+            <div className="unified-form-field">
+              <label className="unified-form-label">Patient UHID *</label>
+              <input
+                type="text"
+                className="unified-search-input"
+                placeholder="Enter patient UHID"
+                value={formData.patientUHID}
+                onChange={(e) => handleChange('patientUHID', e.target.value)}
+              />
+              {errors.patientUHID && (
+                <span className="error-text">{errors.patientUHID}</span>
+              )}
+            </div>
 
-              {/* Hospital */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Hospital
-                </label>
-                <select
-                  className="inquiry-form-select"
-                  value={formData.hospital}
-                  onChange={(e) => handleChange('hospital', e.target.value)}
-                >
-                  <option value="">Select Hospital</option>
-                  {dropdownData.hospitals?.map(hospital => (
-                    <option key={hospital._id} value={hospital._id}>
-                      {hospital.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.hospital && (
-                  <span className="inquiry-form-error">{errors.hospital}</span>
-                )}
-              </div>
-
-              {/* Surgical Category */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Surgical Category
-                </label>
-                <select
-                  className="inquiry-form-select"
-                  value={formData.surgicalCategory}
-                  onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-                  disabled={!formData.hospital}
-                >
-                  <option value="">
-                    {!formData.hospital ? 'Select Hospital First' : 'Select Surgical Category'}
+            <div className="unified-form-field">
+              <label className="unified-form-label">Hospital *</label>
+              <select
+                className="unified-search-input"
+                value={formData.hospital}
+                onChange={(e) => handleChange('hospital', e.target.value)}
+              >
+                <option value="">Select Hospital</option>
+                {dropdownData.hospitals?.map(hospital => (
+                  <option key={hospital._id} value={hospital._id}>
+                    {hospital.shortName || hospital.legalName}
                   </option>
-                  {filteredSurgicalCategories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.description}
-                    </option>
-                  ))}
-                </select>
-                {errors.surgicalCategory && (
-                  <span className="inquiry-form-error">{errors.surgicalCategory}</span>
-                )}
-              </div>
-
-              {/* Payment Method */}
-              <div className="inquiry-form-field">
-                <label className="inquiry-form-label required">
-                  Payment Method
-                </label>
-                <select
-                  className="inquiry-form-select"
-                  value={formData.paymentMethod}
-                  onChange={(e) => handleChange('paymentMethod', e.target.value)}
-                >
-                  <option value="">Select Payment Method</option>
-                  {dropdownData.paymentMethods?.map(method => (
-                    <option key={method._id} value={method._id}>
-                      {method.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.paymentMethod && (
-                  <span className="inquiry-form-error">{errors.paymentMethod}</span>
-                )}
-              </div>
+                ))}
+              </select>
+              {errors.hospital && (
+                <span className="error-text">{errors.hospital}</span>
+              )}
             </div>
 
-            <div className="inquiry-form-actions">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={onCancel}
-                disabled={loading}
+            <div className="unified-form-field">
+              <label className="unified-form-label">Surgical Category *</label>
+              <select
+                className="unified-search-input"
+                value={formData.surgicalCategory}
+                onChange={(e) => handleChange('surgicalCategory', e.target.value)}
+                disabled={!formData.hospital}
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : (inquiry ? 'Update Inquiry' : 'Create Inquiry')}
-              </button>
+                <option value="">
+                  {!formData.hospital ? 'Select Hospital First' : 'Select Surgical Category'}
+                </option>
+                {filteredSurgicalCategories.map(category => (
+                  <option key={category._id} value={category._id}>
+                    {category.description}
+                  </option>
+                ))}
+              </select>
+              {errors.surgicalCategory && (
+                <span className="error-text">{errors.surgicalCategory}</span>
+              )}
             </div>
-          </form>
-        </div>
+
+            <div className="unified-form-field">
+              <label className="unified-form-label">Payment Method *</label>
+              <select
+                className="unified-search-input"
+                value={formData.paymentMethod}
+                onChange={(e) => handleChange('paymentMethod', e.target.value)}
+              >
+                <option value="">Select Payment Method</option>
+                {dropdownData.paymentMethods?.map(payment => (
+                  <option key={payment._id} value={payment._id}>
+                    {payment.name}
+                  </option>
+                ))}
+              </select>
+              {errors.paymentMethod && (
+                <span className="error-text">{errors.paymentMethod}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="unified-form-actions">
+            <button
+              type="button"
+              className="unified-btn unified-btn-secondary"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="unified-btn unified-btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : (inquiry ? 'Update' : 'Create')} Inquiry
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
