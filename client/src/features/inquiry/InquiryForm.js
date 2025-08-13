@@ -280,20 +280,33 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   };
 
   return (
-    <div className="unified-modal-overlay">
-      <div className="unified-modal-container">
-        <div className="unified-modal-header">
-          <h2>{inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}</h2>
-          <button 
-            className="unified-modal-close"
+    <div className="unified-container">
+      {/* Header */}
+      <div className="unified-header">
+        <div className="unified-header-content">
+          <div className="unified-header-text">
+            <h1>{inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}</h1>
+            <p>
+              {inquiry 
+                ? 'Update inquiry information and patient details with hospital-specific surgical categories.'
+                : 'Create a new inquiry with patient information and hospital-specific surgical categories.'
+              }
+            </p>
+          </div>
+          <button
+            className="unified-btn unified-btn-secondary"
             onClick={onCancel}
             type="button"
+            disabled={loading}
           >
-            &times;
+            ← Back to List
           </button>
         </div>
+      </div>
 
-        <div className="unified-modal-body">
+      {/* Form Card */}
+      <div className="unified-card">
+        <div className="unified-card-content">
           <form onSubmit={handleSubmit}>
             <div className="form-section">
               <div className="form-section-title">
@@ -464,7 +477,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               </div>
             </div>
 
-            <div className="unified-modal-actions">
+            {/* Form Actions */}
+            <div className="unified-form-actions">
               <button
                 type="button"
                 className="unified-btn unified-btn-secondary"

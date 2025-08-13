@@ -656,8 +656,9 @@
     padding: 1rem;
   }
   
+  /* Keep table visible in mobile - use responsive styles instead of hiding */
   .unified-table-responsive {
-    display: none;
+    display: block;
   }
   
   .unified-mobile-cards {
@@ -1255,6 +1256,92 @@
   
   .pagination-controls .btn {
     padding: 0.625rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ========== Unified Table Mobile Responsive ========== */
+@media (max-width: 768px) {
+  .unified-table-responsive {
+    display: block !important;
+    margin: -1rem;
+    border-radius: 0;
+  }
+  
+  .unified-table,
+  .unified-table thead,
+  .unified-table tbody,
+  .unified-table th,
+  .unified-table td,
+  .unified-table tr {
+    display: block;
+  }
+  
+  .unified-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .unified-table tr {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .unified-table td {
+    border: none;
+    position: relative;
+    padding: 0.75rem 0 0.25rem 0;
+    white-space: normal;
+    text-align: left !important;
+  }
+  
+  .unified-table td:before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--gray-700);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  .unified-table-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--gray-200);
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  
+  .unified-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .unified-pagination-controls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .unified-table-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .unified-table-action {
+    width: 100%;
+    padding: 0.75rem;
     font-size: 0.9rem;
   }
 }
