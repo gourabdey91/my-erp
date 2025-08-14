@@ -137,8 +137,28 @@
 }
 
 .unified-input:read-only {
-  background-color: var(--gray-100);
+  background-color: #f8f9fa;
+  color: #6c757d;
   cursor: not-allowed;
+}
+
+/* Enhanced readonly styles for table view - matches mobile view */
+.inquiry-items-table .unified-input[readonly],
+.inquiry-items-table .unified-input:read-only,
+.inquiry-items-table textarea.unified-input[readonly],
+.inquiry-items-table textarea.unified-input:read-only {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  border-color: #d0d0d0 !important;
+}
+
+.inquiry-items-table .unified-input[readonly]:focus,
+.inquiry-items-table .unified-input:read-only:focus,
+.inquiry-items-table textarea.unified-input[readonly]:focus,
+.inquiry-items-table textarea.unified-input:read-only:focus {
+  border-color: #d0d0d0 !important;
+  box-shadow: none !important;
 }
 
 .unified-input:disabled {
