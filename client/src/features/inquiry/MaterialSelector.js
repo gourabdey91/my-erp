@@ -43,18 +43,27 @@ const MaterialSelector = ({
     }
   }, [isOpen, hospital, surgicalCategory, selectedImplantType, selectedSubcategory, selectedLength]);
 
-  // Filter materials based on search term
+  // Filter materials based on search term and sort by unit rate
   useEffect(() => {
+    let filtered;
     if (searchTerm.trim() === '') {
-      setFilteredMaterials(materials);
+      filtered = [...materials];
     } else {
-      const filtered = materials.filter(material =>
+      filtered = materials.filter(material =>
         material.materialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         material.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         material.hsnCode.includes(searchTerm)
       );
-      setFilteredMaterials(filtered);
     }
+    
+    // Sort by unit rate (assignedInstitutionalPrice) in ascending order
+    filtered.sort((a, b) => {
+      const priceA = parseFloat(a.assignedInstitutionalPrice) || 0;
+      const priceB = parseFloat(b.assignedInstitutionalPrice) || 0;
+      return priceA - priceB;
+    });
+    
+    setFilteredMaterials(filtered);
   }, [searchTerm, materials]);
 
   // Load available implant types for this hospital and surgical category

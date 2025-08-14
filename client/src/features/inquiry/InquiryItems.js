@@ -140,7 +140,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         materialNumber: material.materialNumber,
         materialDescription: material.description, // This will be shown but not saved
         hsnCode: material.hsnCode,
-        unitRate: material.unitRate,
+        unitRate: material.assignedInstitutionalPrice, // Fixed: use assignedInstitutionalPrice
         gstPercentage: material.gstPercentage,
         unit: material.unit
       };
@@ -251,6 +251,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         value={item.hsnCode}
                         onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
                         placeholder="HSN Code"
+                        readOnly={!!item.materialDescription} // Read-only if selected from material master
+                        title={item.materialDescription ? "HSN Code is derived from material master" : "Enter HSN Code"}
                       />
                     </td>
                     <td>
@@ -262,6 +264,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         placeholder="Rate"
                         min="0"
                         step="0.01"
+                        readOnly={!!item.materialDescription} // Read-only if selected from material master
+                        title={item.materialDescription ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
                       />
                     </td>
                     <td>
@@ -274,6 +278,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         min="0"
                         max="100"
                         step="0.01"
+                        readOnly={!!item.materialDescription} // Read-only if selected from material master
+                        title={item.materialDescription ? "GST% is derived from material master" : "Enter GST%"}
                       />
                     </td>
                     <td>

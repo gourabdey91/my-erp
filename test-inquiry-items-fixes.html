@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Selector & Inquiry Items - Bug Fixes</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .fix-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #27ae60;
+            background: #f0f8f0;
+            border-radius: 0 8px 8px 0;
+        }
+        .issue-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #e74c3c;
+            background: #fdf2f2;
+            border-radius: 0 8px 8px 0;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .before {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .after {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐛 Material Selector & Inquiry Items - Bug Fixes</h1>
+        
+        <div class="issue-section">
+            <h3>❌ Issues Found</h3>
+            <ol>
+                <li><strong>Unit rate not getting selected:</strong> <code>material.unitRate</code> was undefined, should use <code>material.assignedInstitutionalPrice</code></li>
+                <li><strong>HSN Code, Unit Rate, GST% should be read-only:</strong> When material is selected from master, these fields should not be editable</li>
+                <li><strong>Material sorting:</strong> Materials should be sorted by amount in increasing order for better UX</li>
+            </ol>
+        </div>
+
+        <div class="fix-section">
+            <h3>✅ Fix 1: Unit Rate Field Mapping</h3>
+            <p><strong>File:</strong> <code>InquiryItems.js - handleMaterialSelect()</code></p>
+            
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before (Wrong Field)</h4>
+                    <div class="code-block">
+unitRate: material.unitRate, // ❌ This field was undefined
+                    </div>
+                </div>
+                <div class="after">
+                    <h4>✅ After (Correct Field)</h4>
+                    <div class="code-block">
+unitRate: material.assignedInstitutionalPrice, // ✅ Correct field from API
+                    </div>
+                </div>
+            </div>
+
+            <p><strong>Result:</strong> Unit rate now properly populates in inquiry items when material is selected.</p>
+        </div>
+
+        <div class="fix-section">
+            <h3>✅ Fix 2: Read-Only Fields</h3>
+            <p><strong>File:</strong> <code>InquiryItems.js - Input fields for HSN Code, Unit Rate, GST%</code></p>
+            
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before (Always Editable)</h4>
+                    <div class="code-block">
+&lt;input
+  type="text"
+  value={item.hsnCode}
+  onChange={(e) => handleInputChange(...)}
+  placeholder="HSN Code"
+/&gt;
+                    </div>
+                </div>
+                <div class="after">
+                    <h4>✅ After (Read-Only When From Master)</h4>
+                    <div class="code-block">
+&lt;input
+  type="text"
+  value={item.hsnCode}
+  onChange={(e) => handleInputChange(...)}
+  placeholder="HSN Code"
+  readOnly={!!item.materialDescription}
+  title={item.materialDescription ? 
+    "HSN Code is derived from material master" : 
+    "Enter HSN Code"}
+/&gt;
+                    </div>
+                </div>
+            </div>
+
+            <p><strong>Applied to:</strong> HSN Code, Unit Rate, and GST% fields</p>
+            <p><strong>Result:</strong> When material is selected from master, these fields become read-only with visual styling (gray background) and helpful tooltips.</p>
+        </div>
+
+        <div class="fix-section">
+            <h3>✅ Fix 3: Material Sorting by Amount</h3>
+            <p><strong>File:</strong> <code>MaterialSelector.js - Filter materials useEffect</code></p>
+            
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before (No Sorting)</h4>
+                    <div class="code-block">
+// Materials displayed in API response order
+setFilteredMaterials(filtered);
+                    </div>
+                </div>
+                <div class="after">
+                    <h4>✅ After (Sorted by Price)</h4>
+                    <div class="code-block">
+// Sort by unit rate (assignedInstitutionalPrice) in ascending order
+filtered.sort((a, b) => {
+  const priceA = parseFloat(a.assignedInstitutionalPrice) || 0;
+  const priceB = parseFloat(b.assignedInstitutionalPrice) || 0;
+  return priceA - priceB;
+});
+
+setFilteredMaterials(filtered);
+                    </div>
+                </div>
+            </div>
+
+            <p><strong>Result:</strong> Materials are now sorted by unit rate from lowest to highest, making it easier for users to find cost-effective options.</p>
+        </div>
+
+        <div class="fix-section">
+            <h3>🎯 Technical Details</h3>
+            
+            <h4>API Response Structure:</h4>
+            <div class="code-block">
+{
+  "_id": "6896382defa07f60386dd5bd",
+  "materialNumber": "1000203",
+  "description": "Wire Mesh Dia - 1.5 MM Plate 4 * 4",
+  "hsnCode": "90211000",
+  "gstPercentage": 5,
+  "assignedInstitutionalPrice": 56963,  ← This is the unit rate field
+  "unit": "NOS",
+  "surgicalCategory": {...},
+  "implantType": {...}
+}
+            </div>
+
+            <h4>Read-Only Field Logic:</h4>
+            <div class="code-block">
+// A field is read-only if material was selected from master
+readOnly={!!item.materialDescription}
+
+// materialDescription is populated when material is selected from MaterialSelector
+// If user manually enters material number, materialDescription remains empty
+            </div>
+
+            <h4>CSS Styling for Read-Only:</h4>
+            <div class="code-block">
+.unified-input-sm:read-only {
+  background-color: var(--gray-100);
+  cursor: not-allowed;
+}
+            </div>
+        </div>
+
+        <div class="fix-section">
+            <h3>🧪 Testing Steps</h3>
+            <ol>
+                <li>Open React client: <button class="test-btn" onclick="window.open('http://localhost:3000', '_blank')">Open App</button></li>
+                <li>Navigate to Inquiry section</li>
+                <li>Select Hospital and Surgical Category</li>
+                <li>Click "Select Material" in item row</li>
+                <li>Verify materials are sorted by price (lowest first)</li>
+                <li>Select a material from the popup</li>
+                <li>Verify unit rate appears in the item (no longer NaN or empty)</li>
+                <li>Verify HSN Code, Unit Rate, and GST% fields are read-only (gray background)</li>
+                <li>Try hovering over read-only fields to see tooltips</li>
+                <li>Add quantity and verify total calculation works</li>
+            </ol>
+        </div>
+
+        <div class="fix-section">
+            <h3>✅ All Issues Resolved</h3>
+            <ul>
+                <li>✅ <strong>Unit rate now displays correctly</strong> - Uses assignedInstitutionalPrice field</li>
+                <li>✅ <strong>HSN Code, Unit Rate, GST% are read-only</strong> - When selected from material master</li>
+                <li>✅ <strong>Materials sorted by amount</strong> - Ascending order for better UX</li>
+                <li>✅ <strong>Visual feedback</strong> - Read-only fields have gray background and tooltips</li>
+                <li>✅ <strong>User experience improved</strong> - Clear indication of which fields are derived vs. manual</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('🐛 Material Selector & Inquiry Items Bug Fixes Applied');
+        console.log('✅ Unit rate field mapping fixed');
+        console.log('✅ Read-only fields implemented');
+        console.log('✅ Material sorting by amount added');
+        console.log('💡 Test the fixes in the React application');
+    </script>
+</body>
+</html>
