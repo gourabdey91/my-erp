@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MaterialSelector from './MaterialSelector';
-import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
+import MobileCard from '../../shared/components/MobileCard';
 import '../../shared/styles/unified-design.css';
 
 // Updated: All inputs now use unified-input class for consistency with main form
@@ -9,7 +9,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   const [errors, setErrors] = useState({});
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
-  const { openMenuId, toggleMenu, closeMenu, dropdownRef } = useDropdownMenu();
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
@@ -248,14 +247,27 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     </td>
                     
                     <td data-label="Material No.">
-                      <input
-                        type="text"
-                        className={`unified-input ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
-                        value={item.materialNumber}
-                        onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
-                        placeholder="Enter material number"
-                        readOnly={!!item.materialDescription}
-                      />
+                      <div className="material-number-container">
+                        <input
+                          type="text"
+                          className={`unified-input ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
+                          value={item.materialNumber}
+                          onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
+                          placeholder="Enter material number"
+                          readOnly={!!item.materialDescription}
+                        />
+                        <button
+                          type="button"
+                          className="material-selector-btn"
+                          onClick={() => openMaterialSelector(index)}
+                          disabled={!hospital || !surgicalCategory}
+                          title={!hospital || !surgicalCategory ? 'Please select hospital and surgical category first' : 'Select from material master'}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
                       {errors[`${index}_materialNumber`] && (
                         <span className="unified-error-text">{errors[`${index}_materialNumber`]}</span>
                       )}
@@ -402,45 +414,16 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     <td data-label="Actions">
                       <div className="unified-table-actions">
-                        <div className="unified-card-menu" ref={dropdownRef}>
+                        {inquiryItems.length > 1 && (
                           <button
                             type="button"
-                            className="unified-menu-trigger"
-                            onClick={() => toggleMenu(`item-${index}`)}
-                            aria-label="More options"
+                            className="unified-table-action delete"
+                            onClick={() => removeItem(index)}
+                            title="Remove Item"
                           >
-                            ⋮
+                            🗑️
                           </button>
-                          {openMenuId === `item-${index}` && (
-                            <div className="unified-dropdown-menu">
-                              <button
-                                className="unified-dropdown-item"
-                                onClick={() => {
-                                  closeMenu();
-                                  openMaterialSelector(index);
-                                }}
-                                disabled={!hospital || !surgicalCategory}
-                                title={!hospital || !surgicalCategory ? 'Please select hospital and surgical category first' : 'Select from material master'}
-                              >
-                                <span className="action-icon">🔍</span>
-                                Select Material
-                              </button>
-                              {inquiryItems.length > 1 && (
-                                <button
-                                  className="unified-dropdown-item danger"
-                                  onClick={() => {
-                                    closeMenu();
-                                    removeItem(index);
-                                  }}
-                                  title="Remove Item"
-                                >
-                                  <span className="action-icon">🗑️</span>
-                                  Remove Item
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -448,15 +431,55 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
               </tbody>
             </table>
           </div>
-          
-          {/* Summary */}
-          <div className="inquiry-items-summary">
-            <div className="summary-row">
-              <span className="summary-label">Grand Total:</span>
-              <span className="summary-value">
-                {formatCurrency(calculateGrandTotal(), 'INR')}
-              </span>
-            </div>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="unified-mobile-cards">
+          {inquiryItems.map((item, index) => (
+            <MobileCard
+              key={`mobile-${index}`}
+              id={`item-${index}`}
+              title={item.materialNumber || `Item ${formatSerialNumber(item.serialNumber)}`}
+              subtitle={item.materialDescription || 'No description'}
+              badge={{
+                text: formatCurrency(item.totalAmount, item.currency),
+                type: 'success'
+              }}
+              fields={[
+                { label: 'Serial No.', value: formatSerialNumber(item.serialNumber) },
+                { label: 'Unit Rate', value: formatCurrency(item.unitRate) },
+                { label: 'Quantity', value: item.quantity },
+                { label: 'Unit', value: item.unit || 'N/A' },
+                { label: 'HSN Code', value: item.hsnCode || 'N/A' },
+                { label: 'GST %', value: `${item.gstPercentage || 0}%` },
+                { label: 'Discount %', value: `${item.discountPercentage || 0}%` },
+                { label: 'Discount Amount', value: formatCurrency(item.discountAmount) }
+              ]}
+              actions={[
+                {
+                  label: 'Select Material',
+                  icon: '🔍',
+                  onClick: () => openMaterialSelector(index),
+                  disabled: !hospital || !surgicalCategory
+                },
+                ...(inquiryItems.length > 1 ? [{
+                  label: 'Remove Item',
+                  icon: '🗑️',
+                  variant: 'danger',
+                  onClick: () => removeItem(index)
+                }] : [])
+              ]}
+            />
+          ))}
+        </div>
+
+        {/* Summary */}
+        <div className="inquiry-items-summary">
+          <div className="summary-row">
+            <span className="summary-label">Grand Total:</span>
+            <span className="summary-value">
+              {formatCurrency(calculateGrandTotal(), 'INR')}
+            </span>
           </div>
         </div>
       </div>

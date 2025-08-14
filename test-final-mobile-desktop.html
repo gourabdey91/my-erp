@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Mobile/Desktop Inquiry Items Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        /* Unified Input Styles */
+        .unified-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background-color: #fff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .unified-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        /* Table View Styles (Desktop/Tablet) */
+        .unified-table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .inquiry-items-table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .inquiry-items-table th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .inquiry-items-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .inquiry-items-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Column widths */
+        .inquiry-items-table th:nth-child(1) { width: 60px; }
+        .inquiry-items-table th:nth-child(2) { width: 120px; }
+        .inquiry-items-table th:nth-child(3) { width: 200px; }
+        .inquiry-items-table th:nth-child(4) { width: 100px; }
+        .inquiry-items-table th:nth-child(5) { width: 80px; }
+        .inquiry-items-table th:nth-child(6) { width: 60px; }
+        .inquiry-items-table th:nth-child(7) { width: 90px; }
+        .inquiry-items-table th:nth-child(8) { width: 70px; }
+        .inquiry-items-table th:nth-child(9) { width: 70px; }
+        .inquiry-items-table th:nth-child(10) { width: 90px; }
+        .inquiry-items-table th:nth-child(11) { width: 120px; }
+        .inquiry-items-table th:nth-child(12) { width: 80px; }
+
+        .material-number-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .material-number-container input {
+            flex: 1;
+        }
+
+        .material-selector-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            transition: background-color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .material-selector-btn:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .material-selector-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .material-description-display {
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .material-description-text {
+            display: block;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .material-description-note {
+            color: #6c757d;
+            font-size: 11px;
+            font-style: italic;
+        }
+
+        .total-amount {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .unified-table-actions {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .unified-table-action {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .unified-table-action:hover {
+            background: #f8f9fa;
+        }
+
+        .unified-table-action.delete {
+            color: #dc3545;
+        }
+
+        .unified-table-action.delete:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Mobile Card Styles */
+        .unified-mobile-cards {
+            display: none;
+        }
+
+        .unified-mobile-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .unified-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .unified-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .unified-card-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .unified-card-menu {
+            position: relative;
+            margin-left: 8px;
+        }
+
+        .unified-menu-trigger {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .unified-menu-trigger:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .unified-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .unified-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            text-align: left;
+            color: #495057;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .unified-dropdown-item:hover {
+            background: #f8f9fa;
+            color: #007bff;
+        }
+
+        .unified-dropdown-item.danger {
+            color: #dc3545;
+        }
+
+        .unified-dropdown-item.danger:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .unified-dropdown-item:disabled {
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .action-icon {
+            font-size: 16px;
+        }
+
+        .unified-card-content {
+            padding: 1rem;
+        }
+
+        .card-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .card-field:last-child {
+            border-bottom: none;
+        }
+
+        .field-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+        }
+
+        .field-value {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            /* Hide table on mobile */
+            .unified-table-responsive {
+                display: none !important;
+            }
+            
+            /* Show mobile cards */
+            .unified-mobile-cards {
+                display: block !important;
+            }
+        }
+
+        /* Tablet view adjustments */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .inquiry-items-table {
+                font-size: 12px;
+            }
+            
+            .inquiry-items-table th,
+            .inquiry-items-table td {
+                padding: 10px 6px;
+            }
+            
+            .material-selector-btn {
+                min-width: 28px;
+                height: 28px;
+                padding: 6px;
+            }
+
+            .inquiry-items-table th:nth-child(3) { width: 160px; }
+            .inquiry-items-table th:nth-child(4) { width: 90px; }
+            .inquiry-items-table th:nth-child(11) { width: 110px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Final Mobile/Desktop Inquiry Items Test</h1>
+        
+        <div class="test-section">
+            <h2>Desktop/Tablet View - Table with Material Selector Button</h2>
+            <div class="unified-table-responsive">
+                <table class="inquiry-items-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Material No.</th>
+                            <th>Material Description</th>
+                            <th>Unit Rate</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>HSN Code</th>
+                            <th>GST %</th>
+                            <th>Disc %</th>
+                            <th>Disc Amt</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="S.No" class="text-center">
+                                <input type="text" class="unified-input" style="width: 50px;" value="01">
+                            </td>
+                            
+                            <td data-label="Material No.">
+                                <div class="material-number-container">
+                                    <input type="text" class="unified-input" value="MAT001" placeholder="Enter material number">
+                                    <button type="button" class="material-selector-btn" title="Select from material master">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td data-label="Material Description">
+                                <div class="material-description-display">
+                                    <span class="material-description-text">Sample Surgical Implant Device with Long Description</span>
+                                    <small class="material-description-note">(From Material Master)</small>
+                                </div>
+                            </td>
+
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input" value="1500.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input" value="2" style="text-align: center;">
+                            </td>
+
+                            <td data-label="Unit">
+                                <input type="text" class="unified-input" value="PCS" readonly>
+                            </td>
+
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input" value="90211010">
+                            </td>
+
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input" value="12.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc %">
+                                <input type="number" class="unified-input" value="5.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc Amt">
+                                <input type="number" class="unified-input" value="150.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Total Amount">
+                                <input type="text" class="unified-input total-amount" value="₹3,210.00" readonly style="text-align: right;">
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="unified-table-actions">
+                                    <button type="button" class="unified-table-action delete" title="Remove Item">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td data-label="S.No" class="text-center">
+                                <input type="text" class="unified-input" style="width: 50px;" value="02">
+                            </td>
+                            
+                            <td data-label="Material No.">
+                                <div class="material-number-container">
+                                    <input type="text" class="unified-input" value="" placeholder="Enter material number">
+                                    <button type="button" class="material-selector-btn" title="Select from material master">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td data-label="Material Description">
+                                <input type="text" class="unified-input" value="" placeholder="Enter material description">
+                            </td>
+
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input" value="" placeholder="0.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input" value="1" style="text-align: center;">
+                            </td>
+
+                            <td data-label="Unit">
+                                <input type="text" class="unified-input" value="" readonly>
+                            </td>
+
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input" value="">
+                            </td>
+
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input" value="" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc %">
+                                <input type="number" class="unified-input" value="" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc Amt">
+                                <input type="number" class="unified-input" value="" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Total Amount">
+                                <input type="text" class="unified-input total-amount" value="₹0.00" readonly style="text-align: right;">
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="unified-table-actions">
+                                    <button type="button" class="unified-table-action delete" title="Remove Item">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Mobile Cards View -->
+        <div class="unified-mobile-cards">
+            <!-- Card 1 -->
+            <div class="unified-mobile-card">
+                <div class="unified-card-header">
+                    <div>
+                        <h3 class="unified-card-title">MAT001</h3>
+                        <div class="card-subtitle">Sample Surgical Implant Device with Long Description</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="unified-card-badge">₹3,210.00</span>
+                        <div class="unified-card-menu">
+                            <button type="button" class="unified-menu-trigger" onclick="toggleDropdown(this, 'item-0')">⋮</button>
+                            <div class="unified-dropdown-menu" id="dropdown-item-0" style="display: none;">
+                                <button class="unified-dropdown-item">
+                                    <span class="action-icon">🔍</span>
+                                    Select Material
+                                </button>
+                                <button class="unified-dropdown-item danger">
+                                    <span class="action-icon">🗑️</span>
+                                    Remove Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="unified-card-content">
+                    <div class="card-field">
+                        <span class="field-label">Serial No.</span>
+                        <span class="field-value">01</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Unit Rate</span>
+                        <span class="field-value">₹1,500.00</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Quantity</span>
+                        <span class="field-value">2</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Unit</span>
+                        <span class="field-value">PCS</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">HSN Code</span>
+                        <span class="field-value">90211010</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">GST %</span>
+                        <span class="field-value">12.00%</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Discount %</span>
+                        <span class="field-value">5.00%</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Discount Amount</span>
+                        <span class="field-value">₹150.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="unified-mobile-card">
+                <div class="unified-card-header">
+                    <div>
+                        <h3 class="unified-card-title">Item 02</h3>
+                        <div class="card-subtitle">No description</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="unified-card-badge">₹0.00</span>
+                        <div class="unified-card-menu">
+                            <button type="button" class="unified-menu-trigger" onclick="toggleDropdown(this, 'item-1')">⋮</button>
+                            <div class="unified-dropdown-menu" id="dropdown-item-1" style="display: none;">
+                                <button class="unified-dropdown-item">
+                                    <span class="action-icon">🔍</span>
+                                    Select Material
+                                </button>
+                                <button class="unified-dropdown-item danger">
+                                    <span class="action-icon">🗑️</span>
+                                    Remove Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="unified-card-content">
+                    <div class="card-field">
+                        <span class="field-label">Serial No.</span>
+                        <span class="field-value">02</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Unit Rate</span>
+                        <span class="field-value">₹0.00</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Quantity</span>
+                        <span class="field-value">1</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Unit</span>
+                        <span class="field-value">N/A</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">HSN Code</span>
+                        <span class="field-value">N/A</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">GST %</span>
+                        <span class="field-value">0%</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Discount %</span>
+                        <span class="field-value">0%</span>
+                    </div>
+                    <div class="card-field">
+                        <span class="field-label">Discount Amount</span>
+                        <span class="field-value">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Final Implementation</h2>
+            <ul>
+                <li><strong>✅ Desktop/Tablet View:</strong> Table with material selector button in Material No. column</li>
+                <li><strong>✅ Mobile View:</strong> Card layout with three-dot menu in top-right corner of each card</li>
+                <li><strong>✅ Responsive Behavior:</strong> Automatic switching at 768px breakpoint</li>
+                <li><strong>✅ Touch-Friendly:</strong> Proper button sizing and spacing for mobile</li>
+                <li><strong>✅ Consistent UX:</strong> Following surgical category pattern</li>
+            </ul>
+            
+            <h3>Key Differences by View:</h3>
+            <ul>
+                <li><strong>Desktop/Tablet (>768px):</strong> 
+                    <ul>
+                        <li>Shows full table layout</li>
+                        <li>Material selector button visible in Material No. column</li>
+                        <li>Simple delete button in Actions column</li>
+                    </ul>
+                </li>
+                <li><strong>Mobile (≤768px):</strong> 
+                    <ul>
+                        <li>Shows card-based layout</li>
+                        <li>Three-dot menu in card header (top-right)</li>
+                        <li>All actions available through dropdown menu</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <p><strong>Test by resizing your browser window</strong> to see the responsive behavior.</p>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown(button, itemId) {
+            const dropdown = document.getElementById(`dropdown-${itemId}`);
+            const isVisible = dropdown.style.display !== 'none';
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.unified-dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // Toggle current dropdown
+            dropdown.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.unified-card-menu')) {
+                document.querySelectorAll('.unified-dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+
+        // Viewport indicator
+        function checkViewport() {
+            const width = window.innerWidth;
+            const indicator = document.createElement('div');
+            indicator.style.position = 'fixed';
+            indicator.style.top = '10px';
+            indicator.style.right = '10px';
+            indicator.style.background = '#007bff';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px 10px';
+            indicator.style.borderRadius = '4px';
+            indicator.style.fontSize = '12px';
+            indicator.style.zIndex = '9999';
+            
+            if (width <= 480) {
+                indicator.textContent = 'Small Mobile (≤480px) - Cards';
+                indicator.style.background = '#dc3545';
+            } else if (width <= 768) {
+                indicator.textContent = 'Mobile (≤768px) - Cards';
+                indicator.style.background = '#fd7e14';
+            } else if (width <= 1024) {
+                indicator.textContent = 'Tablet (≤1024px) - Table';
+                indicator.style.background = '#198754';
+            } else {
+                indicator.textContent = 'Desktop (>1024px) - Table';
+                indicator.style.background = '#007bff';
+            }
+            
+            const existing = document.querySelector('.viewport-indicator');
+            if (existing) existing.remove();
+            
+            indicator.className = 'viewport-indicator';
+            document.body.appendChild(indicator);
+        }
+        
+        checkViewport();
+        window.addEventListener('resize', checkViewport);
+    </script>
+</body>
+</html>
