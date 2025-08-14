@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile View - Material Selector & Read-Only Fields</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Unified Input Styles */
+        .unified-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background-color: #fff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .unified-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .unified-input[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .unified-input[readonly]:focus {
+            border-color: #d0d0d0;
+            box-shadow: none;
+        }
+
+        /* Mobile Cards */
+        .unified-mobile-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .unified-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .unified-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+
+        .unified-card-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .unified-card-menu {
+            position: relative;
+            margin-left: 8px;
+        }
+
+        .unified-menu-trigger {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .unified-menu-trigger:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .unified-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .unified-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            text-align: left;
+            color: #495057;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .unified-dropdown-item:hover {
+            background: #f8f9fa;
+            color: #007bff;
+        }
+
+        .unified-dropdown-item.danger {
+            color: #dc3545;
+        }
+
+        .unified-dropdown-item.danger:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .action-icon {
+            font-size: 16px;
+        }
+
+        .unified-card-content {
+            padding: 1rem;
+        }
+
+        /* Mobile Form Fields */
+        .mobile-field-group {
+            margin-bottom: 1rem;
+        }
+
+        .mobile-field-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-field-half {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .mobile-field-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-field-input {
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .mobile-field-input.total-amount {
+            font-weight: 600;
+            color: #28a745;
+            background-color: #f8f9fa;
+        }
+
+        textarea.mobile-field-input {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        /* Material selector in mobile */
+        .material-number-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .material-number-container input {
+            flex: 1;
+        }
+
+        .material-selector-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            transition: background-color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .material-selector-btn:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        .material-selector-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* Test indicator */
+        .test-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+
+        .read-only-badge {
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-indicator">Mobile View - Material Selector + Read-Only</div>
+    
+    <div class="container">
+        <h1 style="text-align: center; color: #333; margin-bottom: 30px;">📱 Updated Mobile Cards</h1>
+        
+        <!-- Card 1 - With Data -->
+        <div class="unified-mobile-card">
+            <div class="unified-card-header">
+                <div>
+                    <h3 class="unified-card-title">MAT001</h3>
+                    <div class="card-subtitle">Titanium Hip Implant - Premium Grade</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="unified-card-badge">₹3,210.00</span>
+                    <div class="unified-card-menu">
+                        <button type="button" class="unified-menu-trigger" onclick="toggleDropdown('item-0')">⋮</button>
+                        <div class="unified-dropdown-menu" id="dropdown-item-0" style="display: none;">
+                            <button class="unified-dropdown-item danger">
+                                <span class="action-icon">🗑️</span>
+                                Remove Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="unified-card-content">
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Serial No.</label>
+                    <input type="text" class="unified-input mobile-field-input" value="01">
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Material No.</label>
+                    <div class="material-number-container">
+                        <input type="text" class="unified-input mobile-field-input" value="MAT001" placeholder="Enter material number">
+                        <button type="button" class="material-selector-btn" title="Select from material master">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        Material Description 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <textarea class="unified-input mobile-field-input" placeholder="Material description from master" rows="2" readonly>Titanium Hip Implant - Premium Grade with advanced coating technology for enhanced biocompatibility</textarea>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        Unit Rate 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <input type="number" class="unified-input mobile-field-input" value="1500.00" step="0.01" placeholder="0.00" readonly>
+                </div>
+
+                <div class="mobile-field-row">
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Quantity</label>
+                        <input type="number" class="unified-input mobile-field-input" value="2" min="1">
+                    </div>
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Unit</label>
+                        <input type="text" class="unified-input mobile-field-input" value="PCS" placeholder="Unit">
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        HSN Code 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <input type="text" class="unified-input mobile-field-input" value="90211010" placeholder="HSN from material master" readonly>
+                </div>
+
+                <div class="mobile-field-row">
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">
+                            GST % 
+                            <span class="read-only-badge">FROM MASTER</span>
+                        </label>
+                        <input type="number" class="unified-input mobile-field-input" value="12.00" step="0.01" min="0" readonly>
+                    </div>
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Disc %</label>
+                        <input type="number" class="unified-input mobile-field-input" value="5.00" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Discount Amount</label>
+                    <input type="number" class="unified-input mobile-field-input" value="150.00" step="0.01" min="0">
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Total Amount</label>
+                    <input type="text" class="unified-input mobile-field-input total-amount" value="₹3,210.00" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 - Empty/New Item -->
+        <div class="unified-mobile-card">
+            <div class="unified-card-header">
+                <div>
+                    <h3 class="unified-card-title">Item 02</h3>
+                    <div class="card-subtitle">Select material to auto-fill details</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="unified-card-badge">₹0.00</span>
+                    <div class="unified-card-menu">
+                        <button type="button" class="unified-menu-trigger" onclick="toggleDropdown('item-1')">⋮</button>
+                        <div class="unified-dropdown-menu" id="dropdown-item-1" style="display: none;">
+                            <button class="unified-dropdown-item danger">
+                                <span class="action-icon">🗑️</span>
+                                Remove Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="unified-card-content">
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Serial No.</label>
+                    <input type="text" class="unified-input mobile-field-input" value="02">
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Material No.</label>
+                    <div class="material-number-container">
+                        <input type="text" class="unified-input mobile-field-input" value="" placeholder="Enter or select material number">
+                        <button type="button" class="material-selector-btn" title="Select from material master">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        Material Description 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <textarea class="unified-input mobile-field-input" placeholder="Will be filled from material master" rows="2" readonly></textarea>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        Unit Rate 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <input type="number" class="unified-input mobile-field-input" value="" step="0.01" placeholder="Will be filled from master" readonly>
+                </div>
+
+                <div class="mobile-field-row">
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Quantity</label>
+                        <input type="number" class="unified-input mobile-field-input" value="1" min="1">
+                    </div>
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Unit</label>
+                        <input type="text" class="unified-input mobile-field-input" value="" placeholder="Unit">
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">
+                        HSN Code 
+                        <span class="read-only-badge">FROM MASTER</span>
+                    </label>
+                    <input type="text" class="unified-input mobile-field-input" value="" placeholder="Will be filled from master" readonly>
+                </div>
+
+                <div class="mobile-field-row">
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">
+                            GST % 
+                            <span class="read-only-badge">FROM MASTER</span>
+                        </label>
+                        <input type="number" class="unified-input mobile-field-input" value="" step="0.01" min="0" placeholder="From master" readonly>
+                    </div>
+                    <div class="mobile-field-group mobile-field-half">
+                        <label class="mobile-field-label">Disc %</label>
+                        <input type="number" class="unified-input mobile-field-input" value="" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Discount Amount</label>
+                    <input type="number" class="unified-input mobile-field-input" value="" step="0.01" min="0" placeholder="0.00">
+                </div>
+
+                <div class="mobile-field-group">
+                    <label class="mobile-field-label">Total Amount</label>
+                    <input type="text" class="unified-input mobile-field-input total-amount" value="₹0.00" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">
+            <h3 style="color: #28a745; margin: 0 0 10px 0;">✅ Updated Mobile Features</h3>
+            <ul style="text-align: left; color: #666; margin: 0; padding-left: 20px;">
+                <li><strong>✅ Material Selector Icon:</strong> Blue search icon next to Material No. field</li>
+                <li><strong>✅ Read-Only Fields:</strong> Material Description, Unit Rate, HSN Code, GST% (grayed out)</li>
+                <li><strong>✅ Auto-Fill from Master:</strong> Fields populated when material is selected</li>
+                <li><strong>✅ Editable Fields:</strong> Serial No., Material No., Quantity, Unit, Discount%, Discount Amount</li>
+                <li><strong>✅ Simplified Menu:</strong> Three-dot menu now only shows Remove Item</li>
+                <li><strong>✅ Visual Indicators:</strong> "FROM MASTER" badges on read-only fields</li>
+            </ul>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-radius: 8px; font-size: 14px;">
+                <strong>🔍 Material Selector Workflow:</strong><br>
+                1. Tap search icon next to Material No.<br>
+                2. Select from material master<br>
+                3. Description, Unit Rate, HSN, GST% auto-filled<br>
+                4. Only user-specific fields remain editable
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown(itemId) {
+            const dropdown = document.getElementById(`dropdown-${itemId}`);
+            const isVisible = dropdown.style.display !== 'none';
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.unified-dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+            
+            // Toggle current dropdown
+            dropdown.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.unified-card-menu')) {
+                document.querySelectorAll('.unified-dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+
+        // Material selector demo
+        document.querySelectorAll('.material-selector-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                alert('Material Selector would open here!\n\nSelected material would auto-fill:\n- Material Description\n- Unit Rate\n- HSN Code\n- GST %');
+            });
+        });
+
+        // Demo read-only field behavior
+        document.querySelectorAll('input[readonly], textarea[readonly]').forEach(field => {
+            field.addEventListener('click', function() {
+                this.style.backgroundColor = '#f8f9fa';
+                setTimeout(() => {
+                    this.style.backgroundColor = '#f8f9fa';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html>

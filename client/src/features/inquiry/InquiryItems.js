@@ -469,17 +469,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     </button>
                     {openDropdown === `item-${index}` && (
                       <div className="unified-dropdown-menu">
-                        <button
-                          className="unified-dropdown-item"
-                          onClick={() => {
-                            closeDropdown();
-                            openMaterialSelector(index);
-                          }}
-                          disabled={!hospital || !surgicalCategory}
-                        >
-                          <span className="action-icon">🔍</span>
-                          Select Material
-                        </button>
                         {inquiryItems.length > 1 && (
                           <button
                             className="unified-dropdown-item danger"
@@ -519,6 +508,17 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
                       placeholder="Enter material number"
                     />
+                    <button
+                      type="button"
+                      className="material-selector-btn"
+                      onClick={() => openMaterialSelector(index)}
+                      disabled={!hospital || !surgicalCategory}
+                      title="Select from material master"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -527,9 +527,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <textarea
                     className="unified-input mobile-field-input"
                     value={item.materialDescription}
-                    onChange={(e) => handleInputChange(index, 'materialDescription', e.target.value)}
-                    placeholder="Enter material description"
+                    placeholder="Material description from master"
                     rows="2"
+                    readOnly
                   />
                 </div>
 
@@ -539,9 +539,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     type="number"
                     className="unified-input mobile-field-input"
                     value={item.unitRate}
-                    onChange={(e) => handleInputChange(index, 'unitRate', parseFloat(e.target.value) || 0)}
                     placeholder="0.00"
                     step="0.01"
+                    readOnly
                   />
                 </div>
 
@@ -574,8 +574,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     type="text"
                     className="unified-input mobile-field-input"
                     value={item.hsnCode}
-                    onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
-                    placeholder="Enter HSN code"
+                    placeholder="HSN from material master"
+                    readOnly
                   />
                 </div>
 
@@ -586,9 +586,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       type="number"
                       className="unified-input mobile-field-input"
                       value={item.gstPercentage}
-                      onChange={(e) => handleInputChange(index, 'gstPercentage', parseFloat(e.target.value) || 0)}
                       step="0.01"
                       min="0"
+                      readOnly
                     />
                   </div>
                   <div className="mobile-field-group mobile-field-half">
