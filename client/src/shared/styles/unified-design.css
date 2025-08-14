@@ -1385,6 +1385,39 @@
   cursor: not-allowed;
 }
 
+.unified-input-sm.text-center {
+  text-align: center;
+}
+
+/* Numeric input styling for better decimal display */
+.unified-input-sm[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.unified-input-sm[type="number"]::-webkit-outer-spin-button,
+.unified-input-sm[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Serial number input styling */
+.unified-input-sm[title*="reorder"] {
+  background-color: #fff8dc;
+  border-color: #deb887;
+  font-weight: 600;
+}
+
+.unified-input-sm[title*="reorder"]:focus {
+  background-color: #fffacd;
+  border-color: var(--warning-color);
+}
+
+/* Right-aligned numeric inputs */
+.unified-input-sm[style*="text-align: right"] {
+  padding-right: 0.75rem;
+}
+
 .inquiry-items-summary {
   margin-top: 1rem;
   padding: 1rem;

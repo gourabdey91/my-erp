@@ -80,8 +80,24 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       updatedItems[index].totalAmount = calculations.totalAmount;
     }
     
-    setInquiryItems(updatedItems);
-    onItemsChange(updatedItems);
+    // Handle serial number changes - sort items when serial number is modified
+    if (field === 'serialNumber') {
+      const serialNum = parseInt(value) || 1;
+      updatedItems[index].serialNumber = serialNum;
+      
+      // Sort items by serial number and renumber them sequentially
+      const sortedItems = updatedItems.sort((a, b) => a.serialNumber - b.serialNumber);
+      const renumberedItems = sortedItems.map((item, i) => ({
+        ...item,
+        serialNumber: i + 1
+      }));
+      
+      setInquiryItems(renumberedItems);
+      onItemsChange(renumberedItems);
+    } else {
+      setInquiryItems(updatedItems);
+      onItemsChange(updatedItems);
+    }
     
     // Clear field-specific errors
     if (errors[`${index}_${field}`]) {
@@ -166,10 +182,24 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
   // Format currency display
   const formatCurrency = (amount, currency = 'INR') => {
-    return `${parseFloat(amount || 0).toLocaleString('en-IN', {
+    const numAmount = parseFloat(amount) || 0;
+    return `${numAmount.toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })} ${currency}`;
+  };
+
+  // Format decimal input value for display
+  const formatDecimalInput = (value) => {
+    const numValue = parseFloat(value) || 0;
+    return numValue.toFixed(2);
+  };
+
+  // Handle formatted decimal input change
+  const handleDecimalInputChange = (index, field, value) => {
+    // Remove any non-numeric characters except decimal point
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    handleInputChange(index, field, cleanValue);
   };
 
   // Calculate grand total
@@ -214,7 +244,17 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
               <tbody>
                 {inquiryItems.map((item, index) => (
                   <tr key={index}>
-                    <td className="text-center">{item.serialNumber}</td>
+                    <td className="text-center">
+                      <input
+                        type="number"
+                        className="unified-input-sm text-center"
+                        style={{ width: '50px' }}
+                        value={item.serialNumber}
+                        onChange={(e) => handleInputChange(index, 'serialNumber', e.target.value)}
+                        min="1"
+                        title="Edit to reorder items. Items will be sorted and renumbered automatically."
+                      />
+                    </td>
                     <td>
                       <div className="material-input-group">
                         <input
@@ -261,9 +301,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         className={`unified-input-sm ${errors[`${index}_unitRate`] ? 'error' : ''}`}
                         value={item.unitRate}
                         onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
-                        placeholder="Rate"
+                        placeholder="0.00"
                         min="0"
                         step="0.01"
+                        style={{ textAlign: 'right' }}
                         readOnly={!!item.materialDescription} // Read-only if selected from material master
                         title={item.materialDescription ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
                       />
@@ -288,9 +329,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         className={`unified-input-sm ${errors[`${index}_quantity`] ? 'error' : ''}`}
                         value={item.quantity}
                         onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
-                        placeholder="Qty"
+                        placeholder="0.00"
                         min="0.01"
                         step="0.01"
+                        style={{ textAlign: 'right' }}
                       />
                     </td>
                     <td>
@@ -322,9 +364,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         className="unified-input-sm"
                         value={item.discountAmount}
                         onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
-                        placeholder="0"
+                        placeholder="0.00"
                         min="0"
                         step="0.01"
+                        style={{ textAlign: 'right' }}
                       />
                     </td>
                     <td className="text-right">

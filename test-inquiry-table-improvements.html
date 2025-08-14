@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiry Items Table Improvements</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .improvement-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #27ae60;
+            background: #f0f8f0;
+            border-radius: 0 8px 8px 0;
+        }
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .before {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .after {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+        }
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .demo-table th, .demo-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+        .demo-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .demo-input {
+            width: 60px;
+            padding: 4px 6px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .demo-input.serial {
+            background-color: #fff8dc;
+            border-color: #deb887;
+            font-weight: 600;
+        }
+        .demo-input.decimal {
+            text-align: right;
+            width: 80px;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+        .feature-list {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📊 Inquiry Items Table Improvements</h1>
+        
+        <div class="improvement-section">
+            <h3>✅ Improvement 1: Unit Price Decimal Field</h3>
+            <p><strong>Issue:</strong> Unit price field didn't show proper decimal formatting</p>
+            
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <div class="code-block">
+&lt;input
+  type="number"
+  placeholder="Rate"
+  step="0.01"
+/&gt;
+                    </div>
+                    <p>• Generic placeholder "Rate"</p>
+                    <p>• No right alignment for numbers</p>
+                    <p>• No visual indication of decimal precision</p>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <div class="code-block">
+&lt;input
+  type="number"
+  placeholder="0.00"
+  step="0.01"
+  style={{ textAlign: 'right' }}
+/&gt;
+                    </div>
+                    <p>• Decimal placeholder "0.00"</p>
+                    <p>• Right-aligned for better readability</p>
+                    <p>• Clear decimal precision indication</p>
+                </div>
+            </div>
+
+            <h4>Demo Table:</h4>
+            <table class="demo-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Material</th>
+                        <th>Unit Rate ₹</th>
+                        <th>Quantity</th>
+                        <th>Disc Amt ₹</th>
+                        <th>Total ₹</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input class="demo-input serial" value="1" readonly /></td>
+                        <td>Wire Mesh 1.5mm</td>
+                        <td><input class="demo-input decimal" value="15,999.50" readonly /></td>
+                        <td><input class="demo-input decimal" value="2.00" readonly /></td>
+                        <td><input class="demo-input decimal" value="500.00" readonly /></td>
+                        <td><strong>31,499.00</strong></td>
+                    </tr>
+                    <tr>
+                        <td><input class="demo-input serial" value="2" /></td>
+                        <td>Titanium Plate</td>
+                        <td><input class="demo-input decimal" placeholder="0.00" /></td>
+                        <td><input class="demo-input decimal" placeholder="0.00" /></td>
+                        <td><input class="demo-input decimal" placeholder="0.00" /></td>
+                        <td><strong>0.00</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="improvement-section">
+            <h3>✅ Improvement 2: Editable Serial Numbers</h3>
+            <p><strong>Feature:</strong> Serial numbers are now editable for reordering items</p>
+            
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <div class="code-block">
+&lt;td className="text-center"&gt;
+  {item.serialNumber}
+&lt;/td&gt;
+                    </div>
+                    <p>• Display-only serial numbers</p>
+                    <p>• No way to reorder items</p>
+                    <p>• Fixed sequence</p>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <div class="code-block">
+&lt;td className="text-center"&gt;
+  &lt;input
+    type="number"
+    className="unified-input-sm text-center"
+    value={item.serialNumber}
+    onChange={(e) => handleInputChange(index, 'serialNumber', e.target.value)}
+    title="Edit to reorder items"
+  /&gt;
+&lt;/td&gt;
+                    </div>
+                    <p>• Editable serial numbers</p>
+                    <p>• Automatic sorting on change</p>
+                    <p>• Renumbering after reordering</p>
+                </div>
+            </div>
+
+            <div class="feature-list">
+                <h4>🚀 Reordering Features:</h4>
+                <ul>
+                    <li><strong>Edit Serial Number:</strong> Change any serial number to reorder</li>
+                    <li><strong>Automatic Sorting:</strong> Items automatically sort by serial number</li>
+                    <li><strong>Sequential Renumbering:</strong> Items renumbered 1, 2, 3... after sorting</li>
+                    <li><strong>Visual Feedback:</strong> Serial number field has distinct styling (light yellow background)</li>
+                    <li><strong>Helpful Tooltips:</strong> Hover hint explains the reordering functionality</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="improvement-section">
+            <h3>🔧 Technical Implementation</h3>
+            
+            <h4>Serial Number Handling Logic:</h4>
+            <div class="code-block">
+// Handle serial number changes - sort items when serial number is modified
+if (field === 'serialNumber') {
+  const serialNum = parseInt(value) || 1;
+  updatedItems[index].serialNumber = serialNum;
+  
+  // Sort items by serial number and renumber them sequentially
+  const sortedItems = updatedItems.sort((a, b) => a.serialNumber - b.serialNumber);
+  const renumberedItems = sortedItems.map((item, i) => ({
+    ...item,
+    serialNumber: i + 1
+  }));
+  
+  setInquiryItems(renumberedItems);
+  onItemsChange(renumberedItems);
+}
+            </div>
+
+            <h4>CSS Enhancements:</h4>
+            <div class="code-block">
+/* Serial number input styling */
+.unified-input-sm[title*="reorder"] {
+  background-color: #fff8dc;  /* Light yellow background */
+  border-color: #deb887;     /* Golden border */
+  font-weight: 600;          /* Bold text */
+}
+
+/* Right-aligned numeric inputs */
+.unified-input-sm[style*="text-align: right"] {
+  padding-right: 0.75rem;    /* Better padding for right-aligned text */
+}
+
+/* Remove number input spinners for cleaner look */
+.unified-input-sm[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+            </div>
+        </div>
+
+        <div class="improvement-section">
+            <h3>🎯 User Experience Improvements</h3>
+            
+            <div class="feature-list">
+                <h4>✨ Enhanced Functionality:</h4>
+                <ul>
+                    <li><strong>Better Decimal Display:</strong> All monetary fields show "0.00" placeholder</li>
+                    <li><strong>Right-Aligned Numbers:</strong> Unit rates, quantities, and amounts align right</li>
+                    <li><strong>Reorderable Items:</strong> Easy drag-like reordering by editing serial numbers</li>
+                    <li><strong>Auto-Sorting:</strong> Items automatically reorganize based on serial number changes</li>
+                    <li><strong>Sequential Numbering:</strong> Clean 1, 2, 3... numbering after reordering</li>
+                    <li><strong>Visual Distinction:</strong> Serial number fields have unique styling</li>
+                    <li><strong>Clean Number Inputs:</strong> Removed browser spinners for cleaner appearance</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="improvement-section">
+            <h3>🧪 Testing Scenarios</h3>
+            <ol>
+                <li><strong>Decimal Display:</strong> 
+                    <button class="test-btn" onclick="window.open('http://localhost:3000', '_blank')">Open App</button>
+                    <ul>
+                        <li>Create new inquiry with items</li>
+                        <li>Verify unit rate shows "0.00" placeholder</li>
+                        <li>Enter decimal values (e.g., 15999.50)</li>
+                        <li>Check right alignment of numbers</li>
+                    </ul>
+                </li>
+                <li><strong>Serial Number Reordering:</strong>
+                    <ul>
+                        <li>Add 3-4 items to inquiry</li>
+                        <li>Change serial number of item 4 to 1</li>
+                        <li>Verify item moves to position 1</li>
+                        <li>Check all items renumbered sequentially (1,2,3,4)</li>
+                    </ul>
+                </li>
+                <li><strong>Data Integrity:</strong>
+                    <ul>
+                        <li>Reorder items and save inquiry</li>
+                        <li>Verify items save in the new order</li>
+                        <li>Reload inquiry and check order is preserved</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="improvement-section">
+            <h3>✅ Summary of Changes</h3>
+            <div class="feature-list">
+                <ul>
+                    <li>✅ <strong>Unit price decimal field:</strong> Better formatting with "0.00" placeholder and right alignment</li>
+                    <li>✅ <strong>Editable serial numbers:</strong> Click to edit for reordering items</li>
+                    <li>✅ <strong>Automatic sorting:</strong> Items sort by serial number when changed</li>
+                    <li>✅ <strong>Sequential renumbering:</strong> Clean 1,2,3... sequence after reordering</li>
+                    <li>✅ <strong>Enhanced styling:</strong> Visual distinction for serial numbers and right-aligned numbers</li>
+                    <li>✅ <strong>Improved UX:</strong> Tooltips and visual feedback for better usability</li>
+                    <li>✅ <strong>Data integrity:</strong> Items save in correct order based on serial numbers</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('📊 Inquiry Items Table Improvements Applied');
+        console.log('✅ Unit price decimal formatting enhanced');
+        console.log('✅ Serial numbers now editable for reordering');
+        console.log('✅ Automatic sorting and renumbering implemented');
+        console.log('✅ Enhanced styling and UX improvements added');
+        console.log('💡 Test the improvements in the React application');
+    </script>
+</body>
+</html>
