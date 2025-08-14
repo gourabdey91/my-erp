@@ -61,6 +61,25 @@ const inquiryItemSchema = new mongoose.Schema({
     min: 0,
     set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
   },
+  // GST Amount Breakdown
+  cgstAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
+  },
+  sgstAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
+  },
+  igstAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
+  },
   currency: {
     type: String,
     required: true,
@@ -161,13 +180,28 @@ inquirySchema.index({ isActive: 1 });
 // Add pagination plugin
 inquirySchema.plugin(mongoosePaginate);
 
-// Helper method to calculate item total amount
-inquiryItemSchema.methods.calculateTotal = function() {
+// Helper method to calculate item total amount with GST breakdown
+inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', companyStateCode = '') {
   const baseAmount = this.unitRate * this.quantity;
   const gstAmount = (baseAmount * this.gstPercentage) / 100;
   const discountAmount = this.discountAmount || ((baseAmount * this.discountPercentage) / 100);
   
+  // Calculate GST breakdown
+  const cgstAmount = gstAmount * 0.5; // Always 50%
+  
+  // Same state: SGST = 50%, IGST = 0
+  // Different state: SGST = 0, IGST = 50%
+  const isSameState = customerStateCode === companyStateCode;
+  const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
+  const igstAmount = isSameState ? 0 : gstAmount * 0.5;
+  
   const totalAmount = baseAmount + gstAmount - discountAmount;
+  
+  // Update GST amounts on the item
+  this.cgstAmount = Math.round(cgstAmount * 100) / 100;
+  this.sgstAmount = Math.round(sgstAmount * 100) / 100;
+  this.igstAmount = Math.round(igstAmount * 100) / 100;
+  
   return Math.round(totalAmount * 100) / 100;
 };
 

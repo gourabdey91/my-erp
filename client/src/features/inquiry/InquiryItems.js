@@ -10,6 +10,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [companyDetails, setCompanyDetails] = useState(null);
 
   // Dropdown management
   const toggleDropdown = (dropdownId) => {
@@ -20,9 +21,28 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     setOpenDropdown(null);
   };
 
+  // Fetch company details
+  const fetchCompanyDetails = async () => {
+    try {
+      const response = await fetch('/api/company-details');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setCompanyDetails(data.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching company details:', error);
+    }
+  };
+
   // Initialize with one empty item if no items provided
   useEffect(() => {
     console.log('InquiryItems useEffect - items:', items, 'hospital:', hospital);
+    
+    // Fetch company details
+    fetchCompanyDetails();
+    
     if (items.length === 0) {
       const emptyItem = createEmptyItem(1);
       setInquiryItems([emptyItem]);
@@ -77,7 +97,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       const itemsWithTotals = updatedItems.map(item => {
         // Get state codes for GST calculation
         const customerStateCode = hospital?.stateCode || '';
-        const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+        const companyStateCode = companyDetails?.compliance?.stateCode || '';
+        
+        console.log('Material fetch - State codes:', { customerStateCode, companyStateCode });
         
         const calculations = calculateItemTotal(item, customerStateCode, companyStateCode);
         return { 
@@ -234,7 +256,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     if (['unitRate', 'quantity', 'gstPercentage', 'discountPercentage', 'discountAmount'].includes(field)) {
       // Get state codes for GST calculation
       const customerStateCode = hospital?.stateCode || '';
-      const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+      const companyStateCode = companyDetails?.compliance?.stateCode || '';
+      
+      console.log('State codes for GST calculation:', { customerStateCode, companyStateCode });
       
       const calculations = calculateItemTotal(updatedItems[index], customerStateCode, companyStateCode);
       
@@ -328,7 +352,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       
       // Recalculate totals
       const customerStateCode = hospital?.stateCode || '';
-      const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+      const companyStateCode = companyDetails?.compliance?.stateCode || '';
+      
+      console.log('Material select - State codes:', { customerStateCode, companyStateCode });
       
       const calculations = calculateItemTotal(updatedItems[selectedItemIndex], customerStateCode, companyStateCode);
       updatedItems[selectedItemIndex].totalAmount = calculations.totalAmount;
