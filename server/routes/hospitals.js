@@ -817,4 +817,98 @@ router.post('/:hospitalId/material-assignments/save-processed', async (req, res)
   }
 });
 
+// Get assigned materials for inquiry selection with filtering
+router.get('/:hospitalId/assigned-materials-for-inquiry', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    const { 
+      surgicalCategory, 
+      implantType, 
+      subCategory, 
+      lengthMm,
+      search 
+    } = req.query;
+
+    // Get hospital with assigned materials
+    const hospital = await Hospital.findById(hospitalId)
+      .populate({
+        path: 'materialAssignments.material',
+        populate: [
+          { path: 'surgicalCategory', select: 'description code' },
+          { path: 'implantType', select: 'name subcategories' }
+        ]
+      });
+
+    if (!hospital) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Hospital not found' 
+      });
+    }
+
+    // Filter active material assignments
+    let materials = hospital.materialAssignments
+      .filter(assignment => assignment.isActive && assignment.material)
+      .map(assignment => ({
+        ...assignment.material.toObject(),
+        assignmentId: assignment._id,
+        assignedMrp: assignment.mrp,
+        assignedInstitutionalPrice: assignment.institutionalPrice
+      }));
+
+    // Apply filters
+    if (surgicalCategory) {
+      materials = materials.filter(material => 
+        material.surgicalCategory && material.surgicalCategory._id.toString() === surgicalCategory
+      );
+    }
+
+    if (implantType) {
+      materials = materials.filter(material => {
+        if (!material.implantType) return false;
+        
+        // Check if implantType filter matches either ID or name
+        return material.implantType._id.toString() === implantType || 
+               material.implantType.name === implantType;
+      });
+    }
+
+    if (subCategory) {
+      materials = materials.filter(material => 
+        material.subCategory && material.subCategory.toLowerCase().includes(subCategory.toLowerCase())
+      );
+    }
+
+    if (lengthMm) {
+      const targetLength = parseFloat(lengthMm);
+      materials = materials.filter(material => 
+        material.lengthMm && Math.abs(material.lengthMm - targetLength) < 0.1
+      );
+    }
+
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      materials = materials.filter(material =>
+        material.materialNumber.toLowerCase().includes(searchTerm) ||
+        material.description.toLowerCase().includes(searchTerm) ||
+        material.hsnCode.includes(searchTerm)
+      );
+    }
+
+    res.json({
+      success: true,
+      data: materials,
+      count: materials.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching assigned materials for inquiry:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while fetching assigned materials',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
 
 const MaterialSelector = ({ 
@@ -13,78 +14,34 @@ const MaterialSelector = ({
   const [filteredMaterials, setFilteredMaterials] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(''); // Add error state
   const [selectedMaterial, setSelectedMaterial] = useState(null);
+  
+  // Filter states
+  const [implantTypes, setImplantTypes] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [lengths, setLengths] = useState([]);
+  
+  // Selected filter values
+  const [selectedImplantType, setSelectedImplantType] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedLength, setSelectedLength] = useState('');
 
-  // Mock data for now - will be replaced with actual API call
-  const mockMaterials = [
-    {
-      _id: '1',
-      materialNumber: 'MAT001',
-      description: 'Surgical Suture 3-0',
-      hsnCode: '30051000',
-      unitRate: 150.00,
-      gstPercentage: 12,
-      unit: 'PCS',
-      category: 'Sutures'
-    },
-    {
-      _id: '2',
-      materialNumber: 'MAT002',
-      description: 'Disposable Syringe 10ml',
-      hsnCode: '90183100',
-      unitRate: 25.50,
-      gstPercentage: 12,
-      unit: 'PCS',
-      category: 'Disposables'
-    },
-    {
-      _id: '3',
-      materialNumber: 'MAT003',
-      description: 'Surgical Gloves Size M',
-      hsnCode: '40151100',
-      unitRate: 180.00,
-      gstPercentage: 18,
-      unit: 'PAIR',
-      category: 'PPE'
-    },
-    {
-      _id: '4',
-      materialNumber: 'MAT004',
-      description: 'Orthopedic Implant Screw',
-      hsnCode: '90212100',
-      unitRate: 2500.00,
-      gstPercentage: 5,
-      unit: 'PCS',
-      category: 'Implants'
-    },
-    {
-      _id: '5',
-      materialNumber: 'MAT005',
-      description: 'Cardiac Stent Drug Eluting',
-      hsnCode: '90212200',
-      unitRate: 45000.00,
-      gstPercentage: 5,
-      unit: 'PCS',
-      category: 'Cardiovascular'
-    }
-  ];
-
-  // Fetch materials based on hospital and surgical category
+  // Load implant types when component opens
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen && hospital && surgicalCategory) {
-      setLoading(true);
-      
-      // Simulate API call delay
-      setTimeout(() => {
-        // For now, return mock data filtered by category
-        // In real implementation, this would be an API call to get materials
-        // assigned to the specific hospital and surgical category
-        setMaterials(mockMaterials);
-        setFilteredMaterials(mockMaterials);
-        setLoading(false);
-      }, 500);
+      loadAvailableImplantTypes();
     }
   }, [isOpen, hospital, surgicalCategory]);
+
+  // Fetch materials when filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isOpen && hospital && surgicalCategory) {
+      fetchMaterials();
+    }
+  }, [isOpen, hospital, surgicalCategory, selectedImplantType, selectedSubcategory, selectedLength]);
 
   // Filter materials based on search term
   useEffect(() => {
@@ -99,6 +56,178 @@ const MaterialSelector = ({
       setFilteredMaterials(filtered);
     }
   }, [searchTerm, materials]);
+
+  // Load available implant types for this hospital and surgical category
+  const loadAvailableImplantTypes = async () => {
+    try {
+      // Extract IDs from objects if necessary
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
+      
+      console.log('🚀 Loading implant types for:', { hospitalId, surgicalCategoryId });
+      
+      if (!hospitalId || !surgicalCategoryId) {
+        console.warn('⚠️ Missing hospital or surgical category ID');
+        setImplantTypes([]);
+        setError('Please select both hospital and surgical category first');
+        return;
+      }
+      
+      setLoading(true);
+      setError(''); // Clear any previous errors
+      
+      const response = await materialAPI.getAvailableImplantTypesForInquiry(hospitalId, surgicalCategoryId);
+      console.log('📊 Implant types API response:', response);
+      
+      if (response && response.success) {
+        console.log('✅ Available implant types:', response.data);
+        setImplantTypes(response.data || []);
+        
+        // Show user feedback if no implant types found
+        if (!response.data || response.data.length === 0) {
+          setError('No implant types available for the selected hospital and surgical category');
+        }
+      } else {
+        console.warn('❌ Failed to load implant types:', response);
+        setImplantTypes([]);
+        setError(response.error || 'Failed to load implant types. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Error loading available implant types:', error);
+      setImplantTypes([]);
+      setError(`Network error: ${error.message}. Please check your connection and try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch materials with current filters
+  const fetchMaterials = async () => {
+    setLoading(true);
+    
+    try {
+      // Extract IDs from objects if necessary
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
+      
+      const filters = {
+        surgicalCategory: surgicalCategoryId,
+        ...(selectedImplantType && { implantType: selectedImplantType }),
+        ...(selectedSubcategory && { subCategory: selectedSubcategory }),
+        ...(selectedLength && { lengthMm: selectedLength })
+      };
+
+      const response = await materialAPI.getAssignedMaterialsForInquiry(hospitalId, filters);
+      
+      if (response.success) {
+        setMaterials(response.data || []);
+        setFilteredMaterials(response.data || []);
+      } else {
+        setMaterials([]);
+        setFilteredMaterials([]);
+      }
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      setMaterials([]);
+      setFilteredMaterials([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle implant type change
+  const handleImplantTypeChange = async (value) => {
+    setSelectedImplantType(value);
+    setSelectedSubcategory('');
+    setSelectedLength('');
+    
+    if (value) {
+      // Extract IDs from objects if necessary
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
+      
+      // Load subcategories for selected implant type
+      try {
+        const response = await materialAPI.getSubcategoriesByImplantTypeAndCategory(value, surgicalCategoryId, hospitalId);
+        if (response.success) {
+          setSubcategories(response.data || []);
+        }
+      } catch (error) {
+        console.error('Error loading subcategories:', error);
+        setSubcategories([]);
+      }
+      
+      // Load lengths for selected implant type
+      try {
+        const lengthResponse = await materialAPI.getLengthsByCriteria(hospitalId, { 
+          surgicalCategory: surgicalCategoryId, 
+          implantType: value 
+        });
+        if (lengthResponse.success) {
+          const lengthData = lengthResponse.data || [];
+          console.log('🔧 Length data received:', lengthData);
+          
+          // Ensure all lengths are primitives
+          const safeLengths = lengthData.filter(length => {
+            if (typeof length === 'object') {
+              console.warn('⚠️ Found object in lengths:', length);
+              return false;
+            }
+            return true;
+          });
+          
+          setLengths(safeLengths);
+          console.log('✅ Safe lengths set:', safeLengths);
+        }
+      } catch (error) {
+        console.error('Error loading lengths:', error);
+        setLengths([]);
+      }
+    } else {
+      setSubcategories([]);
+      setLengths([]);
+    }
+  };
+
+  // Handle subcategory change
+  const handleSubcategoryChange = async (value) => {
+    setSelectedSubcategory(value);
+    setSelectedLength('');
+    
+    if (value && selectedImplantType) {
+      // Extract IDs from objects if necessary
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
+      
+      // Load lengths for selected implant type and subcategory
+      try {
+        const lengthResponse = await materialAPI.getLengthsByCriteria(hospitalId, { 
+          surgicalCategory: surgicalCategoryId,
+          implantType: selectedImplantType,
+          subCategory: value
+        });
+        if (lengthResponse.success) {
+          const lengthData = lengthResponse.data || [];
+          console.log('🔧 Length data received (subcategory):', lengthData);
+          
+          // Ensure all lengths are primitives
+          const safeLengths = lengthData.filter(length => {
+            if (typeof length === 'object') {
+              console.warn('⚠️ Found object in lengths (subcategory):', length);
+              return false;
+            }
+            return true;
+          });
+          
+          setLengths(safeLengths);
+          console.log('✅ Safe lengths set (subcategory):', safeLengths);
+        }
+      } catch (error) {
+        console.error('Error loading lengths:', error);
+        setLengths([]);
+      }
+    }
+  };
 
   const handleMaterialSelect = (material) => {
     setSelectedMaterial(material);
@@ -118,20 +247,35 @@ const MaterialSelector = ({
   };
 
   const formatCurrency = (amount) => {
-    return parseFloat(amount).toLocaleString('en-IN', {
+    if (typeof amount !== 'number' || isNaN(amount) || amount === null || amount === undefined) {
+      return '0.00';
+    }
+    return amount.toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   };
 
   const getHospitalName = () => {
-    const hospitalData = dropdownData.hospitals?.find(h => h._id === hospital);
-    return hospitalData ? (hospitalData.shortName || hospitalData.legalName) : 'Unknown Hospital';
+    try {
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const hospitalData = dropdownData?.hospitals?.find(h => h._id === hospitalId);
+      return hospitalData ? (hospitalData.shortName || hospitalData.legalName || 'Unknown Hospital') : 'Unknown Hospital';
+    } catch (error) {
+      console.error('Error getting hospital name:', error);
+      return 'Unknown Hospital';
+    }
   };
 
   const getCategoryName = () => {
-    const categoryData = dropdownData.surgicalCategories?.find(c => c._id === surgicalCategory);
-    return categoryData ? categoryData.description : 'Unknown Category';
+    try {
+      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
+      const categoryData = dropdownData?.surgicalCategories?.find(c => c._id === surgicalCategoryId);
+      return categoryData ? (categoryData.description || 'Unknown Category') : 'Unknown Category';
+    } catch (error) {
+      console.error('Error getting category name:', error);
+      return 'Unknown Category';
+    }
   };
 
   if (!isOpen) return null;
@@ -160,6 +304,75 @@ const MaterialSelector = ({
             <div className="context-item">
               <span className="context-label">Surgical Category:</span>
               <span className="context-value">{getCategoryName()}</span>
+            </div>
+          </div>
+
+          {/* Filter Controls */}
+          <div className="filter-section">
+            {/* Error Display */}
+            {error && (
+              <div className="error-message" style={{
+                background: '#ffe6e6',
+                color: '#d32f2f',
+                padding: '10px',
+                borderRadius: '4px',
+                marginBottom: '15px',
+                border: '1px solid #ffcdd2'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
+            
+            <div className="filter-row">
+              <div className="filter-group">
+                <label>Implant Type:</label>
+                <select 
+                  value={selectedImplantType} 
+                  onChange={(e) => handleImplantTypeChange(e.target.value)}
+                  className="filter-select"
+                  disabled={loading}
+                >
+                  <option value="">{loading ? "Loading..." : "All Types"}</option>
+                  {implantTypes.map(type => (
+                    <option key={type._id} value={type.name}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="filter-group">
+                <label>Subcategory:</label>
+                <select 
+                  value={selectedSubcategory} 
+                  onChange={(e) => handleSubcategoryChange(e.target.value)}
+                  className="filter-select"
+                  disabled={!selectedImplantType}
+                >
+                  <option value="">All Subcategories</option>
+                  {subcategories.map(sub => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="filter-group">
+                <label>Length:</label>
+                <select 
+                  value={selectedLength} 
+                  onChange={(e) => setSelectedLength(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Lengths</option>
+                  {lengths.map((length, index) => (
+                    <option key={index} value={length}>
+                      {typeof length === 'object' ? JSON.stringify(length) : length}mm
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -201,27 +414,13 @@ const MaterialSelector = ({
                     className={`material-item ${selectedMaterial?._id === material._id ? 'selected' : ''}`}
                     onClick={() => handleMaterialSelect(material)}
                   >
-                    <div className="material-header">
-                      <span className="material-number">{material.materialNumber}</span>
-                      <span className="material-category">{material.category}</span>
-                    </div>
-                    <div className="material-description">{material.description}</div>
-                    <div className="material-details">
-                      <div className="detail-group">
-                        <span className="detail-label">HSN Code:</span>
-                        <span className="detail-value">{material.hsnCode}</span>
+                    <div className="material-main-row">
+                      <div className="material-left">
+                        <span className="material-number clickable">{material.materialNumber}</span>
+                        <span className="material-description">{material.description}</span>
                       </div>
-                      <div className="detail-group">
-                        <span className="detail-label">Unit Rate:</span>
-                        <span className="detail-value">₹{formatCurrency(material.unitRate)}</span>
-                      </div>
-                      <div className="detail-group">
-                        <span className="detail-label">GST:</span>
-                        <span className="detail-value">{material.gstPercentage}%</span>
-                      </div>
-                      <div className="detail-group">
-                        <span className="detail-label">Unit:</span>
-                        <span className="detail-value">{material.unit}</span>
+                      <div className="material-right">
+                        <span className="material-unit-rate">₹{formatCurrency(material.assignedInstitutionalPrice)}</span>
                       </div>
                     </div>
                   </div>

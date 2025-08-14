@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Material Selector - UI Improvements</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .test-section:last-child {
+            border-bottom: none;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .api-test {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Material Selector UI/UX Improvements Test</h1>
+        
+        <div class="test-section">
+            <h2>✅ Improvements Implemented</h2>
+            <ul>
+                <li><strong>Fixed NaN in Unit Rate:</strong> Now uses <code>assignedInstitutionalPrice</code> instead of <code>unitRate</code></li>
+                <li><strong>Enhanced formatCurrency Function:</strong> Properly handles undefined/null/NaN values</li>
+                <li><strong>Material Number Clickable:</strong> Users can select material by clicking on material number</li>
+                <li><strong>Optimized Layout:</strong> Material number and description aligned in same row</li>
+                <li><strong>Simplified Display:</strong> Shows only essential info - material number, description, and unit rate</li>
+                <li><strong>Mobile-Friendly Design:</strong> Responsive layout for mobile devices</li>
+                <li><strong>Unified Design Compliance:</strong> Uses design system colors and spacing</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 API Response Structure (Sample)</h2>
+            <div class="api-test">
+{
+  "_id": "6896382defa07f60386dd5bd",
+  "materialNumber": "1000203",
+  "description": "Wire Mesh Dia - 1.5 MM Plate 4 * 4",
+  "hsnCode": "90211000",
+  "assignedInstitutionalPrice": 56963,  ← Used for unit rate
+  "assignedMrp": 159496,
+  "unit": "NOS",
+  "surgicalCategory": {...},
+  "implantType": {...}
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Mobile Responsive Features</h2>
+            <ul>
+                <li>Stacked layout on mobile devices (< 768px)</li>
+                <li>Optimized font sizes for mobile readability</li>
+                <li>Touch-friendly clickable areas</li>
+                <li>Efficient use of vertical space</li>
+                <li>Unit rate prominently displayed</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Testing Steps</h2>
+            <ol>
+                <li>Open React client at <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                <li>Navigate to Inquiry section</li>
+                <li>Select a hospital and surgical category</li>
+                <li>Click "Select Material" button</li>
+                <li>Verify the material popup shows improved layout</li>
+                <li>Check that unit rates display correctly (no NaN)</li>
+                <li>Test clicking on material numbers to select materials</li>
+                <li>Test on mobile viewport (DevTools mobile view)</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ Technical Changes Made</h2>
+            <div class="status success">
+                <strong>✅ MaterialSelector.js:</strong>
+                <ul>
+                    <li>Fixed formatCurrency function to handle null/undefined/NaN</li>
+                    <li>Updated unit rate field to use assignedInstitutionalPrice</li>
+                    <li>Redesigned material item layout (material-main-row structure)</li>
+                    <li>Added clickable material number functionality</li>
+                </ul>
+            </div>
+            
+            <div class="status success">
+                <strong>✅ unified-design.css:</strong>
+                <ul>
+                    <li>Added new styles for material-main-row layout</li>
+                    <li>Enhanced material-number with hover effects</li>
+                    <li>Styled material-unit-rate with green background</li>
+                    <li>Improved mobile responsive design</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Ready to Commit</h2>
+            <div class="status warning">
+                All changes have been implemented successfully. The improvements address:
+                <ul>
+                    <li>✅ NaN unit rate issue fixed</li>
+                    <li>✅ Clickable material selection</li>
+                    <li>✅ Space-efficient layout</li>
+                    <li>✅ Mobile optimization</li>
+                    <li>✅ Unified design compliance</li>
+                </ul>
+                <button class="test-btn" onclick="window.open('http://localhost:3000', '_blank')">Test Live Application</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎯 Material Selector UI Improvements Test Page Loaded');
+        console.log('✅ All requested improvements implemented:');
+        console.log('   - Fixed NaN in unit rate');
+        console.log('   - Material number clickable');
+        console.log('   - Efficient space management');
+        console.log('   - Mobile-friendly design');
+        console.log('   - Unified design system compliance');
+    </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug React Object Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .error {
+            background: #ffe6e6;
+            color: #d32f2f;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug React Object Error</h1>
+    
+    <div class="debug-section">
+        <h2>Test Length Dropdown Rendering</h2>
+        <button onclick="testLengthAPI()">Test Length API</button>
+        <div id="lengthResult"></div>
+        
+        <h3>Simulate React Rendering:</h3>
+        <select id="lengthSelect">
+            <option value="">All Lengths</option>
+        </select>
+        
+        <h3>Debug Object Rendering:</h3>
+        <div id="objectTest"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Test Implant Types</h2>
+        <button onclick="testImplantTypesAPI()">Test Implant Types API</button>
+        <div id="implantResult"></div>
+        
+        <select id="implantSelect">
+            <option value="">All Implant Types</option>
+        </select>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const CARE_HOSPITAL_ID = '68931d3fbbf0c2b8481c523f';
+        const CRANIAL_CATEGORY_ID = '689238679474d7513980ac03';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function showData(elementId, data, title = 'Data') {
+            const element = document.getElementById(elementId);
+            element.innerHTML += `
+                <div>
+                    <h4>${title}:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        async function testLengthAPI() {
+            showResult('lengthResult', '🔄 Testing length API...', 'info');
+            
+            try {
+                const url = `${API_BASE}/hospitals/${CARE_HOSPITAL_ID}/assigned-materials-for-inquiry?surgicalCategory=${CRANIAL_CATEGORY_ID}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Extract lengths like the API would
+                    const lengths = data.data
+                        .filter(material => material.lengthMm !== null && material.lengthMm !== undefined)
+                        .map(material => material.lengthMm)
+                        .filter((length, index, arr) => arr.indexOf(length) === index)
+                        .sort((a, b) => a - b);
+                    
+                    showResult('lengthResult', `✅ Found ${lengths.length} unique lengths`, 'success');
+                    showData('lengthResult', lengths, 'Length Values');
+                    
+                    // Test dropdown population
+                    const select = document.getElementById('lengthSelect');
+                    select.innerHTML = '<option value="">All Lengths</option>';
+                    
+                    lengths.forEach((length, index) => {
+                        console.log(`Length ${index}:`, typeof length, length);
+                        const option = document.createElement('option');
+                        option.value = length;
+                        option.textContent = `${length}mm`;
+                        select.appendChild(option);
+                    });
+                    
+                    // Test object rendering that might cause React error
+                    testObjectRendering(lengths);
+                    
+                } else {
+                    showResult('lengthResult', `❌ API failed: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult('lengthResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testImplantTypesAPI() {
+            showResult('implantResult', '🔄 Testing implant types API...', 'info');
+            
+            try {
+                const url = `${API_BASE}/hospitals/${CARE_HOSPITAL_ID}/assigned-materials-for-inquiry?surgicalCategory=${CRANIAL_CATEGORY_ID}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Extract implant types
+                    const implantTypeMap = new Map();
+                    
+                    data.data.forEach(material => {
+                        if (material.implantType && material.implantType._id && material.implantType.name) {
+                            implantTypeMap.set(material.implantType._id, {
+                                _id: material.implantType._id,
+                                name: material.implantType.name
+                            });
+                        }
+                    });
+                    
+                    const implantTypes = Array.from(implantTypeMap.values());
+                    
+                    showResult('implantResult', `✅ Found ${implantTypes.length} implant types`, 'success');
+                    showData('implantResult', implantTypes, 'Implant Types');
+                    
+                    // Test dropdown population
+                    const select = document.getElementById('implantSelect');
+                    select.innerHTML = '<option value="">All Implant Types</option>';
+                    
+                    implantTypes.forEach((type, index) => {
+                        console.log(`Implant Type ${index}:`, typeof type, type);
+                        const option = document.createElement('option');
+                        option.value = type.name;
+                        option.textContent = type.name;
+                        select.appendChild(option);
+                    });
+                    
+                } else {
+                    showResult('implantResult', `❌ API failed: ${data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult('implantResult', `❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        function testObjectRendering(lengths) {
+            const testDiv = document.getElementById('objectTest');
+            
+            try {
+                // This would cause the same error as React
+                let testHTML = '<p>Length values: ';
+                lengths.forEach(length => {
+                    if (typeof length === 'object') {
+                        testHTML += `[OBJECT: ${JSON.stringify(length)}] `;
+                    } else {
+                        testHTML += `${length} `;
+                    }
+                });
+                testHTML += '</p>';
+                
+                testDiv.innerHTML = testHTML;
+                
+                // Check for problematic objects
+                const problematicObjects = lengths.filter(length => typeof length === 'object');
+                if (problematicObjects.length > 0) {
+                    testDiv.innerHTML += `<div class="error">⚠️ Found ${problematicObjects.length} object(s) in lengths array that could cause React errors!</div>`;
+                    showData('objectTest', problematicObjects, 'Problematic Objects');
+                } else {
+                    testDiv.innerHTML += '<div class="success">✅ All length values are primitives (safe for React)</div>';
+                }
+                
+            } catch (error) {
+                testDiv.innerHTML = `<div class="error">❌ Object rendering test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run tests
+        window.addEventListener('load', function() {
+            setTimeout(testLengthAPI, 1000);
+            setTimeout(testImplantTypesAPI, 2000);
+        });
+    </script>
+</body>
+</html>
