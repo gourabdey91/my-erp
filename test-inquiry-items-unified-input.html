@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiry Items Table Style Test</title>
+    <link rel="stylesheet" href="client/src/shared/styles/unified-design.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            background: var(--light-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        
+        .test-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .material-input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        
+        .material-selector-btn {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            background: var(--white);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .material-selector-btn:hover {
+            background: var(--gray-50);
+            border-color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <h1>Inquiry Items Table Input Style Test</h1>
+    <p>This test verifies that inquiry items table uses unified-input class and displays properly.</p>
+    
+    <!-- Inquiry Items Table Style Test -->
+    <div class="test-section">
+        <h2>Inquiry Items Table with Unified Input Style</h2>
+        <p><strong>Note:</strong> All inputs below should use the <code>unified-input</code> class and have consistent styling.</p>
+        
+        <table class="unified-table inquiry-items-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">S.No</th>
+                    <th style="width: 180px;">Material Number</th>
+                    <th style="width: 250px;">Material Description</th>
+                    <th style="width: 100px;">HSN Code</th>
+                    <th style="width: 110px;">Unit Rate</th>
+                    <th style="width: 80px;">GST %</th>
+                    <th style="width: 100px;">Quantity</th>
+                    <th style="width: 70px;">Unit</th>
+                    <th style="width: 90px;">Disc %</th>
+                    <th style="width: 110px;">Disc Amt</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="unified-input text-center" 
+                            value="01" 
+                            style="width: 50px;"
+                            title="Serial number input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <div class="material-input-group">
+                            <input 
+                                type="text" 
+                                class="unified-input" 
+                                value="MAT001" 
+                                placeholder="Material number"
+                                title="Material number input - should be unified-input class"
+                            />
+                            <button type="button" class="material-selector-btn">🔍</button>
+                        </div>
+                    </td>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="unified-input" 
+                            value="Surgical Implant Kit" 
+                            placeholder="Material description"
+                            title="Material description input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="unified-input" 
+                            value="30049099" 
+                            placeholder="HSN Code"
+                            title="HSN Code input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="unified-input" 
+                            value="15000.00" 
+                            placeholder="0.00"
+                            title="Unit Rate input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="unified-input" 
+                            value="18.00" 
+                            placeholder="GST%"
+                            title="GST% input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="unified-input" 
+                            value="2.00" 
+                            placeholder="0.00" 
+                            style="text-align: right;"
+                            title="Quantity input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="unified-input" 
+                            value="PCS" 
+                            placeholder="Unit"
+                            title="Unit input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="unified-input" 
+                            value="5.00" 
+                            placeholder="0"
+                            title="Discount % input - should be unified-input class"
+                        />
+                    </td>
+                    <td>
+                        <input 
+                            type="number" 
+                            class="unified-input" 
+                            value="1500.00" 
+                            placeholder="0.00" 
+                            style="text-align: right;"
+                            title="Discount Amount input - should be unified-input class"
+                        />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h3>Expected Behavior:</h3>
+        <ul>
+            <li><strong>All inputs:</strong> Should use <code>unified-input</code> class</li>
+            <li><strong>Padding:</strong> 0.5rem 0.75rem (table-specific override)</li>
+            <li><strong>Font Size:</strong> 0.875rem (table-specific)</li>
+            <li><strong>Focus Color:</strong> #3498db (accent color)</li>
+            <li><strong>Border:</strong> 1px solid var(--gray-300)</li>
+            <li><strong>Background:</strong> White</li>
+        </ul>
+        
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Click on any input field above</li>
+            <li>Verify the focus color is blue (#3498db)</li>
+            <li>Check that all inputs have consistent styling</li>
+            <li>Compare with the main form inputs (should have same focus behavior but different padding)</li>
+        </ol>
+    </div>
+
+    <script>
+        // Log the class names of all inputs to verify they're using unified-input
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input');
+            console.log('=== INQUIRY ITEMS TABLE INPUT CLASSES ===');
+            inputs.forEach((input, index) => {
+                console.log(`Input ${index + 1}: ${input.className}`);
+                console.log(`- Placeholder: ${input.placeholder}`);
+                console.log(`- Value: ${input.value}`);
+                console.log(`- Title: ${input.title}`);
+                console.log('---');
+            });
+            
+            // Verify all use unified-input
+            const unifiedInputs = document.querySelectorAll('.unified-input');
+            console.log(`Total inputs: ${inputs.length}`);
+            console.log(`Unified inputs: ${unifiedInputs.length}`);
+            
+            if (inputs.length === unifiedInputs.length) {
+                console.log('✅ All inputs are using unified-input class');
+            } else {
+                console.log('❌ Some inputs are not using unified-input class');
+            }
+        });
+    </script>
+</body>
+</html>

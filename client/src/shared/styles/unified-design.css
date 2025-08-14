@@ -113,20 +113,64 @@
 }
 
 .unified-search-input,
-.unified-filter-select {
-  padding: 0.75rem 1rem;
+.unified-filter-select,
+.unified-input {
+  padding: 0.625rem 0.875rem;
   border: 1px solid var(--gray-300);
   border-radius: var(--border-radius);
   font-size: 0.9rem;
   background: var(--white);
   transition: var(--transition);
+  width: 100%;
 }
 
 .unified-search-input:focus,
-.unified-filter-select:focus {
+.unified-filter-select:focus,
+.unified-input:focus {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.unified-input.error {
+  border-color: var(--danger-color);
+}
+
+.unified-input:read-only {
+  background-color: var(--gray-100);
+  cursor: not-allowed;
+}
+
+.unified-input:disabled {
+  background-color: var(--white) !important;
+  color: var(--gray-500);
+  cursor: not-allowed;
+  border-color: var(--gray-300);
+}
+
+/* Ensure select dropdowns are always pure white and editable */
+select.unified-input {
+  background-color: var(--white) !important;
+  cursor: pointer;
+}
+
+select.unified-input:disabled {
+  background-color: var(--white) !important;
+  cursor: default;
+}
+
+/* Updated: Ensure disabled select elements also maintain white background */
+.unified-input:disabled,
+select.unified-input:disabled {
+  background-color: var(--white) !important;
+  color: var(--gray-500) !important;
+  cursor: not-allowed;
+  border-color: var(--gray-300);
+  opacity: 0.7;
+}
+
+.unified-input.text-center {
+  text-align: center;
 }
 
 .unified-search-input {
@@ -507,13 +551,14 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
+/* Updated: Standardized font styling for table headers to match form labels */
 .unified-table th {
   background: var(--gray-50);
   font-weight: 600;
   color: var(--gray-700);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 0.9rem; /* Changed from 0.85rem to match form labels */
+  text-transform: none; /* Removed uppercase to match form labels */
+  letter-spacing: normal; /* Removed extra letter spacing */
 }
 
 .unified-table td {
@@ -736,11 +781,13 @@
   flex-direction: column;
 }
 
+/* Updated: Standardized font styling to match table headers */
 .unified-form-label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: var(--gray-700);
+  font-size: 0.9rem; /* Added explicit font size to match table headers */
 }
 
 .unified-error-text {
@@ -1346,6 +1393,246 @@
   }
 }
 
+/* ========== Inquiry Items Table Enhancements ========== */
+/* Updated: Table inputs now use same rounded borders as main form for consistency */
+.inquiry-items-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.inquiry-items-table th,
+.inquiry-items-table td {
+  padding: 0.75rem 0.5rem;
+}
+
+/* Column widths for better content visibility */
+.inquiry-items-table th:nth-child(1) { width: 60px; }   /* S.No */
+.inquiry-items-table th:nth-child(2) { width: 120px; }  /* Material No. */
+.inquiry-items-table th:nth-child(3) { width: 200px; }  /* Material Description */
+.inquiry-items-table th:nth-child(4) { width: 100px; }  /* Unit Rate */
+.inquiry-items-table th:nth-child(5) { width: 80px; }   /* Quantity */
+.inquiry-items-table th:nth-child(6) { width: 60px; }   /* Unit */
+.inquiry-items-table th:nth-child(7) { width: 90px; }   /* HSN Code */
+.inquiry-items-table th:nth-child(8) { width: 70px; }   /* GST % */
+.inquiry-items-table th:nth-child(9) { width: 70px; }   /* Disc % */
+.inquiry-items-table th:nth-child(10) { width: 90px; }  /* Disc Amt */
+.inquiry-items-table th:nth-child(11) { width: 120px; } /* Total Amount */
+.inquiry-items-table th:nth-child(12) { width: 80px; }  /* Actions */
+
+.inquiry-items-table .unified-input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border-radius: var(--border-radius);
+}
+
+.material-description-display {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.material-description-text {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--gray-700);
+  display: block;
+}
+
+.material-description-note {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.total-amount {
+  font-weight: 600;
+  color: var(--success-color);
+}
+
+/* Three-dot menu positioning for table */
+.unified-table-actions .unified-card-menu {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.unified-table-actions .unified-menu-trigger {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: var(--transition);
+  min-width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unified-table-actions .unified-menu-trigger:hover {
+  background: var(--gray-100);
+  color: var(--gray-800);
+}
+
+.unified-table-actions .unified-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  min-width: 160px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.unified-table-actions .unified-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.unified-table-actions .unified-dropdown-item:hover {
+  background: var(--gray-50);
+  color: var(--primary-color);
+}
+
+.unified-table-actions .unified-dropdown-item.danger {
+  color: var(--danger-color);
+}
+
+.unified-table-actions .unified-dropdown-item.danger:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.unified-table-actions .unified-dropdown-item:disabled {
+  color: var(--gray-400);
+  cursor: not-allowed;
+}
+
+.unified-table-actions .unified-dropdown-item:disabled:hover {
+  background: none;
+  color: var(--gray-400);
+}
+
+/* Tablet view adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .inquiry-items-table {
+    font-size: 0.8rem;
+  }
+  
+  .inquiry-items-table th,
+  .inquiry-items-table td {
+    padding: 0.6rem 0.4rem;
+  }
+  
+  .inquiry-items-table .unified-input {
+    padding: 0.4rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Adjust column widths for tablet */
+  .inquiry-items-table th:nth-child(3) { width: 160px; }  /* Material Description */
+  .inquiry-items-table th:nth-child(4) { width: 90px; }   /* Unit Rate */
+  .inquiry-items-table th:nth-child(11) { width: 110px; } /* Total Amount */
+}
+
+.inquiry-items-table th,
+.inquiry-items-table td {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.inquiry-items-table .unified-input {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius); /* Changed from var(--border-radius-sm) to match main form */
+  background: var(--white);
+}
+
+.inquiry-items-table .unified-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* Material input group improvements */
+.material-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  min-width: 180px;
+}
+
+.material-input-group .unified-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Material description field improvements */
+.material-description-field .unified-input {
+  min-width: 200px;
+}
+
+.material-description-display {
+  min-width: 200px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Ensure consistent input sizing across the table */
+.inquiry-items-table td[data-label="Material Number"] {
+  min-width: 180px;
+}
+
+.inquiry-items-table td[data-label="Material Description"] {
+  min-width: 250px;
+}
+
+.inquiry-items-table td[data-label="HSN Code"] .unified-input {
+  min-width: 100px;
+}
+
+.inquiry-items-table td[data-label="Unit Rate"] .unified-input {
+  min-width: 90px;
+}
+
+.inquiry-items-table td[data-label="GST %"] .unified-input {
+  min-width: 70px;
+}
+
+.inquiry-items-table td[data-label="Quantity"] .unified-input {
+  min-width: 80px;
+}
+
+.inquiry-items-table td[data-label="Unit"] .unified-input {
+  min-width: 60px;
+}
+
+.inquiry-items-table td[data-label="Disc %"] .unified-input {
+  min-width: 70px;
+}
+
+.inquiry-items-table td[data-label="Disc Amt"] .unified-input {
+  min-width: 90px;
+}
+
 /* ========== Inquiry Items Specific Styles ========== */
 .inquiry-items-container {
   margin-top: 1rem;
@@ -1362,7 +1649,7 @@
 }
 
 .unified-input-sm {
-  padding: 0.375rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   border: 1px solid var(--gray-300);
   border-radius: var(--border-radius-sm);
@@ -1390,31 +1677,31 @@
 }
 
 /* Numeric input styling for better decimal display */
-.unified-input-sm[type="number"] {
+.unified-input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
 }
 
-.unified-input-sm[type="number"]::-webkit-outer-spin-button,
-.unified-input-sm[type="number"]::-webkit-inner-spin-button {
+.unified-input[type="number"]::-webkit-outer-spin-button,
+.unified-input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 /* Serial number input styling */
-.unified-input-sm[title*="reorder"] {
+.unified-input[title*="reorder"] {
   background-color: #fff8dc;
   border-color: #deb887;
   font-weight: 600;
 }
 
-.unified-input-sm[title*="reorder"]:focus {
+.unified-input[title*="reorder"]:focus {
   background-color: #fffacd;
   border-color: var(--warning-color);
 }
 
 /* Right-aligned numeric inputs */
-.unified-input-sm[style*="text-align: right"] {
+.unified-input[style*="text-align: right"] {
   padding-right: 0.75rem;
 }
 
@@ -1466,7 +1753,7 @@
     padding: 0.5rem 0;
   }
   
-  .unified-input-sm {
+  .unified-input {
     padding: 0.5rem;
     font-size: 0.9rem;
   }
@@ -1683,24 +1970,26 @@
   align-items: flex-start;
 }
 
-.material-input-group .unified-input-sm {
+.material-input-group .unified-input {
   flex: 1;
 }
 
 .material-selector-btn {
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem;
   background: var(--primary-600);
   color: var(--white);
   border: 1px solid var(--primary-600);
   border-radius: var(--border-radius-sm);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
 }
 
 .material-selector-btn:hover:not(:disabled) {
@@ -1714,6 +2003,42 @@
   border-color: var(--gray-300);
   cursor: not-allowed;
   transform: none;
+}
+
+/* ========== Material Description Field ========== */
+.material-description-field {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.material-description-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-sm);
+  min-height: 2.375rem;
+}
+
+.material-description-text {
+  color: var(--gray-800);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.material-description-note {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.material-description-field input {
+  min-height: 2.375rem;
 }
 
 /* ========== Mobile Responsive for Material Selector ========== */
@@ -1768,5 +2093,211 @@
   
   .material-selector-btn {
     justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  
+  .material-description-field {
+    min-height: auto;
+  }
+  
+  .material-description-display {
+    min-height: auto;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .material-description-text {
+    font-size: 0.8rem;
+  }
+  
+  .material-description-note {
+    font-size: 0.7rem;
   }
 }
+
+/* ========== Inquiry Items Specific Styles ========== */
+.inquiry-items-table th:first-child {
+  width: 60px; /* Reduced width for S.No column */
+  text-align: center;
+}
+
+.inquiry-items-table td:first-child {
+  text-align: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.material-number-container {
+  display: flex;
+  align-items: center;
+  gap: 2px; /* 2px gap between input and icon */
+  position: relative;
+}
+
+.material-selector-btn {
+  background: var(--accent-color);
+  border: none;
+  border-radius: var(--border-radius);
+  color: var(--white);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.material-selector-btn:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.material-selector-btn:disabled {
+  background: var(--gray-400);
+  cursor: not-allowed;
+}
+
+/* Mobile responsive inquiry table */
+@media (max-width: 768px) {
+  .unified-table-responsive {
+    display: block !important;
+    margin: -1rem;
+    border-radius: 0;
+    overflow: visible;
+  }
+  
+  .inquiry-items-table,
+  .inquiry-items-table thead,
+  .inquiry-items-table tbody,
+  .inquiry-items-table th,
+  .inquiry-items-table td,
+  .inquiry-items-table tr {
+    display: block;
+  }
+  
+  .inquiry-items-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .inquiry-items-table tr {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .inquiry-items-table td {
+    border: none;
+    position: relative;
+    padding: 0.75rem 0 0.5rem 0;
+    white-space: normal;
+    text-align: left !important;
+    width: 100% !important;
+  }
+  
+  .inquiry-items-table td:before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--gray-700);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Mobile input sizing */
+  .inquiry-items-table .unified-input {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 44px; /* Better touch target */
+  }
+  
+  /* Material description display */
+  .material-description-display {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .material-description-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  
+  /* Three-dot menu in mobile */
+  .unified-table-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: center;
+  }
+  
+  .unified-table-actions .unified-card-menu {
+    position: relative;
+  }
+  
+  .unified-table-actions .unified-menu-trigger {
+    min-width: 44px;
+    height: 44px;
+    font-size: 1.4rem;
+  }
+  
+  .unified-table-actions .unified-dropdown-menu {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 180px;
+  }
+  
+  .unified-table-actions .unified-dropdown-item {
+    padding: 1rem 0.75rem;
+    font-size: 0.9rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .unified-table-actions .action-icon {
+    font-size: 1.1rem;
+  }
+}
+
+/* Very small mobile screens */
+@media (max-width: 480px) {
+  .inquiry-items-table tr {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .inquiry-items-table td {
+    padding: 0.5rem 0 0.4rem 0;
+  }
+  
+  .inquiry-items-table .unified-input {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .unified-table-actions .unified-dropdown-menu {
+    min-width: 160px;
+  }
+}
+
+/* Remove old mobile styles - replaced with card layout above */
+
+/* End of Inquiry Items Styles */

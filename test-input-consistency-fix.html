@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiry Items Table - Text Input Consistency Fix</title>
+    <style>
+        :root {
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --white: #ffffff;
+            --border-radius-sm: 0.375rem;
+            --border-radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--gray-50);
+        }
+
+        .test-container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--gray-800);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .comparison-section {
+            margin-bottom: 40px;
+        }
+
+        .comparison-box {
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .before {
+            border-color: #f59e0b;
+            background: #fef3c7;
+        }
+
+        .after {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .comparison-box h3 {
+            color: var(--gray-700);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Standard unified table styles */
+        .unified-table-responsive {
+            overflow-x: auto;
+            margin: -1.5rem;
+            margin-top: 0;
+        }
+
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            table-layout: fixed;
+        }
+
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+
+        .unified-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .unified-table td {
+            color: var(--gray-800);
+        }
+
+        /* OLD: Problematic input styles */
+        .unified-input-sm-old {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            width: 100%;
+            background: var(--white);
+        }
+
+        /* NEW: Improved input styles */
+        .unified-input-sm {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            width: 100%;
+            min-width: 0;
+            background: var(--white);
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .unified-input-sm:focus {
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        .unified-input-sm:read-only {
+            background-color: var(--gray-100);
+            cursor: not-allowed;
+        }
+
+        /* Material input group improvements */
+        .material-input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+            min-width: 180px;
+        }
+
+        .material-input-group .unified-input-sm {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .material-input-group-old {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .material-input-group-old .unified-input-sm-old {
+            flex: 1;
+            min-width: 60px; /* Too narrow! */
+        }
+
+        .material-selector-btn {
+            padding: 0.5rem;
+            background: var(--primary-600);
+            color: var(--white);
+            border: 1px solid var(--primary-600);
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            cursor: pointer;
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .material-selector-btn:hover {
+            background: var(--primary-700);
+        }
+
+        .material-description-display {
+            padding: 0.5rem 0.75rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+            color: var(--gray-800);
+            min-width: 200px;
+        }
+
+        .unified-amount-text {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .unified-table-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .unified-table-action {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .unified-table-action.delete {
+            color: #dc2626;
+        }
+
+        .unified-table-action:hover {
+            background: var(--gray-100);
+        }
+
+        .issue-highlight {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            color: #b91c1c;
+            font-size: 0.9rem;
+        }
+
+        .fix-highlight {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            color: #166534;
+            font-size: 0.9rem;
+        }
+
+        .feature-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-top: 30px;
+        }
+
+        .feature-box h3 {
+            color: var(--primary-600);
+            margin-bottom: 15px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Inquiry Items Table - Input Consistency & Width Fixes</h1>
+
+        <div class="comparison-section">
+            <div class="comparison-box before">
+                <h3>❌ Before: Inconsistent Inputs & Narrow Material Number</h3>
+                <div class="unified-table-responsive">
+                    <table class="unified-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">S.No</th>
+                                <th style="width: 120px">Material Number *</th>
+                                <th style="width: 200px">Material Description</th>
+                                <th style="width: 100px">Unit Rate *</th>
+                                <th style="width: 80px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <input type="text" class="unified-input-sm-old" value="01" style="width: 50px; text-align: center;">
+                                </td>
+                                <td>
+                                    <div class="material-input-group-old">
+                                        <input type="text" class="unified-input-sm-old" value="MAT001" placeholder="Enter material number">
+                                        <button class="material-selector-btn">🔍</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" class="unified-input-sm-old" value="Surgical Steel Implant" placeholder="Enter description">
+                                </td>
+                                <td>
+                                    <input type="number" class="unified-input-sm-old" value="1250.00" style="text-align: right;">
+                                </td>
+                                <td>
+                                    <div class="unified-table-actions">
+                                        <button class="unified-table-action delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="issue-highlight">
+                    <strong>Issues:</strong>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>Material number input too narrow (only shows 2-3 characters)</li>
+                        <li>Inconsistent input padding (0.375rem vs 0.5rem in headers)</li>
+                        <li>No minimum width constraints</li>
+                        <li>Poor focus states</li>
+                        <li>Cramped layout with too many columns</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="comparison-box after">
+                <h3>✅ After: Consistent Inputs & Proper Material Number Width</h3>
+                <div class="unified-table-responsive">
+                    <table class="unified-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">S.No</th>
+                                <th style="width: 180px">Material Number *</th>
+                                <th style="width: 250px">Material Description</th>
+                                <th style="width: 120px">HSN Code *</th>
+                                <th style="width: 110px">Unit Rate *</th>
+                                <th style="width: 90px">GST % *</th>
+                                <th style="width: 100px">Quantity *</th>
+                                <th style="width: 80px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <input type="text" class="unified-input-sm" value="01" style="width: 50px; text-align: center;">
+                                </td>
+                                <td>
+                                    <div class="material-input-group">
+                                        <input type="text" class="unified-input-sm" value="IMPL-HIP-STEEL-001" placeholder="Enter material number">
+                                        <button class="material-selector-btn">🔍</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="material-description-display">
+                                        Surgical Steel Hip Implant - Grade 316L
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" class="unified-input-sm" value="90212110" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" class="unified-input-sm" value="45000.00" style="text-align: right;" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" class="unified-input-sm" value="12" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" class="unified-input-sm" value="1" style="text-align: right;">
+                                </td>
+                                <td>
+                                    <div class="unified-table-actions">
+                                        <button class="unified-table-action delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="fix-highlight">
+                    <strong>Improvements:</strong>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li>Material number width increased from 120px to 180px</li>
+                        <li>Consistent input padding (0.5rem 0.75rem)</li>
+                        <li>Proper minimum width constraints for all fields</li>
+                        <li>Enhanced focus states with blue outline</li>
+                        <li>Optimized column widths for better space utilization</li>
+                        <li>Material description width increased to 250px</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-box">
+            <h3>🎯 Technical Improvements Implemented</h3>
+            <div class="feature-grid">
+                <div>
+                    <h4>Column Width Optimization:</h4>
+                    <ul style="font-size: 0.9rem;">
+                        <li><strong>Material Number:</strong> 120px → 180px (+50%)</li>
+                        <li><strong>Material Description:</strong> 200px → 250px (+25%)</li>
+                        <li><strong>HSN Code:</strong> 120px (restored)</li>
+                        <li><strong>Unit Rate:</strong> 100px → 110px</li>
+                        <li><strong>GST %:</strong> 80px → 90px</li>
+                        <li><strong>Total Amount:</strong> 120px → 140px</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Input Consistency Fixes:</h4>
+                    <ul style="font-size: 0.9rem;">
+                        <li><strong>Padding:</strong> 0.375rem 0.5rem → 0.5rem 0.75rem</li>
+                        <li><strong>Focus States:</strong> Added blue outline</li>
+                        <li><strong>Min-width:</strong> Added constraints per field type</li>
+                        <li><strong>Table Layout:</strong> Fixed layout for consistent sizing</li>
+                        <li><strong>Material Input:</strong> Minimum 120px for text field</li>
+                        <li><strong>Responsive:</strong> Maintains data-label for mobile</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #f0f9ff; padding: 20px; border-radius: var(--border-radius); border: 1px solid #bae6fd; margin-top: 30px;">
+            <h3 style="color: var(--primary-600); margin-bottom: 15px;">🔍 Material Number Display Test</h3>
+            <p><strong>Test Cases:</strong></p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                <div>
+                    <strong>Short Material Number:</strong><br>
+                    <input type="text" class="unified-input-sm" value="MAT001" style="margin-top: 5px;">
+                </div>
+                <div>
+                    <strong>Long Material Number:</strong><br>
+                    <input type="text" class="unified-input-sm" value="IMPL-HIP-STEEL-316L-001" style="margin-top: 5px;">
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: #047857; font-size: 0.9rem;">
+                ✅ Both short and long material numbers are now fully visible with proper spacing!
+            </p>
+        </div>
+    </div>
+</body>
+</html>

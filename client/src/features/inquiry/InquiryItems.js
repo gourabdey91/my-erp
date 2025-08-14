@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import MaterialSelector from './MaterialSelector';
+import { useDropdownMenu } from '../../shared/hooks/useDropdownMenu';
 import '../../shared/styles/unified-design.css';
 
+// Updated: All inputs now use unified-input class for consistency with main form
 const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, dropdownData }) => {
   const [inquiryItems, setInquiryItems] = useState(items);
   const [errors, setErrors] = useState({});
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const { openMenuId, toggleMenu, closeMenu, dropdownRef } = useDropdownMenu();
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
@@ -62,20 +65,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   const formatSerialNumber = (num) => {
     const serialNum = parseInt(num) || 1;
     return serialNum.toString().padStart(2, '0');
-  };
-
-  // Sort and renumber items (called before saving)
-  const sortAndRenumberItems = (items) => {
-    const sortedItems = [...items].sort((a, b) => {
-      const serialA = parseInt(a.serialNumber) || 999;
-      const serialB = parseInt(b.serialNumber) || 999;
-      return serialA - serialB;
-    });
-    
-    return sortedItems.map((item, index) => ({
-      ...item,
-      serialNumber: index + 1
-    }));
   };
 
   // Handle input change
@@ -199,19 +188,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     })} ${currency}`;
   };
 
-  // Format decimal input value for display
-  const formatDecimalInput = (value) => {
-    const numValue = parseFloat(value) || 0;
-    return numValue.toFixed(2);
-  };
-
-  // Handle formatted decimal input change
-  const handleDecimalInputChange = (index, field, value) => {
-    // Remove any non-numeric characters except decimal point
-    const cleanValue = value.replace(/[^\d.]/g, '');
-    handleInputChange(index, field, cleanValue);
-  };
-
   // Calculate grand total
   const calculateGrandTotal = () => {
     const total = inquiryItems.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
@@ -233,31 +209,32 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       
       <div className="unified-card-content">
         <div className="inquiry-items-container">
-          {/* Items Table */}
+          {/* Items Table - Updated with responsive two-row layout */}
           <div className="unified-table-responsive">
-            <table className="unified-table unified-table-sm">
+            <table className="unified-table inquiry-items-table">
               <thead>
                 <tr>
-                  <th style={{ width: '60px' }}>S.No</th>
-                  <th style={{ width: '120px' }}>Material Number *</th>
-                  <th style={{ width: '120px' }}>HSN Code *</th>
-                  <th style={{ width: '100px' }}>Unit Rate *</th>
-                  <th style={{ width: '80px' }}>GST % *</th>
-                  <th style={{ width: '80px' }}>Quantity *</th>
-                  <th style={{ width: '60px' }}>Unit</th>
-                  <th style={{ width: '80px' }}>Disc %</th>
-                  <th style={{ width: '100px' }}>Disc Amt</th>
-                  <th style={{ width: '120px' }}>Total Amount</th>
-                  <th style={{ width: '60px' }}>Actions</th>
+                  <th>S.No</th>
+                  <th>Material No.</th>
+                  <th>Material Description</th>
+                  <th>Unit Rate</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>HSN Code</th>
+                  <th>GST %</th>
+                  <th>Disc %</th>
+                  <th>Disc Amt</th>
+                  <th>Total Amount</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {inquiryItems.map((item, index) => (
                   <tr key={index}>
-                    <td className="text-center">
+                    <td data-label="S.No" className="text-center">
                       <input
                         type="text"
-                        className="unified-input-sm text-center"
+                        className="unified-input text-center"
                         style={{ width: '50px' }}
                         value={formatSerialNumber(item.serialNumber)}
                         onChange={(e) => {
@@ -269,90 +246,80 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         title="Enter serial number for custom ordering. Items will be sorted when saved."
                       />
                     </td>
-                    <td>
-                      <div className="material-input-group">
-                        <input
-                          type="text"
-                          className={`unified-input-sm ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
-                          value={item.materialNumber}
-                          onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
-                          placeholder="Enter material number"
-                          readOnly={!!item.materialDescription} // Read-only if selected from material master
-                        />
-                        <button
-                          type="button"
-                          className="material-selector-btn"
-                          onClick={() => openMaterialSelector(index)}
-                          disabled={!hospital || !surgicalCategory}
-                          title={!hospital || !surgicalCategory ? 'Please select hospital and surgical category first' : 'Select from material master'}
-                        >
-                          📋 Select
-                        </button>
-                      </div>
-                      {item.materialDescription && (
-                        <small style={{ color: 'var(--gray-600)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
-                          {item.materialDescription}
-                        </small>
-                      )}
+                    
+                    <td data-label="Material No.">
+                      <input
+                        type="text"
+                        className={`unified-input ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
+                        value={item.materialNumber}
+                        onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
+                        placeholder="Enter material number"
+                        readOnly={!!item.materialDescription}
+                      />
                       {errors[`${index}_materialNumber`] && (
                         <span className="unified-error-text">{errors[`${index}_materialNumber`]}</span>
                       )}
                     </td>
-                    <td>
-                      <input
-                        type="text"
-                        className={`unified-input-sm ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
-                        value={item.hsnCode}
-                        onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
-                        placeholder="HSN Code"
-                        readOnly={!!item.materialDescription} // Read-only if selected from material master
-                        title={item.materialDescription ? "HSN Code is derived from material master" : "Enter HSN Code"}
-                      />
+
+                    <td data-label="Material Description">
+                      {item.materialDescription ? (
+                        <div className="material-description-display">
+                          <span className="material-description-text">
+                            {item.materialDescription}
+                          </span>
+                          <small className="material-description-note">
+                            (From Material Master)
+                          </small>
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          className="unified-input"
+                          value={item.materialDescription || ''}
+                          onChange={(e) => handleInputChange(index, 'materialDescription', e.target.value)}
+                          placeholder="Enter material description"
+                          title="Material description - auto-filled when selected from material master"
+                        />
+                      )}
                     </td>
-                    <td>
+
+                    <td data-label="Unit Rate">
                       <input
                         type="number"
-                        className={`unified-input-sm ${errors[`${index}_unitRate`] ? 'error' : ''}`}
+                        className={`unified-input ${errors[`${index}_unitRate`] ? 'error' : ''}`}
                         value={item.unitRate}
                         onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
                         placeholder="0.00"
                         min="0"
                         step="0.01"
                         style={{ textAlign: 'right' }}
-                        readOnly={!!item.materialDescription} // Read-only if selected from material master
+                        readOnly={!!item.materialDescription}
                         title={item.materialDescription ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
                       />
+                      {errors[`${index}_unitRate`] && (
+                        <span className="unified-error-text">{errors[`${index}_unitRate`]}</span>
+                      )}
                     </td>
-                    <td>
+
+                    <td data-label="Quantity">
                       <input
                         type="number"
-                        className={`unified-input-sm ${errors[`${index}_gstPercentage`] ? 'error' : ''}`}
-                        value={item.gstPercentage}
-                        onChange={(e) => handleInputChange(index, 'gstPercentage', e.target.value)}
-                        placeholder="GST%"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        readOnly={!!item.materialDescription} // Read-only if selected from material master
-                        title={item.materialDescription ? "GST% is derived from material master" : "Enter GST%"}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        className={`unified-input-sm ${errors[`${index}_quantity`] ? 'error' : ''}`}
+                        className={`unified-input ${errors[`${index}_quantity`] ? 'error' : ''}`}
                         value={item.quantity}
                         onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
-                        placeholder="0.00"
-                        min="0.01"
-                        step="0.01"
-                        style={{ textAlign: 'right' }}
+                        placeholder="1"
+                        min="1"
+                        style={{ textAlign: 'center' }}
                       />
+                      {errors[`${index}_quantity`] && (
+                        <span className="unified-error-text">{errors[`${index}_quantity`]}</span>
+                      )}
                     </td>
-                    <td>
+
+                    <td data-label="Unit">
                       <input
                         type="text"
-                        className="unified-input-sm"
+                        className="unified-input"
                         value={item.unit}
                         onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
                         placeholder="Unit"
@@ -360,22 +327,59 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         title="Unit is derived from material master"
                       />
                     </td>
-                    <td>
+
+                    <td data-label="HSN Code">
+                      <input
+                        type="text"
+                        className={`unified-input ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
+                        value={item.hsnCode}
+                        onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
+                        placeholder="HSN Code"
+                        readOnly={!!item.materialDescription}
+                        title={item.materialDescription ? "HSN Code is derived from material master" : "Enter HSN Code"}
+                      />
+                      {errors[`${index}_hsnCode`] && (
+                        <span className="unified-error-text">{errors[`${index}_hsnCode`]}</span>
+                      )}
+                    </td>
+
+                    <td data-label="GST %">
                       <input
                         type="number"
-                        className="unified-input-sm"
+                        className={`unified-input ${errors[`${index}_gstPercentage`] ? 'error' : ''}`}
+                        value={item.gstPercentage}
+                        onChange={(e) => handleInputChange(index, 'gstPercentage', e.target.value)}
+                        placeholder="GST%"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        style={{ textAlign: 'right' }}
+                        readOnly={!!item.materialDescription}
+                        title={item.materialDescription ? "GST% is derived from material master" : "Enter GST%"}
+                      />
+                      {errors[`${index}_gstPercentage`] && (
+                        <span className="unified-error-text">{errors[`${index}_gstPercentage`]}</span>
+                      )}
+                    </td>
+
+                    <td data-label="Disc %">
+                      <input
+                        type="number"
+                        className="unified-input"
                         value={item.discountPercentage}
                         onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
                         placeholder="0"
                         min="0"
                         max="100"
                         step="0.01"
+                        style={{ textAlign: 'right' }}
                       />
                     </td>
-                    <td>
+
+                    <td data-label="Disc Amt">
                       <input
                         type="number"
-                        className="unified-input-sm"
+                        className="unified-input"
                         value={item.discountAmount}
                         onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
                         placeholder="0.00"
@@ -384,22 +388,60 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         style={{ textAlign: 'right' }}
                       />
                     </td>
-                    <td className="text-right">
-                      <span className="unified-amount-text">
-                        {formatCurrency(item.totalAmount)}
-                      </span>
+
+                    <td data-label="Total Amount">
+                      <input
+                        type="text"
+                        className="unified-input total-amount"
+                        value={formatCurrency(item.totalAmount, item.currency)}
+                        readOnly
+                        style={{ textAlign: 'right', fontWeight: '600', color: '#28a745' }}
+                        title={`Total amount for this item: ${formatCurrency(item.totalAmount, item.currency)}`}
+                      />
                     </td>
-                    <td className="text-center">
-                      {inquiryItems.length > 1 && (
-                        <button
-                          type="button"
-                          className="unified-table-action delete"
-                          onClick={() => removeItem(index)}
-                          title="Remove Item"
-                        >
-                          🗑️
-                        </button>
-                      )}
+
+                    <td data-label="Actions">
+                      <div className="unified-table-actions">
+                        <div className="unified-card-menu" ref={dropdownRef}>
+                          <button
+                            type="button"
+                            className="unified-menu-trigger"
+                            onClick={() => toggleMenu(`item-${index}`)}
+                            aria-label="More options"
+                          >
+                            ⋮
+                          </button>
+                          {openMenuId === `item-${index}` && (
+                            <div className="unified-dropdown-menu">
+                              <button
+                                className="unified-dropdown-item"
+                                onClick={() => {
+                                  closeMenu();
+                                  openMaterialSelector(index);
+                                }}
+                                disabled={!hospital || !surgicalCategory}
+                                title={!hospital || !surgicalCategory ? 'Please select hospital and surgical category first' : 'Select from material master'}
+                              >
+                                <span className="action-icon">🔍</span>
+                                Select Material
+                              </button>
+                              {inquiryItems.length > 1 && (
+                                <button
+                                  className="unified-dropdown-item danger"
+                                  onClick={() => {
+                                    closeMenu();
+                                    removeItem(index);
+                                  }}
+                                  title="Remove Item"
+                                >
+                                  <span className="action-icon">🗑️</span>
+                                  Remove Item
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}

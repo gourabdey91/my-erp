@@ -1,0 +1,45 @@
+/* DEBUG CSS - ADD THIS TO TEST SECONDARY ROWS */
+
+/* Force secondary rows to always be visible for debugging */
+.inquiry-items-table .secondary-row {
+  display: table-row !important;
+  background: #e3f2fd !important;
+  border: 2px solid red !important;
+}
+
+.inquiry-items-table .secondary-row-content {
+  padding: 1rem !important;
+  background: #fff3cd !important;
+  display: table-cell !important;
+}
+
+.inquiry-items-table .secondary-fields-container {
+  display: block !important;
+  background: #d1ecf1 !important;
+  padding: 1rem !important;
+}
+
+.inquiry-items-table .secondary-field {
+  display: block !important;
+  margin-bottom: 1rem !important;
+  background: #f8d7da !important;
+  padding: 0.5rem !important;
+}
+
+/* On mobile force everything to be blocks and visible */
+@media (max-width: 768px) {
+  .inquiry-items-table .secondary-row {
+    display: block !important;
+    width: 100% !important;
+    background: #28a745 !important;
+    color: white !important;
+    padding: 1rem !important;
+    margin: 1rem 0 !important;
+    border: 3px solid blue !important;
+  }
+  
+  .inquiry-items-table .secondary-row td {
+    display: block !important;
+    width: 100% !important;
+  }
+}

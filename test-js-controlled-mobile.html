@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Inquiry - JS Controlled</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .unified-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: #ffffff;
+            box-sizing: border-box;
+        }
+        .primary-row {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px 6px 0 0;
+            padding: 1rem;
+            margin-bottom: 0;
+        }
+        .primary-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .primary-field:last-child {
+            border-bottom: none;
+        }
+        .primary-field label {
+            font-weight: 600;
+            color: #495057;
+            margin-right: 1rem;
+        }
+        .secondary-row {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .secondary-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .secondary-field:last-child {
+            margin-bottom: 0;
+        }
+        .secondary-field label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.8rem;
+        }
+        .material-description-highlight {
+            background: #17a2b8;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        .material-description-highlight label {
+            color: white;
+            font-weight: bold;
+        }
+        .material-description-highlight input {
+            background: white;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>JS-Controlled Mobile Layout Test</h2>
+        
+        <!-- Item 1 -->
+        <div class="primary-row">
+            <div class="primary-field">
+                <label>S.No:</label>
+                <span>01</span>
+            </div>
+            <div class="primary-field">
+                <label>Material No.:</label>
+                <span>1000692 🔍</span>
+            </div>
+            <div class="primary-field">
+                <label>Unit Rate:</label>
+                <span>3510</span>
+            </div>
+            <div class="primary-field">
+                <label>Quantity:</label>
+                <span>5</span>
+            </div>
+            <div class="primary-field">
+                <label>Disc Amt:</label>
+                <span>0</span>
+            </div>
+            <div class="primary-field">
+                <label>Total Amount:</label>
+                <span>18,427.50 INR</span>
+            </div>
+            <div class="primary-field">
+                <label>Actions:</label>
+                <span>🗑️</span>
+            </div>
+        </div>
+        
+        <!-- Secondary Row for Item 1 -->
+        <div class="secondary-row">
+            <div class="secondary-field material-description-highlight">
+                <label>Material Description:</label>
+                <input type="text" class="unified-input" placeholder="Enter material description" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>HSN Code:</label>
+                <input type="text" class="unified-input" placeholder="HSN Code" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>GST %:</label>
+                <input type="number" class="unified-input" placeholder="GST%" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>Unit:</label>
+                <input type="text" class="unified-input" placeholder="Unit" readonly />
+            </div>
+            
+            <div class="secondary-field">
+                <label>Disc %:</label>
+                <input type="number" class="unified-input" placeholder="0" />
+            </div>
+        </div>
+        
+        <!-- Item 2 -->
+        <div class="primary-row">
+            <div class="primary-field">
+                <label>S.No:</label>
+                <span>02</span>
+            </div>
+            <div class="primary-field">
+                <label>Material No.:</label>
+                <span>1000100 🔍</span>
+            </div>
+            <div class="primary-field">
+                <label>Unit Rate:</label>
+                <span>832</span>
+            </div>
+            <div class="primary-field">
+                <label>Quantity:</label>
+                <span>10</span>
+            </div>
+            <div class="primary-field">
+                <label>Disc Amt:</label>
+                <span>0</span>
+            </div>
+            <div class="primary-field">
+                <label>Total Amount:</label>
+                <span>8,736.00 INR</span>
+            </div>
+            <div class="primary-field">
+                <label>Actions:</label>
+                <span>🗑️</span>
+            </div>
+        </div>
+        
+        <!-- Secondary Row for Item 2 -->
+        <div class="secondary-row">
+            <div class="secondary-field material-description-highlight">
+                <label>Material Description:</label>
+                <input type="text" class="unified-input" placeholder="Enter material description" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>HSN Code:</label>
+                <input type="text" class="unified-input" placeholder="HSN Code" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>GST %:</label>
+                <input type="number" class="unified-input" placeholder="GST%" />
+            </div>
+            
+            <div class="secondary-field">
+                <label>Unit:</label>
+                <input type="text" class="unified-input" placeholder="Unit" readonly />
+            </div>
+            
+            <div class="secondary-field">
+                <label>Disc %:</label>
+                <input type="number" class="unified-input" placeholder="0" />
+            </div>
+        </div>
+    </div>
+</body>
+</html>

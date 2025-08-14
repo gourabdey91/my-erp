@@ -6,19 +6,21 @@ import './Inquiry.css';
 
 const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    inquiryDate: new Date().toISOString().split('T')[0],
-    patientName: '',
-    patientUHID: '',
-    hospital: '',
-    surgicalCategory: '',
-    surgicalProcedure: '',
-    paymentMethod: '',
+    hospitalId: inquiry?.hospitalId || '',
+    inquiryNumber: inquiry?.inquiryNumber || '',
+    inquiryDate: inquiry?.inquiryDate || new Date().toISOString().split('T')[0],
+    patientName: inquiry?.patientName || '',
+    patientUHID: inquiry?.patientUHID || '',
+    hospital: inquiry?.hospital || '',
+    surgicalCategory: inquiry?.surgicalCategory || '',
+    surgicalProcedure: inquiry?.surgicalProcedure || '',
+    paymentMethod: inquiry?.paymentMethod || '',
     limit: {
-      amount: '',
-      currency: 'INR'
+      amount: inquiry?.limit?.amount || '',
+      currency: inquiry?.limit?.currency || 'INR'
     },
-    items: [],
-    totalInquiryAmount: 0
+    items: inquiry?.items || [],
+    totalInquiryAmount: inquiry?.totalInquiryAmount || 0
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -348,10 +350,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               
               <div className="unified-form-grid">
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Inquiry Date *</label>
+                  <label className="unified-form-label">Inquiry Date</label>
                   <input
                     type="date"
-                    className="unified-search-input"
+                    className="unified-input"
                     value={formData.inquiryDate}
                     onChange={(e) => handleChange('inquiryDate', e.target.value)}
                   />
@@ -361,9 +363,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Hospital *</label>
+                  <label className="unified-form-label">Hospital</label>
                   <select
-                    className="unified-search-input"
+                    className="unified-input"
                     value={formData.hospital}
                     onChange={(e) => handleChange('hospital', e.target.value)}
                   >
@@ -380,10 +382,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Patient Name *</label>
+                  <label className="unified-form-label">Patient Name</label>
                   <input
                     type="text"
-                    className="unified-search-input"
+                    className="unified-input"
                     placeholder="Enter patient name"
                     value={formData.patientName}
                     onChange={(e) => handleChange('patientName', e.target.value)}
@@ -394,10 +396,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Patient UHID *</label>
+                  <label className="unified-form-label">Patient UHID</label>
                   <input
                     type="text"
-                    className="unified-search-input"
+                    className="unified-input"
                     placeholder="Enter patient UHID"
                     value={formData.patientUHID}
                     onChange={(e) => handleChange('patientUHID', e.target.value)}
@@ -408,16 +410,13 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Category *</label>
+                  <label className="unified-form-label">Surgical Category</label>
                   <select
-                    className="unified-search-input"
+                    className="unified-input"
                     value={formData.surgicalCategory}
                     onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-                    disabled={!formData.hospital}
                   >
-                    <option value="">
-                      {!formData.hospital ? 'Select Hospital First' : 'Select Surgical Category'}
-                    </option>
+                    <option value="">Select Surgical Category</option>
                     {filteredSurgicalCategories.map(category => (
                       <option key={category._id} value={category._id}>
                         {category.description}
@@ -430,9 +429,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Payment Method *</label>
+                  <label className="unified-form-label">Payment Method</label>
                   <select
-                    className="unified-search-input"
+                    className="unified-input"
                     value={formData.paymentMethod}
                     onChange={(e) => handleChange('paymentMethod', e.target.value)}
                   >
@@ -451,16 +450,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 <div className="unified-form-field">
                   <label className="unified-form-label">Surgical Procedure <span className="unified-optional">(Optional)</span></label>
                   <select
-                    className="unified-search-input"
+                    className="unified-input"
                     value={formData.surgicalProcedure}
                     onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-                    disabled={!formData.hospital}
                   >
-                    <option value="">
-                      {!formData.hospital ? 'Select Hospital First' : 
-                       (!formData.surgicalCategory && !formData.paymentMethod) ? 'Select Category or Payment Method' : 
-                       'Select Procedure (Optional)'}
-                    </option>
+                    <option value="">Select Procedure (Optional)</option>
                     {filteredSurgicalProcedures.map(procedure => (
                       <option key={procedure._id} value={procedure._id}>
                         {procedure.code} - {procedure.name} ({procedure.amount} {procedure.currency})
@@ -470,24 +464,22 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Limit Amount *</label>
+                  <label className="unified-form-label">Limit Amount</label>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <input
                       type="number"
-                      className="unified-search-input"
+                      className="unified-input"
                       placeholder="Enter limit amount"
                       value={formData.limit.amount}
                       onChange={(e) => handleChange('limit.amount', e.target.value)}
-                      disabled={!!formData.surgicalProcedure}
                       min="0"
                       step="0.01"
                       style={{ flex: '2' }}
                     />
                     <select
-                      className="unified-search-input"
+                      className="unified-input"
                       value={formData.limit.currency}
                       onChange={(e) => handleChange('limit.currency', e.target.value)}
-                      disabled={!!formData.surgicalProcedure}
                       style={{ flex: '1' }}
                     >
                       <option value="INR">INR</option>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Description & Mobile Responsive Test</title>
+    <style>
+        /* Import unified design styles simulation */
+        :root {
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --white: #ffffff;
+            --border-radius-sm: 0.375rem;
+            --border-radius: 0.5rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--gray-50);
+        }
+
+        .test-container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--gray-800);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+        }
+
+        .test-section h3 {
+            color: var(--gray-700);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-600);
+            padding-bottom: 5px;
+        }
+
+        /* Unified table styles */
+        .unified-table-responsive {
+            overflow-x: auto;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--gray-200);
+        }
+
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .unified-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .unified-input-sm {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+        }
+
+        .unified-input-sm:read-only {
+            background-color: var(--gray-100);
+            cursor: not-allowed;
+        }
+
+        /* Material description styles */
+        .material-description-field {
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .material-description-display {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            min-height: 2.375rem;
+        }
+
+        .material-description-text {
+            color: var(--gray-800);
+            font-size: 0.875rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .material-description-note {
+            color: var(--gray-500);
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+
+        .material-input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .material-input-group .unified-input-sm {
+            flex: 1;
+        }
+
+        .material-selector-btn {
+            padding: 0.375rem 0.75rem;
+            background: var(--primary-600);
+            color: var(--white);
+            border: 1px solid var(--primary-600);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .material-selector-btn:hover {
+            background: var(--primary-700);
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .unified-table,
+            .unified-table thead,
+            .unified-table tbody,
+            .unified-table th,
+            .unified-table td,
+            .unified-table tr {
+                display: block;
+            }
+
+            .unified-table thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .unified-table tr {
+                background: var(--white);
+                border: 1px solid var(--gray-200);
+                border-radius: var(--border-radius);
+                margin-bottom: 1rem;
+                padding: 1rem;
+                box-shadow: var(--shadow-sm);
+            }
+
+            .unified-table td {
+                border: none;
+                position: relative;
+                padding: 0.75rem 0 0.25rem 0;
+                white-space: normal;
+                text-align: left !important;
+            }
+
+            .unified-table td:before {
+                content: attr(data-label) ": ";
+                font-weight: 600;
+                color: var(--gray-700);
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+                display: block;
+                margin-bottom: 0.25rem;
+            }
+
+            .material-input-group {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .material-selector-btn {
+                align-self: flex-start;
+            }
+        }
+
+        .mobile-test-btn {
+            background: var(--primary-600);
+            color: var(--white);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .description {
+            color: var(--gray-600);
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .test-results {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid #27ae60;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📋 Material Description & Mobile Responsive Test</h1>
+
+        <div class="test-section">
+            <h3>Material Description Field Features</h3>
+            <div class="description">
+                Test the new material description column with:
+                <br>• Dedicated column for material description
+                <br>• Auto-filled when selected from material master  
+                <br>• Manual entry when not from material master
+                <br>• Mobile-friendly with proper data-labels (resize window to test)
+            </div>
+
+            <div class="unified-table-responsive">
+                <table class="unified-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px">S.No</th>
+                            <th style="width: 120px">Material Number</th>
+                            <th style="width: 200px">Material Description</th>
+                            <th style="width: 120px">HSN Code</th>
+                            <th style="width: 100px">Unit Rate</th>
+                            <th style="width: 80px">GST %</th>
+                            <th style="width: 80px">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="S.No">
+                                <input type="text" class="unified-input-sm text-center" value="01" style="width: 50px; text-align: center;">
+                            </td>
+                            <td data-label="Material Number">
+                                <div class="material-input-group">
+                                    <input type="text" class="unified-input-sm" value="MAT001" readonly>
+                                    <button class="material-selector-btn">📋 Select</button>
+                                </div>
+                            </td>
+                            <td data-label="Material Description">
+                                <div class="material-description-field">
+                                    <div class="material-description-display">
+                                        <span class="material-description-text">
+                                            Surgical Steel Implant - Hip Joint Replacement Prosthetic Device
+                                        </span>
+                                        <small class="material-description-note">
+                                            (From Material Master)
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input-sm" value="90212110" readonly>
+                            </td>
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input-sm" value="45000.00" readonly style="text-align: right;">
+                            </td>
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input-sm" value="12" readonly>
+                            </td>
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input-sm" value="1" style="text-align: right;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td data-label="S.No">
+                                <input type="text" class="unified-input-sm text-center" value="02" style="width: 50px; text-align: center;">
+                            </td>
+                            <td data-label="Material Number">
+                                <div class="material-input-group">
+                                    <input type="text" class="unified-input-sm" value="MAT002" placeholder="Enter material number">
+                                    <button class="material-selector-btn">📋 Select</button>
+                                </div>
+                            </td>
+                            <td data-label="Material Description">
+                                <div class="material-description-field">
+                                    <input type="text" class="unified-input-sm" value="Custom Orthopedic Screw Set" placeholder="Enter material description">
+                                </div>
+                            </td>
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input-sm" value="90212190" placeholder="HSN Code">
+                            </td>
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input-sm" value="2500.00" placeholder="0.00" style="text-align: right;">
+                            </td>
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input-sm" value="18" placeholder="GST%">
+                            </td>
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input-sm" value="5" style="text-align: right;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td data-label="S.No">
+                                <input type="text" class="unified-input-sm text-center" value="03" style="width: 50px; text-align: center;">
+                            </td>
+                            <td data-label="Material Number">
+                                <div class="material-input-group">
+                                    <input type="text" class="unified-input-sm" value="" placeholder="Enter material number">
+                                    <button class="material-selector-btn">📋 Select</button>
+                                </div>
+                            </td>
+                            <td data-label="Material Description">
+                                <div class="material-description-field">
+                                    <input type="text" class="unified-input-sm" value="" placeholder="Enter material description">
+                                </div>
+                            </td>
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input-sm" value="" placeholder="HSN Code">
+                            </td>
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input-sm" value="" placeholder="0.00" style="text-align: right;">
+                            </td>
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input-sm" value="" placeholder="GST%">
+                            </td>
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input-sm" value="" placeholder="0.00" style="text-align: right;">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="test-results">
+                <h4>✅ Features Demonstrated:</h4>
+                <ul>
+                    <li><strong>Row 1:</strong> Material from master - Description auto-filled, read-only fields</li>
+                    <li><strong>Row 2:</strong> Custom material - Editable description field</li>
+                    <li><strong>Row 3:</strong> Empty row - All fields editable</li>
+                    <li><strong>Mobile View:</strong> Resize window to see mobile cards with data labels</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Mobile Responsiveness Test</h3>
+            <div class="description">
+                Use the buttons below to simulate different screen sizes or resize your browser window.
+            </div>
+            
+            <button class="mobile-test-btn" onclick="setWidth('480px')">📱 Mobile (480px)</button>
+            <button class="mobile-test-btn" onclick="setWidth('768px')">📲 Tablet (768px)</button>
+            <button class="mobile-test-btn" onclick="setWidth('1024px')">💻 Desktop (1024px)</button>
+            <button class="mobile-test-btn" onclick="setWidth('100%')">↔️ Full Width</button>
+
+            <div id="currentWidth" style="margin-top: 10px; font-weight: bold;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Expected Mobile Behavior</h3>
+            <ul>
+                <li><strong>Desktop View:</strong> Standard table layout with all columns visible</li>
+                <li><strong>Mobile View (≤768px):</strong> 
+                    <ul>
+                        <li>Table headers hidden</li>
+                        <li>Each row becomes a card</li>
+                        <li>Data labels appear before each field (e.g., "Material Description: ...")</li>
+                        <li>Material selector button stacks below input field</li>
+                        <li>All content remains accessible and readable</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function setWidth(width) {
+            const container = document.querySelector('.test-container');
+            const body = document.body;
+            
+            if (width === '100%') {
+                body.style.maxWidth = 'none';
+                body.style.width = '100%';
+            } else {
+                body.style.maxWidth = width;
+                body.style.width = width;
+            }
+            
+            document.getElementById('currentWidth').textContent = `Current width: ${width}`;
+            
+            // Add a small delay to see the transition
+            setTimeout(() => {
+                if (parseInt(width) <= 768) {
+                    alert('Mobile view activated! Notice:\n• Headers are hidden\n• Rows become cards\n• Data labels appear\n• Better mobile usability');
+                }
+            }, 100);
+        }
+
+        // Initialize
+        document.getElementById('currentWidth').textContent = 'Current width: Full Width';
+
+        // Show current viewport width
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const viewportInfo = document.getElementById('currentWidth');
+            if (viewportInfo) {
+                viewportInfo.textContent = `Current viewport: ${width}px`;
+            }
+        }
+
+        window.addEventListener('resize', updateViewportInfo);
+        updateViewportInfo();
+    </script>
+</body>
+</html>

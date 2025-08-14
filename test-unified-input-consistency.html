@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Input Consistency Test</title>
+    <link rel="stylesheet" href="client/src/shared/styles/unified-design.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            background: var(--light-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        
+        .test-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-field {
+            flex: 1;
+        }
+        
+        .form-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid var(--gray-300);
+            padding: 0.5rem;
+            text-align: left;
+        }
+        
+        .comparison-table th {
+            background: var(--gray-100);
+            font-weight: 600;
+        }
+        
+        .style-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .style-box {
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+        }
+        
+        .style-box h3 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <h1>Input Style Consistency Test</h1>
+    <p>Testing the unified input styles across main inquiry form and inquiry items table.</p>
+    
+    <!-- Main Form Style Test -->
+    <div class="test-section">
+        <h2>Main Inquiry Form Style</h2>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Hospital</label>
+                <select class="unified-input">
+                    <option>Select Hospital</option>
+                    <option>Care Hospital</option>
+                    <option>Apollo Hospital</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label>Patient Name</label>
+                <input type="text" class="unified-input" placeholder="Enter patient name" value="John Doe">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-field">
+                <label>Patient UHID</label>
+                <input type="text" class="unified-input" placeholder="Enter patient UHID" value="UH123456">
+            </div>
+            <div class="form-field">
+                <label>Surgical Category</label>
+                <select class="unified-input">
+                    <option>Select Category</option>
+                    <option>Orthopedic Surgery</option>
+                    <option>Cardiac Surgery</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-field">
+                <label>Limit Amount</label>
+                <input type="number" class="unified-input" placeholder="0.00" value="50000.00">
+            </div>
+            <div class="form-field">
+                <label>Currency</label>
+                <select class="unified-input">
+                    <option value="INR">INR</option>
+                    <option value="USD">USD</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Inquiry Items Table Style Test -->
+    <div class="test-section">
+        <h2>Inquiry Items Table Style</h2>
+        <table class="unified-table inquiry-items-table">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Material Number</th>
+                    <th>Material Description</th>
+                    <th>HSN Code</th>
+                    <th>Unit Rate</th>
+                    <th>GST %</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Disc %</th>
+                    <th>Disc Amt</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <input type="text" class="unified-input text-center" value="01" style="width: 50px;">
+                    </td>
+                    <td>
+                        <div class="material-input-group">
+                            <input type="text" class="unified-input" value="MAT001" placeholder="Material number">
+                            <button type="button" class="material-selector-btn">🔍</button>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="Surgical Implant Kit" placeholder="Material description">
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="30049099" placeholder="HSN Code">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="15000.00" placeholder="0.00">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="18.00" placeholder="GST%" min="0" max="100">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="2.00" placeholder="0.00" style="text-align: right;">
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="PCS" placeholder="Unit">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="5.00" placeholder="0" min="0" max="100">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="1500.00" placeholder="0.00" style="text-align: right;">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" class="unified-input text-center" value="02" style="width: 50px;">
+                    </td>
+                    <td>
+                        <div class="material-input-group">
+                            <input type="text" class="unified-input" value="MAT002" placeholder="Material number">
+                            <button type="button" class="material-selector-btn">🔍</button>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="Bone Cement" placeholder="Material description">
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="39069090" placeholder="HSN Code">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="2500.00" placeholder="0.00">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="12.00" placeholder="GST%" min="0" max="100">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="1.00" placeholder="0.00" style="text-align: right;">
+                    </td>
+                    <td>
+                        <input type="text" class="unified-input" value="KG" placeholder="Unit">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="0.00" placeholder="0" min="0" max="100">
+                    </td>
+                    <td>
+                        <input type="number" class="unified-input" value="0.00" placeholder="0.00" style="text-align: right;">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Style Comparison -->
+    <div class="test-section">
+        <h2>Input Style Analysis</h2>
+        <div class="style-comparison">
+            <div class="style-box">
+                <h3>Main Form Inputs (.unified-input)</h3>
+                <p><strong>Padding:</strong> 0.625rem 0.875rem</p>
+                <p><strong>Font Size:</strong> 0.9rem</p>
+                <p><strong>Border Radius:</strong> 8px (var(--border-radius))</p>
+                <p><strong>Focus Color:</strong> #3498db (var(--accent-color))</p>
+                <p><strong>Box Shadow:</strong> 0 0 0 3px rgba(52, 152, 219, 0.1)</p>
+            </div>
+            <div class="style-box">
+                <h3>Table Inputs (.unified-input in table)</h3>
+                <p><strong>Padding:</strong> 0.5rem 0.75rem (overridden for table)</p>
+                <p><strong>Font Size:</strong> 0.875rem (overridden for table)</p>
+                <p><strong>Border Radius:</strong> var(--border-radius-sm) (overridden for table)</p>
+                <p><strong>Focus Color:</strong> Same as main form</p>
+                <p><strong>Box Shadow:</strong> Same as main form</p>
+            </div>
+        </div>
+        
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Main Form (.unified-input)</th>
+                    <th>Table (.unified-input in .inquiry-items-table)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Padding</td>
+                    <td>0.625rem 0.875rem</td>
+                    <td>0.5rem 0.75rem</td>
+                    <td>✅ Appropriately sized for context</td>
+                </tr>
+                <tr>
+                    <td>Font Size</td>
+                    <td>0.9rem</td>
+                    <td>0.875rem</td>
+                    <td>✅ Table uses smaller font for density</td>
+                </tr>
+                <tr>
+                    <td>Border</td>
+                    <td>1px solid var(--gray-300)</td>
+                    <td>1px solid var(--gray-300)</td>
+                    <td>✅ Consistent</td>
+                </tr>
+                <tr>
+                    <td>Focus Color</td>
+                    <td>var(--accent-color)</td>
+                    <td>var(--accent-color)</td>
+                    <td>✅ Consistent</td>
+                </tr>
+                <tr>
+                    <td>Box Shadow on Focus</td>
+                    <td>0 0 0 3px rgba(52, 152, 219, 0.1)</td>
+                    <td>0 0 0 3px rgba(52, 152, 219, 0.1)</td>
+                    <td>✅ Consistent</td>
+                </tr>
+                <tr>
+                    <td>Error State</td>
+                    <td>var(--danger-color) border</td>
+                    <td>var(--danger-color) border</td>
+                    <td>✅ Consistent</td>
+                </tr>
+                <tr>
+                    <td>Read-only State</td>
+                    <td>var(--gray-100) background</td>
+                    <td>var(--gray-100) background</td>
+                    <td>✅ Consistent</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Test interactions -->
+    <div class="test-section">
+        <h2>Interactive Test</h2>
+        <p>Try interacting with the inputs above:</p>
+        <ul>
+            <li>Click on different inputs to see consistent focus states</li>
+            <li>Both form and table inputs should have the same accent color (#3498db) on focus</li>
+            <li>The box shadow effect should be consistent across all inputs</li>
+            <li>Padding and font sizes are contextually appropriate (larger for forms, compact for tables)</li>
+            <li>Error states (red border) work consistently</li>
+        </ul>
+    </div>
+
+    <script>
+        // Add some interactive testing
+        document.querySelectorAll('.unified-input').forEach(input => {
+            input.addEventListener('focus', () => {
+                console.log('Input focused:', input.className, 'Value:', input.value);
+            });
+        });
+        
+        // Simulate error state on some inputs
+        setTimeout(() => {
+            const errorInputs = document.querySelectorAll('input[value="MAT002"]');
+            errorInputs.forEach(input => {
+                if (Math.random() > 0.7) {
+                    input.classList.add('error');
+                    console.log('Added error state to input');
+                }
+            });
+        }, 2000);
+    </script>
+</body>
+</html>

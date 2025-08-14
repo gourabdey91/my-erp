@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Inquiry Responsive Layout</title>
+    <style>
+        /* Import unified design styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* CSS Variables */
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --white: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+            --accent-color: var(--primary-color);
+            --border-radius: 6px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Unified Input Styles */
+        .unified-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            background-color: var(--white);
+            transition: all 0.15s ease-in-out;
+            font-family: inherit;
+        }
+
+        .unified-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        /* Dropdown styles - always white and editable */
+        .unified-dropdown {
+            background-color: var(--white) !important;
+            cursor: pointer;
+        }
+
+        .unified-dropdown:disabled {
+            background-color: var(--white) !important;
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        /* Table Styles */
+        .unified-table-responsive {
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+        }
+
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .unified-table th {
+            background-color: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        /* Responsive Table Layout - Fiori Style Two-Row Layout */
+        .inquiry-items-table.responsive-table .secondary-row {
+            display: none; /* Hide secondary row on desktop */
+        }
+
+        @media (max-width: 768px) {
+            .inquiry-items-table.responsive-table {
+                font-size: 0.85rem;
+            }
+            
+            .inquiry-items-table.responsive-table thead {
+                display: none; /* Hide desktop headers on mobile */
+            }
+            
+            /* Primary Row - Contains main fields */
+            .inquiry-items-table.responsive-table .primary-row {
+                display: block;
+                border: 1px solid var(--gray-200);
+                border-radius: var(--border-radius);
+                background: var(--white);
+                box-shadow: var(--shadow-sm);
+                margin-bottom: 0;
+                padding: 0.5rem;
+            }
+            
+            .inquiry-items-table.responsive-table .primary-row td {
+                display: block;
+                text-align: right;
+                border: none;
+                padding: 0.4rem 1rem;
+                position: relative;
+                border-bottom: 1px solid var(--gray-100);
+            }
+            
+            .inquiry-items-table.responsive-table .primary-row td:last-child {
+                border-bottom: none;
+            }
+            
+            .inquiry-items-table.responsive-table .primary-row td:before {
+                content: attr(data-label) ":";
+                position: absolute;
+                left: 1rem;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 600;
+                color: var(--gray-700);
+                font-size: 0.85rem;
+            }
+            
+            /* Primary fields styling */
+            .inquiry-items-table.responsive-table .primary-row td[data-label="S.No"],
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Material No."],
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Unit Rate"],
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Quantity"],
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Disc Amt"],
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Total Amount"] {
+                background-color: var(--gray-50);
+                font-weight: 500;
+            }
+            
+            /* Actions field */
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Actions"] {
+                text-align: center;
+                background-color: var(--accent-color);
+                color: var(--white);
+            }
+            
+            .inquiry-items-table.responsive-table .primary-row td[data-label="Actions"]:before {
+                color: var(--white);
+            }
+            
+            /* Secondary Row - Contains detail fields */
+            .inquiry-items-table.responsive-table .secondary-row {
+                display: block;
+                border: 1px solid var(--gray-200);
+                border-top: none;
+                border-radius: 0 0 var(--border-radius) var(--border-radius);
+                background: var(--gray-50);
+                margin-bottom: 1rem;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-row-content {
+                padding: 1rem;
+                display: block;
+                border: none;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-fields-container {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-field label {
+                font-weight: 600;
+                color: var(--gray-700);
+                font-size: 0.8rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-field span {
+                color: var(--gray-800);
+                font-size: 0.9rem;
+            }
+            
+            /* Special styling for material description */
+            .inquiry-items-table.responsive-table .secondary-field:first-child {
+                background-color: var(--info-color);
+                color: var(--white);
+                padding: 0.75rem;
+                border-radius: var(--border-radius);
+                margin-bottom: 0.5rem;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-field:first-child label {
+                color: var(--white);
+                font-weight: bold;
+            }
+            
+            .inquiry-items-table.responsive-table .secondary-field:first-child span {
+                color: var(--white);
+                font-weight: 500;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Responsive Inquiry Table Test</h1>
+        <p>Resize your browser window to test the responsive layout. On mobile/tablet view, the table will transform into a Fiori-style two-section layout per item.</p>
+        
+        <div class="unified-table-responsive">
+            <table class="unified-table inquiry-items-table responsive-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Material No.</th>
+                        <th>Unit Rate</th>
+                        <th>Quantity</th>
+                        <th>Disc Amt</th>
+                        <th>Total Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Item 1 -->
+                    <tr class="primary-row">
+                        <td data-label="S.No">01</td>
+                        <td data-label="Material No.">MAT-001</td>
+                        <td data-label="Unit Rate">₹125.50</td>
+                        <td data-label="Quantity">2.00</td>
+                        <td data-label="Disc Amt">₹10.00</td>
+                        <td data-label="Total Amount">₹266.18</td>
+                        <td data-label="Actions">🗑️</td>
+                    </tr>
+                    <tr class="secondary-row">
+                        <td colspan="7" class="secondary-row-content">
+                            <div class="secondary-fields-container">
+                                <div class="secondary-field">
+                                    <label>Material Description:</label>
+                                    <span>Surgical Implant Type A - Premium Grade</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>HSN Code:</label>
+                                    <span>90211090</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>GST %:</label>
+                                    <span>18.00</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>Unit:</label>
+                                    <span>PCS</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>Disc %:</label>
+                                    <span>0.00</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Item 2 -->
+                    <tr class="primary-row">
+                        <td data-label="S.No">02</td>
+                        <td data-label="Material No.">MAT-002</td>
+                        <td data-label="Unit Rate">₹89.25</td>
+                        <td data-label="Quantity">1.00</td>
+                        <td data-label="Disc Amt">₹0.00</td>
+                        <td data-label="Total Amount">₹105.32</td>
+                        <td data-label="Actions">🗑️</td>
+                    </tr>
+                    <tr class="secondary-row">
+                        <td colspan="7" class="secondary-row-content">
+                            <div class="secondary-fields-container">
+                                <div class="secondary-field">
+                                    <label>Material Description:</label>
+                                    <span>Cardiac Stent - Drug Eluting</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>HSN Code:</label>
+                                    <span>90211010</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>GST %:</label>
+                                    <span>18.00</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>Unit:</label>
+                                    <span>PCS</span>
+                                </div>
+                                <div class="secondary-field">
+                                    <label>Disc %:</label>
+                                    <span>0.00</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Dropdown Test</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+            <div>
+                <label>Payment Method (Always Editable):</label>
+                <select class="unified-input unified-dropdown">
+                    <option value="">Select Payment Method</option>
+                    <option value="cash">Cash</option>
+                    <option value="card">Credit Card</option>
+                    <option value="transfer">Bank Transfer</option>
+                </select>
+            </div>
+            <div>
+                <label>Category (Always Editable):</label>
+                <select class="unified-input unified-dropdown">
+                    <option value="">Select Category</option>
+                    <option value="orthopedic">Orthopedic</option>
+                    <option value="cardiac">Cardiac</option>
+                    <option value="neuro">Neurosurgery</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding: 1rem; background: #e8f4fd; border-radius: 6px;">
+            <h3>Testing Instructions:</h3>
+            <ul>
+                <li><strong>Desktop View:</strong> Table should display normally with all columns visible</li>
+                <li><strong>Mobile View (< 768px):</strong> Table should transform into card-like layout with:
+                    <ul>
+                        <li>Primary fields (S.No, Material No., Unit Rate, Quantity, Total Amount) highlighted</li>
+                        <li>Material Description with special blue background</li>
+                        <li>Actions with accent color background</li>
+                        <li>Secondary fields (HSN Code, GST %, Unit, Disc %) with subtle styling</li>
+                    </ul>
+                </li>
+                <li><strong>Dropdowns:</strong> Should always have pure white background and be editable</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

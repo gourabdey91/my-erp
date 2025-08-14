@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Row Table Layout Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        /* Unified Input Styles */
+        .unified-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            background-color: #fff;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .unified-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        /* Table Styles */
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .unified-table th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        .unified-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .unified-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .unified-table input {
+            border: 1px solid #ced4da;
+            padding: 6px 8px;
+            font-size: 13px;
+            min-width: 60px;
+        }
+
+        .material-number-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .material-selector-btn {
+            padding: 6px 8px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .material-description-display {
+            max-width: 200px;
+        }
+
+        .material-description-text {
+            display: block;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .material-description-note {
+            color: #6c757d;
+            font-size: 11px;
+        }
+
+        .total-amount {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .delete-item-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        /* Mobile responsive - stack table when screen is too narrow */
+        @media (max-width: 1024px) {
+            .unified-table {
+                font-size: 12px;
+            }
+            
+            .unified-table th,
+            .unified-table td {
+                padding: 8px 4px;
+            }
+            
+            .unified-table input {
+                font-size: 12px;
+                padding: 4px 6px;
+                min-width: 50px;
+            }
+        }
+
+        /* Very narrow screens - card layout */
+        @media (max-width: 768px) {
+            .unified-table,
+            .unified-table thead,
+            .unified-table tbody,
+            .unified-table th,
+            .unified-table td,
+            .unified-table tr {
+                display: block;
+            }
+
+            .unified-table thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .unified-table tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                padding: 10px;
+                border-radius: 8px;
+                background-color: #fff;
+            }
+
+            .unified-table td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 40% !important;
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+
+            .unified-table td:before {
+                content: attr(data-label) ": ";
+                position: absolute;
+                left: 6px;
+                width: 35%;
+                padding-right: 10px;
+                white-space: nowrap;
+                font-weight: bold;
+                color: #333;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Single Row Table Layout Test</h1>
+        
+        <div class="test-section">
+            <h2>Desktop View - All Fields in Single Row</h2>
+            <div class="table-responsive">
+                <table className="unified-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Material No.</th>
+                            <th>Material Description</th>
+                            <th>Unit Rate</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>HSN Code</th>
+                            <th>GST %</th>
+                            <th>Disc %</th>
+                            <th>Disc Amt</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="S.No" class="text-center">
+                                <input type="text" class="unified-input text-center" style="width: 50px;" value="01" placeholder="01">
+                            </td>
+                            
+                            <td data-label="Material No.">
+                                <div class="material-number-container">
+                                    <input type="text" class="unified-input" value="MAT001" placeholder="Enter material number">
+                                    <button type="button" class="material-selector-btn" title="Select from material master">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td data-label="Material Description">
+                                <div class="material-description-display">
+                                    <span class="material-description-text">Sample Surgical Implant</span>
+                                    <small class="material-description-note">(From Material Master)</small>
+                                </div>
+                            </td>
+
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input" value="1500.00" placeholder="0.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input" value="2" placeholder="1" style="text-align: center;">
+                            </td>
+
+                            <td data-label="Unit">
+                                <input type="text" class="unified-input" value="PCS" placeholder="Unit" readonly>
+                            </td>
+
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input" value="90211010" placeholder="HSN Code">
+                            </td>
+
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input" value="12.00" placeholder="GST%" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc %">
+                                <input type="number" class="unified-input" value="5.00" placeholder="0" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc Amt">
+                                <input type="number" class="unified-input" value="150.00" placeholder="0.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Total Amount">
+                                <input type="text" class="unified-input total-amount" value="₹3,210.00" readonly style="text-align: right; font-weight: 600; color: #28a745;">
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="action-buttons">
+                                    <button type="button" class="delete-item-btn" title="Remove Item">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td data-label="S.No" class="text-center">
+                                <input type="text" class="unified-input text-center" style="width: 50px;" value="02" placeholder="01">
+                            </td>
+                            
+                            <td data-label="Material No.">
+                                <div class="material-number-container">
+                                    <input type="text" class="unified-input" value="" placeholder="Enter material number">
+                                    <button type="button" class="material-selector-btn" title="Select from material master">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td data-label="Material Description">
+                                <input type="text" class="unified-input" value="" placeholder="Enter material description">
+                            </td>
+
+                            <td data-label="Unit Rate">
+                                <input type="number" class="unified-input" value="" placeholder="0.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Quantity">
+                                <input type="number" class="unified-input" value="1" placeholder="1" style="text-align: center;">
+                            </td>
+
+                            <td data-label="Unit">
+                                <input type="text" class="unified-input" value="" placeholder="Unit" readonly>
+                            </td>
+
+                            <td data-label="HSN Code">
+                                <input type="text" class="unified-input" value="" placeholder="HSN Code">
+                            </td>
+
+                            <td data-label="GST %">
+                                <input type="number" class="unified-input" value="" placeholder="GST%" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc %">
+                                <input type="number" class="unified-input" value="" placeholder="0" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Disc Amt">
+                                <input type="number" class="unified-input" value="" placeholder="0.00" style="text-align: right;">
+                            </td>
+
+                            <td data-label="Total Amount">
+                                <input type="text" class="unified-input total-amount" value="₹0.00" readonly style="text-align: right; font-weight: 600; color: #28a745;">
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="action-buttons">
+                                    <button type="button" class="delete-item-btn" title="Remove Item">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Instructions</h2>
+            <ul>
+                <li><strong>Desktop View:</strong> All fields are displayed in a single row with horizontal scrolling if needed</li>
+                <li><strong>Tablet View (≤ 1024px):</strong> Slightly compressed but still single row layout</li>
+                <li><strong>Mobile View (≤ 768px):</strong> Card-based layout with field labels</li>
+                <li><strong>All dropdowns are editable</strong> with pure white background</li>
+                <li><strong>Consistent input styling</strong> using unified-input class</li>
+                <li><strong>Material selector button</strong> with search icon for material master lookup</li>
+            </ul>
+            
+            <p><strong>Test by resizing your browser window</strong> to see the responsive behavior.</p>
+        </div>
+    </div>
+
+    <script>
+        // Test responsiveness
+        function checkViewport() {
+            const width = window.innerWidth;
+            const indicator = document.createElement('div');
+            indicator.style.position = 'fixed';
+            indicator.style.top = '10px';
+            indicator.style.right = '10px';
+            indicator.style.background = '#007bff';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px 10px';
+            indicator.style.borderRadius = '4px';
+            indicator.style.fontSize = '12px';
+            indicator.style.zIndex = '9999';
+            
+            if (width <= 768) {
+                indicator.textContent = 'Mobile View (≤768px)';
+            } else if (width <= 1024) {
+                indicator.textContent = 'Tablet View (≤1024px)';
+            } else {
+                indicator.textContent = 'Desktop View (>1024px)';
+            }
+            
+            // Remove existing indicator
+            const existing = document.querySelector('.viewport-indicator');
+            if (existing) existing.remove();
+            
+            indicator.className = 'viewport-indicator';
+            document.body.appendChild(indicator);
+        }
+        
+        checkViewport();
+        window.addEventListener('resize', checkViewport);
+    </script>
+</body>
+</html>
