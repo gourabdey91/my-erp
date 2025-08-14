@@ -161,6 +161,30 @@
   box-shadow: none !important;
 }
 
+/* Override: Material Number should always be editable (white background) */
+.inquiry-items-table td[data-label="Material No."] .unified-input,
+.inquiry-items-table td[data-label="Material Number"] .unified-input {
+  background-color: var(--white) !important;
+  color: var(--gray-800) !important;
+  cursor: text !important;
+  border-color: var(--gray-300) !important;
+}
+
+.inquiry-items-table td[data-label="Material No."] .unified-input:focus,
+.inquiry-items-table td[data-label="Material Number"] .unified-input:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1) !important;
+}
+
+/* Override: Total Amount should keep green color */
+.inquiry-items-table .unified-input.total-amount {
+  background-color: var(--white) !important;
+  color: #28a745 !important;
+  font-weight: 600 !important;
+  cursor: not-allowed !important;
+  border-color: var(--gray-300) !important;
+}
+
 .unified-input:disabled {
   background-color: var(--white) !important;
   color: var(--gray-500);
