@@ -2488,6 +2488,11 @@ select.unified-input:disabled {
   line-height: 1.3;
 }
 
+/* Hide material description field in mobile view since it's shown in header */
+.mobile-description-field {
+  display: none;
+}
+
 /* Mobile responsive inquiry items */
 @media (max-width: 768px) {
   /* Hide table on mobile */

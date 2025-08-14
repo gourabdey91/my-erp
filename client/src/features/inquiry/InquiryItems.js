@@ -631,7 +631,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   </div>
                 </div>
 
-                <div className="mobile-field-group">
+                <div className="mobile-field-group mobile-description-field">
                   <label className="mobile-field-label">Material Description</label>
                   <textarea
                     className="unified-input mobile-field-input"
