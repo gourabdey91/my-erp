@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import MaterialSelector from './MaterialSelector';
 import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
@@ -10,6 +10,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [materialDataProcessed, setMaterialDataProcessed] = useState(false);
 
   // Dropdown management
   const toggleDropdown = (dropdownId) => {
@@ -25,10 +26,63 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     if (items.length === 0) {
       const emptyItem = createEmptyItem(1);
       setInquiryItems([emptyItem]);
+      setMaterialDataProcessed(true); // Mark as processed since there's nothing to process
     } else {
       setInquiryItems(items);
+      setMaterialDataProcessed(false); // Reset flag when new items are loaded
     }
   }, [items]);
+
+  // Fetch material data for existing items when hospital is available and not already processed
+  useEffect(() => {
+    const fetchMaterialDataForExistingItems = async () => {
+      if (!hospital?.id || materialDataProcessed || inquiryItems.length === 0) {
+        return;
+      }
+
+      const updatedItems = [];
+      let hasChanges = false;
+
+      for (const item of inquiryItems) {
+        if (item.materialNumber) {
+          // This item has a material number, fetch from master
+          const materialData = await fetchMaterialByNumber(item.materialNumber, hospital.id);
+          
+          if (materialData) {
+            updatedItems.push({
+              ...item,
+              materialDescription: materialData.description,
+              hsnCode: materialData.hsnCode,
+              unitRate: materialData.assignedInstitutionalPrice,
+              gstPercentage: materialData.gstPercentage,
+              unit: materialData.unit,
+              isFromMaster: true
+            });
+            hasChanges = true;
+          } else {
+            updatedItems.push(item);
+          }
+        } else {
+          updatedItems.push(item);
+        }
+      }
+
+      if (hasChanges) {
+        // Recalculate totals for updated items
+        const itemsWithTotals = updatedItems.map(item => {
+          const calculations = calculateItemTotal(item);
+          return { ...item, totalAmount: calculations.totalAmount };
+        });
+
+        setInquiryItems(itemsWithTotals);
+        onItemsChange(itemsWithTotals);
+      }
+      
+      setMaterialDataProcessed(true); // Mark as processed
+    };
+
+    fetchMaterialDataForExistingItems();
+  }, [hospital?.id, materialDataProcessed, inquiryItems.length]);
 
   // Create a new empty item
   const createEmptyItem = (serialNumber) => ({
