@@ -524,9 +524,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                             {item.materialDescription ? (
                               <span className="description-text">
                                 {item.materialDescription}
-                                {item.isFromMaster && (
-                                  <span className="description-badge">(From Master)</span>
-                                )}
                               </span>
                             ) : (
                               <span className="description-placeholder">No description available</span>
@@ -542,25 +539,13 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         <div className="hsn-code-container">
                           <span className="hsn-label">HSN Code:</span>
                           <div className="hsn-content">
-                            <input
-                              type="text"
-                              className={`unified-input hsn-input ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
-                              value={item.hsnCode}
-                              onChange={(e) => !item.isFromMaster && handleInputChange(index, 'hsnCode', e.target.value)}
-                              placeholder="Enter HSN Code"
-                              readOnly={item.isFromMaster}
-                              title={item.isFromMaster ? "HSN Code is from material master" : "Enter HSN Code"}
-                            />
-                            {item.isFromMaster && (
-                              <span className="hsn-badge">(From Master)</span>
+                            {item.hsnCode ? (
+                              <span className="hsn-text">{item.hsnCode}</span>
+                            ) : (
+                              <span className="hsn-placeholder">Not specified</span>
                             )}
                           </div>
                         </div>
-                        {errors[`${index}_hsnCode`] && (
-                          <div className="unified-error-text" style={{ marginTop: '0.25rem' }}>
-                            {errors[`${index}_hsnCode`]}
-                          </div>
-                        )}
                       </td>
                     </tr>
                   </React.Fragment>
