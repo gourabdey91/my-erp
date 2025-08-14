@@ -207,14 +207,27 @@
 
 .inquiry-items-table .inquiry-hsn-row {
   border-top: none !important;
-  border-bottom: 1px solid var(--gray-300) !important; /* Only last secondary row has underline */
+  border-bottom: none !important; /* Remove underline from HSN row */
   background-color: #f8f9fa; /* Same background as description row */
 }
 
 .inquiry-items-table .inquiry-hsn-row td {
   padding: 0.5rem 0.75rem;
   border-top: none !important;
-  border-bottom: 1px solid var(--gray-300) !important; /* Underline only on HSN row */
+  border-bottom: none !important; /* Remove underline from HSN row cells */
+}
+
+/* GST% row styling - matches description and HSN rows */
+.inquiry-items-table .inquiry-gst-row {
+  border-top: none !important;
+  border-bottom: 1px solid var(--gray-300) !important; /* Only last secondary row has underline */
+  background-color: #f8f9fa; /* Same background as other secondary rows */
+}
+
+.inquiry-items-table .inquiry-gst-row td {
+  padding: 0.5rem 0.75rem;
+  border-top: none !important;
+  border-bottom: 1px solid var(--gray-300) !important; /* Underline only on GST row */
 }
 
 .inquiry-items-table .inquiry-description-row td,
@@ -234,20 +247,23 @@
 
 .material-description-container {
   display: flex;
-  align-items: flex-start;
-  gap: 0.1rem; /* Minimal spacing between label and value */
+  align-items: center; /* Changed from flex-start to center to match HSN/GST */
+  gap: 0.05rem; /* Ultra minimal spacing between label and value */
   font-size: 0.9rem;
 }
 
 .description-label {
   font-weight: 600;
   color: var(--gray-600);
-  min-width: 80px; /* Significantly reduced minimum width */
+  min-width: 50px; /* Reduced to match HSN/GST labels */
   flex-shrink: 0;
 }
 
 .description-content {
+  display: flex;
+  align-items: center;
   flex: 1;
+  gap: 0; /* No additional gap inside content */
 }
 
 .description-text {
@@ -317,7 +333,39 @@
   display: none; /* Hide "From Master" badge */
 }
 
-/* Responsive behavior for two-row layout */
+/* GST% code container styling - matches HSN code container */
+.gst-code-container {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem; /* Minimal spacing between label and value */
+  font-size: 0.9rem;
+}
+
+.gst-label {
+  font-weight: 600;
+  color: var(--gray-600);
+  min-width: 50px; /* Minimal width for GST% label */
+  flex-shrink: 0;
+}
+
+.gst-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.gst-text {
+  color: var(--gray-800);
+  font-weight: 400; /* Normal font weight, not bold */
+}
+
+.gst-placeholder {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* Responsive behavior for four-row layout */
 @media (max-width: 768px) {
   .inquiry-items-table .inquiry-description-row,
   .inquiry-items-table .inquiry-hsn-row {
@@ -1592,16 +1640,13 @@ select.unified-input:disabled {
 /* Column widths for better content visibility */
 .inquiry-items-table th:nth-child(1) { width: 60px; }   /* S.No */
 .inquiry-items-table th:nth-child(2) { width: 120px; }  /* Material No. */
-.inquiry-items-table th:nth-child(3) { width: 200px; }  /* Material Description */
-.inquiry-items-table th:nth-child(4) { width: 100px; }  /* Unit Rate */
-.inquiry-items-table th:nth-child(5) { width: 80px; }   /* Quantity */
-.inquiry-items-table th:nth-child(6) { width: 60px; }   /* Unit */
-.inquiry-items-table th:nth-child(7) { width: 90px; }   /* HSN Code */
-.inquiry-items-table th:nth-child(8) { width: 70px; }   /* GST % */
-.inquiry-items-table th:nth-child(9) { width: 70px; }   /* Disc % */
-.inquiry-items-table th:nth-child(10) { width: 90px; }  /* Disc Amt */
-.inquiry-items-table th:nth-child(11) { width: 120px; } /* Total Amount */
-.inquiry-items-table th:nth-child(12) { width: 80px; }  /* Actions */
+.inquiry-items-table th:nth-child(3) { width: 90px; }   /* Unit Rate - made smaller and auto-fit */
+.inquiry-items-table th:nth-child(4) { width: 80px; }   /* Quantity */
+.inquiry-items-table th:nth-child(5) { width: 60px; }   /* Unit */
+.inquiry-items-table th:nth-child(6) { width: 70px; }   /* Disc % */
+.inquiry-items-table th:nth-child(7) { width: 90px; }   /* Disc Amt */
+.inquiry-items-table th:nth-child(8) { width: 120px; }  /* Total Amount */
+.inquiry-items-table th:nth-child(9) { width: 80px; }   /* Actions */
 
 .inquiry-items-table .unified-input {
   width: 100%;
@@ -1736,9 +1781,8 @@ select.unified-input:disabled {
   }
   
   /* Adjust column widths for tablet */
-  .inquiry-items-table th:nth-child(3) { width: 160px; }  /* Material Description */
-  .inquiry-items-table th:nth-child(4) { width: 90px; }   /* Unit Rate */
-  .inquiry-items-table th:nth-child(11) { width: 110px; } /* Total Amount */
+  .inquiry-items-table th:nth-child(3) { width: 80px; }   /* Unit Rate - made smaller */
+  .inquiry-items-table th:nth-child(8) { width: 110px; }  /* Total Amount */
 }
 
 .inquiry-items-table th,

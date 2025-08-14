@@ -342,7 +342,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <th>Unit Rate</th>
                   <th>Quantity</th>
                   <th>Unit</th>
-                  <th>GST %</th>
                   <th>Disc %</th>
                   <th>Disc Amt</th>
                   <th>Total Amount</th>
@@ -442,25 +441,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         />
                       </td>
 
-                      <td data-label="GST %">
-                        <input
-                          type="number"
-                          className={`unified-input ${errors[`${index}_gstPercentage`] ? 'error' : ''}`}
-                          value={item.gstPercentage}
-                          onChange={(e) => !item.isFromMaster && handleInputChange(index, 'gstPercentage', e.target.value)}
-                          placeholder="GST%"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          style={{ textAlign: 'right' }}
-                          readOnly={item.isFromMaster}
-                          title={item.isFromMaster ? "GST% is from material master" : "Enter GST%"}
-                        />
-                        {errors[`${index}_gstPercentage`] && (
-                          <span className="unified-error-text">{errors[`${index}_gstPercentage`]}</span>
-                        )}
-                      </td>
-
                       <td data-label="Disc %">
                         <input
                           type="number"
@@ -517,7 +497,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Secondary row for material description - SAP Fiori style */}
                     <tr className="inquiry-description-row">
-                      <td colSpan="10" className="material-description-cell">
+                      <td colSpan="9" className="material-description-cell">
                         <div className="material-description-container">
                           <span className="description-label">Material Description:</span>
                           <div className="description-content">
@@ -535,7 +515,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Third row for HSN Code - SAP Fiori style */}
                     <tr className="inquiry-hsn-row">
-                      <td colSpan="10" className="hsn-code-cell">
+                      <td colSpan="9" className="hsn-code-cell">
                         <div className="hsn-code-container">
                           <span className="hsn-label">HSN Code:</span>
                           <div className="hsn-content">
@@ -543,6 +523,22 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                               <span className="hsn-text">{item.hsnCode}</span>
                             ) : (
                               <span className="hsn-placeholder">Not specified</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Fourth row for GST% - SAP Fiori style */}
+                    <tr className="inquiry-gst-row">
+                      <td colSpan="9" className="gst-code-cell">
+                        <div className="gst-code-container">
+                          <span className="gst-label">GST %:</span>
+                          <div className="gst-content">
+                            {item.gstPercentage ? (
+                              <span className="gst-text">{item.gstPercentage}%</span>
+                            ) : (
+                              <span className="gst-placeholder">Not specified</span>
                             )}
                           </div>
                         </div>
