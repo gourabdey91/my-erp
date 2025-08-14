@@ -161,11 +161,12 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       updatedItems[selectedItemIndex] = {
         ...updatedItems[selectedItemIndex],
         materialNumber: material.materialNumber,
-        materialDescription: material.description, // This will be shown but not saved
+        materialDescription: material.description,
         hsnCode: material.hsnCode,
-        unitRate: material.assignedInstitutionalPrice, // Fixed: use assignedInstitutionalPrice
+        unitRate: material.assignedInstitutionalPrice,
         gstPercentage: material.gstPercentage,
-        unit: material.unit
+        unit: material.unit,
+        isFromMaster: true // Flag to indicate this is from material master
       };
       
       // Recalculate totals
@@ -263,7 +264,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                           value={item.materialNumber}
                           onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
                           placeholder="Enter material number"
-                          readOnly={!!item.materialDescription}
+                          readOnly={item.isFromMaster}
                         />
                         <button
                           type="button"
@@ -283,7 +284,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     </td>
 
                     <td data-label="Material Description">
-                      {item.materialDescription ? (
+                      {item.isFromMaster ? (
                         <div className="material-description-display">
                           <span className="material-description-text">
                             {item.materialDescription}
@@ -314,8 +315,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         min="0"
                         step="0.01"
                         style={{ textAlign: 'right' }}
-                        readOnly={!!item.materialDescription}
-                        title={item.materialDescription ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
+                        readOnly={item.isFromMaster}
+                        title={item.isFromMaster ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
                       />
                       {errors[`${index}_unitRate`] && (
                         <span className="unified-error-text">{errors[`${index}_unitRate`]}</span>
@@ -344,8 +345,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         value={item.unit}
                         onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
                         placeholder="Unit"
-                        readOnly
-                        title="Unit is derived from material master"
+                        readOnly={item.isFromMaster}
+                        title={item.isFromMaster ? "Unit is derived from material master" : "Enter Unit"}
                       />
                     </td>
 
@@ -356,8 +357,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         value={item.hsnCode}
                         onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
                         placeholder="HSN Code"
-                        readOnly={!!item.materialDescription}
-                        title={item.materialDescription ? "HSN Code is derived from material master" : "Enter HSN Code"}
+                        readOnly={item.isFromMaster}
+                        title={item.isFromMaster ? "HSN Code is derived from material master" : "Enter HSN Code"}
                       />
                       {errors[`${index}_hsnCode`] && (
                         <span className="unified-error-text">{errors[`${index}_hsnCode`]}</span>
@@ -375,8 +376,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         max="100"
                         step="0.01"
                         style={{ textAlign: 'right' }}
-                        readOnly={!!item.materialDescription}
-                        title={item.materialDescription ? "GST% is derived from material master" : "Enter GST%"}
+                        readOnly={item.isFromMaster}
+                        title={item.isFromMaster ? "GST% is derived from material master" : "Enter GST%"}
                       />
                       {errors[`${index}_gstPercentage`] && (
                         <span className="unified-error-text">{errors[`${index}_gstPercentage`]}</span>
@@ -529,7 +530,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     value={item.materialDescription}
                     placeholder="Material description from master"
                     rows="2"
-                    readOnly
+                    readOnly={item.isFromMaster}
                   />
                 </div>
 
@@ -541,7 +542,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     value={item.unitRate}
                     placeholder="0.00"
                     step="0.01"
-                    readOnly
+                    readOnly={item.isFromMaster}
                   />
                 </div>
 
@@ -564,6 +565,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       value={item.unit}
                       onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
                       placeholder="Unit"
+                      readOnly={item.isFromMaster}
                     />
                   </div>
                 </div>
@@ -575,7 +577,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     className="unified-input mobile-field-input"
                     value={item.hsnCode}
                     placeholder="HSN from material master"
-                    readOnly
+                    readOnly={item.isFromMaster}
                   />
                 </div>
 
@@ -588,7 +590,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       value={item.gstPercentage}
                       step="0.01"
                       min="0"
-                      readOnly
+                      readOnly={item.isFromMaster}
                     />
                   </div>
                   <div className="mobile-field-group mobile-field-half">
