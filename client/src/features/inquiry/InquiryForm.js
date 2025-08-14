@@ -500,6 +500,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             <InquiryItems
               items={formData.items}
               onItemsChange={handleItemsChange}
+              hospital={formData.hospital}
+              surgicalCategory={formData.surgicalCategory}
+              dropdownData={dropdownData}
             />
 
             {/* Inquiry Summary */}

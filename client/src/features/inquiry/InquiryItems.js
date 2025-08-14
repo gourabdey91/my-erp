@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import MaterialSelector from './MaterialSelector';
 import '../../shared/styles/unified-design.css';
 
-const InquiryItems = ({ items = [], onItemsChange }) => {
+const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, dropdownData }) => {
   const [inquiryItems, setInquiryItems] = useState(items);
   const [errors, setErrors] = useState({});
+  const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
@@ -122,6 +125,45 @@ const InquiryItems = ({ items = [], onItemsChange }) => {
     setErrors(newErrors);
   };
 
+  // Open material selector
+  const openMaterialSelector = (index) => {
+    setSelectedItemIndex(index);
+    setMaterialSelectorOpen(true);
+  };
+
+  // Handle material selection
+  const handleMaterialSelect = (material) => {
+    if (selectedItemIndex !== null) {
+      const updatedItems = [...inquiryItems];
+      updatedItems[selectedItemIndex] = {
+        ...updatedItems[selectedItemIndex],
+        materialNumber: material.materialNumber,
+        materialDescription: material.description, // This will be shown but not saved
+        hsnCode: material.hsnCode,
+        unitRate: material.unitRate,
+        gstPercentage: material.gstPercentage,
+        unit: material.unit
+      };
+      
+      // Recalculate totals
+      const calculations = calculateItemTotal(updatedItems[selectedItemIndex]);
+      updatedItems[selectedItemIndex].totalAmount = calculations.totalAmount;
+      
+      setInquiryItems(updatedItems);
+      onItemsChange(updatedItems);
+      
+      // Clear material selector
+      setMaterialSelectorOpen(false);
+      setSelectedItemIndex(null);
+    }
+  };
+
+  // Close material selector
+  const closeMaterialSelector = () => {
+    setMaterialSelectorOpen(false);
+    setSelectedItemIndex(null);
+  };
+
   // Format currency display
   const formatCurrency = (amount, currency = 'INR') => {
     return `${parseFloat(amount || 0).toLocaleString('en-IN', {
@@ -174,13 +216,30 @@ const InquiryItems = ({ items = [], onItemsChange }) => {
                   <tr key={index}>
                     <td className="text-center">{item.serialNumber}</td>
                     <td>
-                      <input
-                        type="text"
-                        className={`unified-input-sm ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
-                        value={item.materialNumber}
-                        onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
-                        placeholder="Enter material number"
-                      />
+                      <div className="material-input-group">
+                        <input
+                          type="text"
+                          className={`unified-input-sm ${errors[`${index}_materialNumber`] ? 'error' : ''}`}
+                          value={item.materialNumber}
+                          onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
+                          placeholder="Enter material number"
+                          readOnly={!!item.materialDescription} // Read-only if selected from material master
+                        />
+                        <button
+                          type="button"
+                          className="material-selector-btn"
+                          onClick={() => openMaterialSelector(index)}
+                          disabled={!hospital || !surgicalCategory}
+                          title={!hospital || !surgicalCategory ? 'Please select hospital and surgical category first' : 'Select from material master'}
+                        >
+                          📋 Select
+                        </button>
+                      </div>
+                      {item.materialDescription && (
+                        <small style={{ color: 'var(--gray-600)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                          {item.materialDescription}
+                        </small>
+                      )}
                       {errors[`${index}_materialNumber`] && (
                         <span className="unified-error-text">{errors[`${index}_materialNumber`]}</span>
                       )}
@@ -296,6 +355,16 @@ const InquiryItems = ({ items = [], onItemsChange }) => {
           </div>
         </div>
       </div>
+
+      {/* Material Selector Modal */}
+      <MaterialSelector
+        isOpen={materialSelectorOpen}
+        onClose={closeMaterialSelector}
+        onSelect={handleMaterialSelect}
+        hospital={hospital}
+        surgicalCategory={surgicalCategory}
+        dropdownData={dropdownData}
+      />
     </div>
   );
 };
