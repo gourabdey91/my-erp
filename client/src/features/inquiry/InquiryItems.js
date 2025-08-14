@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MaterialSelector from './MaterialSelector';
+import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
 
 // Updated: All inputs now use unified-input class for consistency with main form
@@ -75,10 +76,67 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     return serialNum.toString().padStart(2, '0');
   };
 
+  // Fetch material data by material number
+  const fetchMaterialByNumber = async (materialNumber, hospitalId) => {
+    try {
+      if (!materialNumber?.trim() || !hospitalId) {
+        return null;
+      }
+
+      // Use the existing API with search parameter to find the material
+      const response = await materialAPI.getAssignedMaterialsForInquiry(hospitalId, {
+        search: materialNumber.trim()
+      });
+
+      if (response?.success && response.data?.length > 0) {
+        // Find exact match for material number
+        const exactMatch = response.data.find(
+          material => material.materialNumber?.toUpperCase() === materialNumber.trim().toUpperCase()
+        );
+        return exactMatch || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching material by number:', error);
+      return null;
+    }
+  };
+
   // Handle input change
-  const handleInputChange = (index, field, value) => {
+  const handleInputChange = async (index, field, value) => {
     const updatedItems = [...inquiryItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
+    
+    // If material number is changed, try to fetch material data
+    if (field === 'materialNumber' && value?.trim() && hospital) {
+      const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
+      const materialData = await fetchMaterialByNumber(value, hospitalId);
+      
+      if (materialData) {
+        // Auto-fill material data from master
+        updatedItems[index] = {
+          ...updatedItems[index],
+          materialNumber: materialData.materialNumber,
+          materialDescription: materialData.description,
+          hsnCode: materialData.hsnCode,
+          unitRate: materialData.assignedInstitutionalPrice,
+          gstPercentage: materialData.gstPercentage,
+          unit: materialData.unit,
+          isFromMaster: true
+        };
+      } else if (value?.trim() === '') {
+        // Clear material data when material number is cleared
+        updatedItems[index] = {
+          ...updatedItems[index],
+          materialDescription: '',
+          hsnCode: '',
+          unitRate: '',
+          gstPercentage: '',
+          unit: '',
+          isFromMaster: false
+        };
+      }
+    }
     
     // Auto-calculate totals when relevant fields change
     if (['unitRate', 'quantity', 'gstPercentage', 'discountPercentage', 'discountAmount'].includes(field)) {
@@ -284,25 +342,16 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     </td>
 
                     <td data-label="Material Description">
-                      {item.isFromMaster ? (
-                        <div className="material-description-display">
-                          <span className="material-description-text">
-                            {item.materialDescription}
-                          </span>
+                      <div className="material-description-display">
+                        <span className="material-description-text">
+                          {item.materialDescription || 'No description'}
+                        </span>
+                        {item.isFromMaster && (
                           <small className="material-description-note">
                             (From Material Master)
                           </small>
-                        </div>
-                      ) : (
-                        <input
-                          type="text"
-                          className="unified-input"
-                          value={item.materialDescription || ''}
-                          onChange={(e) => handleInputChange(index, 'materialDescription', e.target.value)}
-                          placeholder="Enter material description"
-                          title="Material description - auto-filled when selected from material master"
-                        />
-                      )}
+                        )}
+                      </div>
                     </td>
 
                     <td data-label="Unit Rate">
@@ -310,13 +359,13 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         type="number"
                         className={`unified-input ${errors[`${index}_unitRate`] ? 'error' : ''}`}
                         value={item.unitRate}
-                        onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
+                        onChange={(e) => !item.isFromMaster && handleInputChange(index, 'unitRate', e.target.value)}
                         placeholder="0.00"
                         min="0"
                         step="0.01"
                         style={{ textAlign: 'right' }}
                         readOnly={item.isFromMaster}
-                        title={item.isFromMaster ? "Unit Rate is derived from material master" : "Enter Unit Rate"}
+                        title={item.isFromMaster ? "Unit Rate is from material master" : "Enter Unit Rate"}
                       />
                       {errors[`${index}_unitRate`] && (
                         <span className="unified-error-text">{errors[`${index}_unitRate`]}</span>
@@ -343,10 +392,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         type="text"
                         className="unified-input"
                         value={item.unit}
-                        onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
+                        onChange={(e) => !item.isFromMaster && handleInputChange(index, 'unit', e.target.value)}
                         placeholder="Unit"
                         readOnly={item.isFromMaster}
-                        title={item.isFromMaster ? "Unit is derived from material master" : "Enter Unit"}
+                        title={item.isFromMaster ? "Unit is from material master" : "Enter Unit"}
                       />
                     </td>
 
@@ -355,10 +404,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         type="text"
                         className={`unified-input ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
                         value={item.hsnCode}
-                        onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
+                        onChange={(e) => !item.isFromMaster && handleInputChange(index, 'hsnCode', e.target.value)}
                         placeholder="HSN Code"
                         readOnly={item.isFromMaster}
-                        title={item.isFromMaster ? "HSN Code is derived from material master" : "Enter HSN Code"}
+                        title={item.isFromMaster ? "HSN Code is from material master" : "Enter HSN Code"}
                       />
                       {errors[`${index}_hsnCode`] && (
                         <span className="unified-error-text">{errors[`${index}_hsnCode`]}</span>
@@ -370,14 +419,14 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         type="number"
                         className={`unified-input ${errors[`${index}_gstPercentage`] ? 'error' : ''}`}
                         value={item.gstPercentage}
-                        onChange={(e) => handleInputChange(index, 'gstPercentage', e.target.value)}
+                        onChange={(e) => !item.isFromMaster && handleInputChange(index, 'gstPercentage', e.target.value)}
                         placeholder="GST%"
                         min="0"
                         max="100"
                         step="0.01"
                         style={{ textAlign: 'right' }}
                         readOnly={item.isFromMaster}
-                        title={item.isFromMaster ? "GST% is derived from material master" : "Enter GST%"}
+                        title={item.isFromMaster ? "GST% is from material master" : "Enter GST%"}
                       />
                       {errors[`${index}_gstPercentage`] && (
                         <span className="unified-error-text">{errors[`${index}_gstPercentage`]}</span>
@@ -528,7 +577,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <textarea
                     className="unified-input mobile-field-input"
                     value={item.materialDescription}
-                    placeholder="Material description from master"
+                    onChange={(e) => !item.isFromMaster && handleInputChange(index, 'materialDescription', e.target.value)}
+                    placeholder={item.isFromMaster ? "Description from material master" : "Enter material description"}
                     rows="2"
                     readOnly={item.isFromMaster}
                   />
@@ -540,6 +590,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     type="number"
                     className="unified-input mobile-field-input"
                     value={item.unitRate}
+                    onChange={(e) => !item.isFromMaster && handleInputChange(index, 'unitRate', e.target.value)}
                     placeholder="0.00"
                     step="0.01"
                     readOnly={item.isFromMaster}
@@ -563,8 +614,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       type="text"
                       className="unified-input mobile-field-input"
                       value={item.unit}
-                      onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
-                      placeholder="Unit"
+                      onChange={(e) => !item.isFromMaster && handleInputChange(index, 'unit', e.target.value)}
+                      placeholder={item.isFromMaster ? "Unit from material master" : "Enter unit"}
                       readOnly={item.isFromMaster}
                     />
                   </div>
@@ -576,7 +627,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     type="text"
                     className="unified-input mobile-field-input"
                     value={item.hsnCode}
-                    placeholder="HSN from material master"
+                    onChange={(e) => !item.isFromMaster && handleInputChange(index, 'hsnCode', e.target.value)}
+                    placeholder={item.isFromMaster ? "HSN from material master" : "Enter HSN code"}
                     readOnly={item.isFromMaster}
                   />
                 </div>
@@ -588,6 +640,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       type="number"
                       className="unified-input mobile-field-input"
                       value={item.gstPercentage}
+                      onChange={(e) => !item.isFromMaster && handleInputChange(index, 'gstPercentage', e.target.value)}
+                      placeholder={item.isFromMaster ? "GST from material master" : "Enter GST %"}
                       step="0.01"
                       min="0"
                       readOnly={item.isFromMaster}
