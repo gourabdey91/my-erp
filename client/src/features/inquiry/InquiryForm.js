@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inquiryAPI } from '../../services/inquiryAPI';
+import InquiryItems from './InquiryItems';
 import '../../shared/styles/unified-design.css';
 import './Inquiry.css';
 
@@ -15,7 +16,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     limit: {
       amount: '',
       currency: 'INR'
-    }
+    },
+    items: [],
+    totalInquiryAmount: 0
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -82,7 +85,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         limit: {
           amount: inquiry.limit?.amount || '',
           currency: inquiry.limit?.currency || 'INR'
-        }
+        },
+        items: inquiry.items || [],
+        totalInquiryAmount: inquiry.totalInquiryAmount || 0
       };
       
       setFormData(newFormData);
@@ -109,7 +114,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         limit: {
           amount: '',
           currency: 'INR'
-        }
+        },
+        items: [],
+        totalInquiryAmount: 0
       });
       setFilteredSurgicalCategories([]);
       setFilteredSurgicalProcedures([]);
@@ -215,6 +222,18 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         [field]: ''
       }));
     }
+  };
+
+  // Handle items change
+  const handleItemsChange = (updatedItems) => {
+    // Calculate total inquiry amount
+    const totalInquiryAmount = updatedItems.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      items: updatedItems,
+      totalInquiryAmount: Math.round(totalInquiryAmount * 100) / 100
+    }));
   };
 
   // Validate form
@@ -476,6 +495,31 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 </div>
               </div>
             </div>
+
+            {/* Inquiry Items Section */}
+            <InquiryItems
+              items={formData.items}
+              onItemsChange={handleItemsChange}
+            />
+
+            {/* Inquiry Summary */}
+            {formData.items.length > 0 && (
+              <div className="unified-card" style={{ marginTop: '1rem' }}>
+                <div className="unified-card-content">
+                  <div className="inquiry-summary">
+                    <div className="summary-row">
+                      <span className="summary-label">Total Inquiry Amount:</span>
+                      <span className="summary-value">
+                        {parseFloat(formData.totalInquiryAmount || 0).toLocaleString('en-IN', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })} INR
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Form Actions */}
             <div className="unified-form-actions">

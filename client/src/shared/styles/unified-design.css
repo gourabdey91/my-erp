@@ -1345,3 +1345,133 @@
     font-size: 0.9rem;
   }
 }
+
+/* ========== Inquiry Items Specific Styles ========== */
+.inquiry-items-container {
+  margin-top: 1rem;
+}
+
+.unified-table-sm {
+  font-size: 0.875rem;
+}
+
+.unified-table-sm th,
+.unified-table-sm td {
+  padding: 0.5rem 0.375rem;
+  vertical-align: middle;
+}
+
+.unified-input-sm {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--border-radius-sm);
+  width: 100%;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.unified-input-sm:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+.unified-input-sm.error {
+  border-color: var(--red-400);
+}
+
+.unified-input-sm:read-only {
+  background-color: var(--gray-100);
+  cursor: not-allowed;
+}
+
+.inquiry-items-summary {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-200);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--gray-900);
+}
+
+.summary-label {
+  color: var(--gray-700);
+}
+
+.summary-value {
+  color: var(--primary-600);
+  font-size: 1.25rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* ========== Mobile Responsive for Inquiry Items ========== */
+@media (max-width: 768px) {
+  .inquiry-items-container {
+    margin: 0 -1rem;
+  }
+  
+  .unified-table-sm tr {
+    padding: 0.75rem;
+  }
+  
+  .unified-table-sm td {
+    padding: 0.5rem 0;
+  }
+  
+  .unified-input-sm {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .inquiry-items-summary {
+    margin: 1rem 0 0 1rem;
+    margin-right: 1rem;
+  }
+  
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+}
+
+/* ========== Inquiry Summary Styles ========== */
+.inquiry-summary {
+  padding: 1rem;
+  background: var(--primary-50);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--primary-200);
+}
+
+.inquiry-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--gray-900);
+}
+
+.inquiry-summary .summary-label {
+  color: var(--primary-700);
+}
+
+.inquiry-summary .summary-value {
+  color: var(--primary-800);
+  font-size: 1.5rem;
+}
