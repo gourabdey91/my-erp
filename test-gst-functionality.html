@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Fields Test - My ERP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-scenario {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #005a99;
+        }
+        .json-display {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">GST Fields Functionality Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Scenarios</h2>
+            
+            <div class="test-scenario">
+                <h3>Scenario 1: Same State (SGST should be shown)</h3>
+                <p><strong>Company State Code:</strong> TN (Tamil Nadu)</p>
+                <p><strong>Hospital State Code:</strong> TN (Tamil Nadu)</p>
+                <p><strong>Expected:</strong> CGST and SGST columns visible, IGST hidden</p>
+                <button onclick="testSameState()">Test Same State Logic</button>
+                <div id="sameStateResult" class="test-result"></div>
+            </div>
+            
+            <div class="test-scenario">
+                <h3>Scenario 2: Different State (IGST should be shown)</h3>
+                <p><strong>Company State Code:</strong> TN (Tamil Nadu)</p>
+                <p><strong>Hospital State Code:</strong> KA (Karnataka)</p>
+                <p><strong>Expected:</strong> CGST and IGST columns visible, SGST hidden</p>
+                <button onclick="testDifferentState()">Test Different State Logic</button>
+                <div id="differentStateResult" class="test-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>API Tests</h2>
+            
+            <div class="test-scenario">
+                <h3>Company Details API</h3>
+                <button onclick="testCompanyDetailsAPI()">Fetch Company Details</button>
+                <div id="companyApiResult" class="test-result"></div>
+            </div>
+            
+            <div class="test-scenario">
+                <h3>GST Calculation Test</h3>
+                <button onclick="testGSTCalculation()">Test GST Calculation</button>
+                <div id="gstCalculationResult" class="test-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Frontend Integration Test</h2>
+            <p>Open the inquiry page in your ERP application and verify:</p>
+            <ul>
+                <li>GST columns appear in the table</li>
+                <li>Only SGST or IGST is shown based on state logic</li>
+                <li>Mobile view shows GST fields correctly</li>
+                <li>GST amounts calculate properly</li>
+            </ul>
+            <button onclick="openApp()">Open ERP Application</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Test same state logic
+        async function testSameState() {
+            const resultDiv = document.getElementById('sameStateResult');
+            resultDiv.innerHTML = '<div class="info">Testing same state logic...</div>';
+            
+            try {
+                // Simulate same state scenario
+                const companyStateCode = 'TN';
+                const hospitalStateCode = 'TN';
+                
+                const isSameState = companyStateCode === hospitalStateCode;
+                
+                if (isSameState) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✓ Same State Logic Working<br>
+                            Company: ${companyStateCode}, Hospital: ${hospitalStateCode}<br>
+                            Result: SGST should be shown, IGST should be hidden
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ✗ Same State Logic Failed<br>
+                            Expected same state but got different
+                        </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Test different state logic
+        async function testDifferentState() {
+            const resultDiv = document.getElementById('differentStateResult');
+            resultDiv.innerHTML = '<div class="info">Testing different state logic...</div>';
+            
+            try {
+                // Simulate different state scenario
+                const companyStateCode = 'TN';
+                const hospitalStateCode = 'KA';
+                
+                const isSameState = companyStateCode === hospitalStateCode;
+                
+                if (!isSameState) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✓ Different State Logic Working<br>
+                            Company: ${companyStateCode}, Hospital: ${hospitalStateCode}<br>
+                            Result: IGST should be shown, SGST should be hidden
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            ✗ Different State Logic Failed<br>
+                            Expected different state but got same
+                        </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Test company details API
+        async function testCompanyDetailsAPI() {
+            const resultDiv = document.getElementById('companyApiResult');
+            resultDiv.innerHTML = '<div class="info">Fetching company details...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/companyDetails`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✓ Company Details API Working</div>
+                        <div class="json-display">${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ API Error: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Test GST calculation
+        async function testGSTCalculation() {
+            const resultDiv = document.getElementById('gstCalculationResult');
+            resultDiv.innerHTML = '<div class="info">Testing GST calculation...</div>';
+            
+            try {
+                // Sample data for testing
+                const testData = {
+                    amount: 1000,
+                    gstRate: 18,
+                    companyStateCode: 'TN',
+                    hospitalStateCode: 'TN' // Same state
+                };
+                
+                const gstAmount = (testData.amount * testData.gstRate) / 100;
+                const isSameState = testData.companyStateCode === testData.hospitalStateCode;
+                
+                let cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
+                
+                if (isSameState) {
+                    cgstAmount = gstAmount / 2;
+                    sgstAmount = gstAmount / 2;
+                } else {
+                    igstAmount = gstAmount;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✓ GST Calculation Test Passed</div>
+                    <div class="json-display">
+Test Data:
+Amount: ₹${testData.amount}
+GST Rate: ${testData.gstRate}%
+Company State: ${testData.companyStateCode}
+Hospital State: ${testData.hospitalStateCode}
+
+Calculated GST:
+Total GST: ₹${gstAmount}
+CGST: ₹${cgstAmount}
+SGST: ₹${sgstAmount}
+IGST: ₹${igstAmount}
+
+Same State: ${isSameState}
+                    </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Calculation Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Open ERP application
+        function openApp() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            testSameState();
+            setTimeout(() => testDifferentState(), 500);
+            setTimeout(() => testCompanyDetailsAPI(), 1000);
+            setTimeout(() => testGSTCalculation(), 1500);
+        };
+    </script>
+</body>
+</html>

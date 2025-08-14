@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discount Field Conditional Display Test - My ERP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-scenario {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #005a99;
+        }
+        .json-display {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .hospital-config {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .config-option {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .config-option.active {
+            background-color: #007acc;
+            color: white;
+            border-color: #007acc;
+        }
+        .visual-demo {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            background: #fafafa;
+        }
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .demo-table th,
+        .demo-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .demo-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .hidden-column {
+            background-color: #ffebee;
+            text-decoration: line-through;
+            color: #666;
+            opacity: 0.5;
+        }
+        .mobile-view {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .desktop-view {
+                display: none;
+            }
+            .mobile-view {
+                display: block;
+            }
+        }
+        .mobile-field {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .mobile-field.hidden {
+            display: none;
+        }
+        .mobile-field-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">Discount Field Conditional Display Test</h1>
+        
+        <div class="test-section">
+            <h2>Hospital Configuration Scenarios</h2>
+            
+            <div class="test-scenario">
+                <h3>Test Configuration</h3>
+                <p>Select a hospital configuration to test discount field visibility:</p>
+                
+                <div class="hospital-config">
+                    <div class="config-option" onclick="setDiscountAllowed(true)" id="discount-allowed">
+                        <strong>Hospital A</strong><br>
+                        discountAllowed: true
+                    </div>
+                    <div class="config-option active" onclick="setDiscountAllowed(false)" id="discount-not-allowed">
+                        <strong>Hospital B</strong><br>
+                        discountAllowed: false
+                    </div>
+                </div>
+                
+                <div id="config-result" class="test-result info">
+                    Current Configuration: discountAllowed = <span id="discount-status">false</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Desktop Table View</h2>
+            
+            <div class="visual-demo desktop-view">
+                <h3>Inquiry Items Table</h3>
+                <table class="demo-table" id="desktop-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Material No.</th>
+                            <th>Unit Rate</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th id="disc-perc-header" class="hidden-column">Disc %</th>
+                            <th id="disc-amt-header" class="hidden-column">Disc Amt</th>
+                            <th>CGST Amt</th>
+                            <th>SGST Amt</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>01</td>
+                            <td>MAT001</td>
+                            <td>₹1,000.00</td>
+                            <td>2</td>
+                            <td>NOS</td>
+                            <td id="disc-perc-data" class="hidden-column">5.00</td>
+                            <td id="disc-amt-data" class="hidden-column">₹100.00</td>
+                            <td>₹171.00</td>
+                            <td>₹171.00</td>
+                            <td>₹2,242.00</td>
+                            <td>⚙️</td>
+                        </tr>
+                        <tr>
+                            <td colspan="9" id="secondary-row">
+                                <strong>Material Description:</strong> Sample Orthopedic Implant
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="test-result" id="desktop-result">
+                    <strong>Desktop View:</strong> Discount columns are currently <span id="desktop-status">hidden</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Mobile View</h2>
+            
+            <div class="visual-demo mobile-view">
+                <h3>Mobile Inquiry Item</h3>
+                <div class="mobile-field">
+                    <div class="mobile-field-label">GST %</div>
+                    <input type="number" value="18.00" readonly style="width: 100%; padding: 8px;">
+                </div>
+                
+                <div class="mobile-field hidden" id="mobile-disc-perc">
+                    <div class="mobile-field-label">Disc %</div>
+                    <input type="number" value="5.00" style="width: 100%; padding: 8px;">
+                </div>
+                
+                <div class="mobile-field hidden" id="mobile-disc-amt">
+                    <div class="mobile-field-label">Discount Amount</div>
+                    <input type="number" value="100.00" style="width: 100%; padding: 8px;">
+                </div>
+                
+                <div class="test-result" id="mobile-result">
+                    <strong>Mobile View:</strong> Discount fields are currently <span id="mobile-status">hidden</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>API Testing</h2>
+            
+            <div class="test-scenario">
+                <h3>Hospital Master Data</h3>
+                <button onclick="testHospitalAPI()">Fetch Hospital Details</button>
+                <div id="hospital-api-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-scenario">
+                <h3>Test Different Hospital Configurations</h3>
+                <button onclick="testHospitalWithDiscountAllowed()">Test Hospital with Discount Allowed</button>
+                <button onclick="testHospitalWithoutDiscountAllowed()">Test Hospital without Discount</button>
+                <div id="hospital-test-result" class="test-result"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Frontend Integration Test</h2>
+            <p>Open the inquiry page in your ERP application and verify:</p>
+            <ul>
+                <li>Select a hospital where <code>discountAllowed</code> is <strong>true</strong></li>
+                <li>Verify discount columns appear in the table</li>
+                <li>Verify discount fields appear in mobile view</li>
+                <li>Switch to a hospital where <code>discountAllowed</code> is <strong>false</strong></li>
+                <li>Verify discount columns are hidden</li>
+                <li>Verify table colspan adjusts correctly</li>
+            </ul>
+            <button onclick="openApp()">Open ERP Application</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let currentDiscountAllowed = false;
+        
+        // Set discount allowed configuration
+        function setDiscountAllowed(allowed) {
+            currentDiscountAllowed = allowed;
+            
+            // Update UI indicators
+            document.getElementById('discount-status').textContent = allowed.toString();
+            document.getElementById('discount-allowed').classList.toggle('active', allowed);
+            document.getElementById('discount-not-allowed').classList.toggle('active', !allowed);
+            
+            // Update desktop table view
+            const discountHeaders = ['disc-perc-header', 'disc-amt-header'];
+            const discountData = ['disc-perc-data', 'disc-amt-data'];
+            
+            discountHeaders.forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.toggle('hidden-column', !allowed);
+            });
+            
+            discountData.forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.toggle('hidden-column', !allowed);
+            });
+            
+            // Update secondary row colspan
+            const secondaryRow = document.getElementById('secondary-row');
+            const baseColumns = 9; // S.No, Material, Rate, Qty, Unit, CGST, SGST, Total, Actions
+            const discountColumns = allowed ? 2 : 0;
+            secondaryRow.setAttribute('colspan', baseColumns + discountColumns);
+            
+            // Update mobile view
+            const mobileDiscountFields = ['mobile-disc-perc', 'mobile-disc-amt'];
+            mobileDiscountFields.forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.toggle('hidden', !allowed);
+            });
+            
+            // Update status messages
+            document.getElementById('desktop-status').textContent = allowed ? 'visible' : 'hidden';
+            document.getElementById('mobile-status').textContent = allowed ? 'visible' : 'hidden';
+            
+            // Update result styling
+            const desktopResult = document.getElementById('desktop-result');
+            const mobileResult = document.getElementById('mobile-result');
+            
+            desktopResult.className = `test-result ${allowed ? 'success' : 'warning'}`;
+            mobileResult.className = `test-result ${allowed ? 'success' : 'warning'}`;
+        }
+        
+        // Test hospital API
+        async function testHospitalAPI() {
+            const resultDiv = document.getElementById('hospital-api-result');
+            resultDiv.innerHTML = '<div class="info">Fetching hospital data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/hospitals`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const hospitalsWithDiscount = data.data.filter(h => h.discountAllowed);
+                    const hospitalsWithoutDiscount = data.data.filter(h => !h.discountAllowed);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">✓ Hospital API Working</div>
+                        <div class="json-display">
+Total Hospitals: ${data.data.length}
+With Discount Allowed: ${hospitalsWithDiscount.length}
+Without Discount: ${hospitalsWithoutDiscount.length}
+
+Sample Hospitals:
+${data.data.slice(0, 3).map(h => `
+- ${h.legalName || h.shortName}
+  discountAllowed: ${h.discountAllowed}
+`).join('')}
+                        </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ API Error: ${data.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Test hospital with discount allowed
+        async function testHospitalWithDiscountAllowed() {
+            const resultDiv = document.getElementById('hospital-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing hospital with discount allowed...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/hospitals`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const hospitalWithDiscount = data.data.find(h => h.discountAllowed === true);
+                    
+                    if (hospitalWithDiscount) {
+                        resultDiv.innerHTML = `
+                            <div class="success">✓ Found Hospital with Discount Allowed</div>
+                            <div class="json-display">
+Hospital: ${hospitalWithDiscount.legalName || hospitalWithDiscount.shortName}
+discountAllowed: ${hospitalWithDiscount.discountAllowed}
+Expected Behavior:
+- Discount % column should be visible
+- Discount Amount column should be visible  
+- Mobile discount fields should be shown
+- Table colspan should include discount columns
+                            </div>`;
+                        
+                        // Auto-set the configuration
+                        setDiscountAllowed(true);
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="warning">⚠ No Hospital with discountAllowed=true found</div>
+                            <p>You may need to update a hospital's discountAllowed field to true for testing.</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ API Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Test hospital without discount allowed
+        async function testHospitalWithoutDiscountAllowed() {
+            const resultDiv = document.getElementById('hospital-test-result');
+            resultDiv.innerHTML = '<div class="info">Testing hospital without discount allowed...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/hospitals`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const hospitalWithoutDiscount = data.data.find(h => h.discountAllowed === false);
+                    
+                    if (hospitalWithoutDiscount) {
+                        resultDiv.innerHTML = `
+                            <div class="success">✓ Found Hospital without Discount</div>
+                            <div class="json-display">
+Hospital: ${hospitalWithoutDiscount.legalName || hospitalWithoutDiscount.shortName}
+discountAllowed: ${hospitalWithoutDiscount.discountAllowed}
+Expected Behavior:
+- Discount % column should be hidden
+- Discount Amount column should be hidden
+- Mobile discount fields should be hidden
+- Table colspan should exclude discount columns
+                            </div>`;
+                        
+                        // Auto-set the configuration
+                        setDiscountAllowed(false);
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="info">ℹ All hospitals have discountAllowed=false (which is expected as default)</div>`;
+                        
+                        // Auto-set the configuration
+                        setDiscountAllowed(false);
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">✗ API Error: ${data.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Open ERP application
+        function openApp() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        // Initialize the page
+        window.onload = function() {
+            setDiscountAllowed(false); // Start with discount not allowed
+            setTimeout(() => testHospitalAPI(), 1000);
+        };
+    </script>
+</body>
+</html>

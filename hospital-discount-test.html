@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Discount Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #005a99; }
+        .hospital-list {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .hospital-item {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 3px solid #ddd;
+            background: white;
+        }
+        .hospital-item.discount-allowed {
+            border-left-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Hospital Discount Configuration Test</h1>
+        
+        <div class="result info">
+            This tool helps test the discount field conditional display functionality.
+        </div>
+        
+        <h2>1. Current Hospital Settings</h2>
+        <button onclick="loadHospitals()">Load Hospital List</button>
+        <div id="hospitalList" class="hospital-list"></div>
+        
+        <h2>2. Enable Discount for Testing</h2>
+        <button onclick="enableDiscountForFirstHospital()">Enable Discount for First Hospital</button>
+        <div id="updateResult"></div>
+        
+        <h2>3. Test Instructions</h2>
+        <div class="code-block">
+1. Click "Enable Discount for First Hospital" above
+2. Open ERP Application: <button onclick="window.open('http://localhost:3000', '_blank')">Open App</button>
+3. Navigate to Inquiry > Add New Inquiry
+4. Select the hospital with discount enabled
+5. Check browser console for debug logs:
+   - "InquiryItems: hospital data received"
+   - "InquiryItems: discount fields should be visible: true"
+6. Verify discount columns appear in the table
+7. Switch to another hospital and verify discount columns disappear
+        </div>
+        
+        <h2>4. Debug Information</h2>
+        <div id="debugInfo"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let hospitals = [];
+        
+        async function loadHospitals() {
+            try {
+                const response = await fetch(`${API_BASE}/hospitals`);
+                if (response.ok) {
+                    hospitals = await response.json();
+                    
+                    const listDiv = document.getElementById('hospitalList');
+                    listDiv.innerHTML = hospitals.slice(0, 10).map(h => `
+                        <div class="hospital-item ${h.discountAllowed ? 'discount-allowed' : ''}">
+                            <strong>${h.shortName || h.legalName}</strong><br>
+                            <small>ID: ${h._id}</small><br>
+                            <small>Discount Allowed: <strong>${h.discountAllowed ? '✅ YES' : '❌ NO'}</strong></small>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('debugInfo').innerHTML = `
+                        <div class="result success">
+                            ✅ Loaded ${hospitals.length} hospitals<br>
+                            Hospitals with discount: ${hospitals.filter(h => h.discountAllowed).length}<br>
+                            Hospitals without discount: ${hospitals.filter(h => !h.discountAllowed).length}
+                        </div>`;
+                } else {
+                    document.getElementById('debugInfo').innerHTML = 
+                        `<div class="result error">❌ Failed to load hospitals: ${response.status}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('debugInfo').innerHTML = 
+                    `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function enableDiscountForFirstHospital() {
+            if (hospitals.length === 0) {
+                document.getElementById('updateResult').innerHTML = 
+                    '<div class="result error">❌ No hospitals loaded. Click "Load Hospital List" first.</div>';
+                return;
+            }
+            
+            const hospital = hospitals[0];
+            const updateResult = document.getElementById('updateResult');
+            updateResult.innerHTML = '<div class="result info">🔄 Updating hospital...</div>';
+            
+            try {
+                // Update hospital with discount allowed
+                const response = await fetch(`${API_BASE}/hospitals/${hospital._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ...hospital,
+                        discountAllowed: true,
+                        updatedBy: '64a9f0f1234567890abcdef0' // Dummy user ID for testing
+                    })
+                });
+                
+                if (response.ok) {
+                    const updatedHospital = await response.json();
+                    
+                    updateResult.innerHTML = `
+                        <div class="result success">
+                            ✅ Successfully enabled discount for:<br>
+                            <strong>${hospital.shortName || hospital.legalName}</strong><br>
+                            <small>Hospital ID: ${hospital._id}</small><br>
+                            <small>Discount Allowed: ${updatedHospital.data?.discountAllowed || 'true'}</small>
+                        </div>
+                        <div class="code-block">
+Now you can test in the ERP app:
+1. Go to Inquiry > Add New Inquiry  
+2. Select hospital: "${hospital.shortName || hospital.legalName}"
+3. Open browser console (F12)
+4. Look for debug logs confirming discount fields are visible
+5. Check that discount columns appear in the inquiry items table
+                        </div>`;
+                    
+                    // Reload hospitals to show updated status
+                    setTimeout(loadHospitals, 1000);
+                } else {
+                    const error = await response.text();
+                    updateResult.innerHTML = `<div class="result error">❌ Failed to update: ${error}</div>`;
+                }
+            } catch (error) {
+                updateResult.innerHTML = `<div class="result error">❌ Error updating hospital: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-load hospitals on page load
+        window.onload = loadHospitals;
+    </script>
+</body>
+</html>

@@ -506,7 +506,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             <InquiryItems
               items={formData.items}
               onItemsChange={handleItemsChange}
-              hospital={formData.hospital}
+              hospital={dropdownData.hospitals?.find(h => h._id === formData.hospital) || null}
               surgicalCategory={formData.surgicalCategory}
               dropdownData={dropdownData}
             />

@@ -2425,6 +2425,11 @@ select.unified-input:disabled {
   margin-bottom: 0;
 }
 
+.mobile-field-half {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .mobile-field-label {
   display: block;
   font-weight: 600;

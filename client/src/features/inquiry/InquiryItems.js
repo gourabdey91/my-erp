@@ -38,7 +38,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
-    console.log('InquiryItems useEffect - items:', items, 'hospital:', hospital);
+    console.log('InquiryItems useEffect - items count:', items.length, 'hospital id:', hospital?._id);
     
     // Fetch company details
     fetchCompanyDetails();
@@ -54,7 +54,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         console.log('Hospital available, calling fetchDescriptionsForItems with hospitalId:', hospitalId);
         fetchDescriptionsForItems(items, hospitalId);
       } else {
-        console.log('Hospital not available yet:', hospital);
+        console.log('Hospital not available yet, hospital id:', hospital?._id);
       }
     }
   }, [items, hospital?._id, hospital?.id]);
@@ -377,6 +377,33 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     setSelectedItemIndex(null);
   };
 
+  // Calculate if same state for GST display logic
+  const isSameState = () => {
+    const customerStateCode = hospital?.stateCode || '';
+    const companyStateCode = companyDetails?.compliance?.stateCode || '';
+    return customerStateCode === companyStateCode;
+  };
+
+  // Debug logging for hospital data and discount allowed
+  useEffect(() => {
+    console.log('InquiryItems: hospital data received, id:', hospital?._id, 'name:', hospital?.shortName);
+    console.log('InquiryItems: hospital.discountAllowed:', hospital?.discountAllowed);
+    console.log('InquiryItems: discount fields should be visible:', !!hospital?.discountAllowed);
+  }, [hospital]);
+
+  // Calculate dynamic colspan for secondary rows based on visible columns
+  const getTableColspan = () => {
+    // Base columns: S.No, Material No., Unit Rate, Quantity, Unit, CGST Amt, (SGST/IGST), Total Amount, Actions = 9
+    let colspan = 9;
+    
+    // Add discount columns if allowed
+    if (hospital?.discountAllowed) {
+      colspan += 2; // Disc % and Disc Amt
+    }
+    
+    return colspan;
+  };
+
   // Format currency display
   const formatCurrency = (amount, currency = 'INR') => {
     const numAmount = parseFloat(amount) || 0;
@@ -417,11 +444,14 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <th>Unit Rate</th>
                   <th>Quantity</th>
                   <th>Unit</th>
-                  <th>Disc %</th>
-                  <th>Disc Amt</th>
+                  {hospital?.discountAllowed && <th>Disc %</th>}
+                  {hospital?.discountAllowed && <th>Disc Amt</th>}
                   <th>CGST Amt</th>
-                  <th>SGST Amt</th>
-                  <th>IGST Amt</th>
+                  {isSameState() ? (
+                    <th>SGST Amt</th>
+                  ) : (
+                    <th>IGST Amt</th>
+                  )}
                   <th>Total Amount</th>
                   <th>Actions</th>
                 </tr>
@@ -519,32 +549,36 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         />
                       </td>
 
-                      <td data-label="Disc %">
-                        <input
-                          type="number"
-                          className="unified-input"
-                          value={item.discountPercentage}
-                          onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
-                          placeholder="0"
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          style={{ textAlign: 'right' }}
-                        />
-                      </td>
+                      {hospital?.discountAllowed && (
+                        <td data-label="Disc %">
+                          <input
+                            type="number"
+                            className="unified-input"
+                            value={item.discountPercentage}
+                            onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            style={{ textAlign: 'right' }}
+                          />
+                        </td>
+                      )}
 
-                      <td data-label="Disc Amt">
-                        <input
-                          type="number"
-                          className="unified-input"
-                          value={item.discountAmount}
-                          onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                          style={{ textAlign: 'right' }}
-                        />
-                      </td>
+                      {hospital?.discountAllowed && (
+                        <td data-label="Disc Amt">
+                          <input
+                            type="number"
+                            className="unified-input"
+                            value={item.discountAmount}
+                            onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            style={{ textAlign: 'right' }}
+                          />
+                        </td>
+                      )}
 
                       <td data-label="CGST Amt">
                         <input
@@ -557,27 +591,29 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         />
                       </td>
 
-                      <td data-label="SGST Amt">
-                        <input
-                          type="text"
-                          className="unified-input gst-amount"
-                          value={formatCurrency(item.sgstAmount || 0, item.currency)}
-                          readOnly
-                          style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
-                          title={`SGST amount: ${formatCurrency(item.sgstAmount || 0, item.currency)}`}
-                        />
-                      </td>
-
-                      <td data-label="IGST Amt">
-                        <input
-                          type="text"
-                          className="unified-input gst-amount"
-                          value={formatCurrency(item.igstAmount || 0, item.currency)}
-                          readOnly
-                          style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
-                          title={`IGST amount: ${formatCurrency(item.igstAmount || 0, item.currency)}`}
-                        />
-                      </td>
+                      {isSameState() ? (
+                        <td data-label="SGST Amt">
+                          <input
+                            type="text"
+                            className="unified-input gst-amount"
+                            value={formatCurrency(item.sgstAmount || 0, item.currency)}
+                            readOnly
+                            style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
+                            title={`SGST amount: ${formatCurrency(item.sgstAmount || 0, item.currency)}`}
+                          />
+                        </td>
+                      ) : (
+                        <td data-label="IGST Amt">
+                          <input
+                            type="text"
+                            className="unified-input gst-amount"
+                            value={formatCurrency(item.igstAmount || 0, item.currency)}
+                            readOnly
+                            style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
+                            title={`IGST amount: ${formatCurrency(item.igstAmount || 0, item.currency)}`}
+                          />
+                        </td>
+                      )}
 
                       <td data-label="Total Amount">
                         <input
@@ -608,7 +644,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Secondary row for material description - SAP Fiori style */}
                     <tr className="inquiry-description-row">
-                      <td colSpan="12" className="material-description-cell">
+                      <td colSpan={getTableColspan()} className="material-description-cell">
                         <div className="material-description-container">
                           <span className="description-label">Material Description:</span>
                           <div className="description-content">
@@ -626,7 +662,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Third row for HSN Code - SAP Fiori style */}
                     <tr className="inquiry-hsn-row">
-                      <td colSpan="12" className="hsn-code-cell">
+                      <td colSpan={getTableColspan()} className="hsn-code-cell">
                         <div className="hsn-code-container">
                           <span className="hsn-label">HSN Code:</span>
                           <div className="hsn-content">
@@ -642,7 +678,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Fourth row for GST% - SAP Fiori style */}
                     <tr className="inquiry-gst-row">
-                      <td colSpan="12" className="gst-code-cell">
+                      <td colSpan={getTableColspan()} className="gst-code-cell">
                         <div className="gst-code-container">
                           <span className="gst-label">GST %:</span>
                           <div className="gst-content">
@@ -804,7 +840,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                 </div>
 
                 <div className="mobile-field-row">
-                  <div className="mobile-field-group mobile-field-half">
+                  <div className={`mobile-field-group ${hospital?.discountAllowed ? 'mobile-field-half' : ''}`}>
                     <label className="mobile-field-label">GST %</label>
                     <input
                       type="number"
@@ -817,33 +853,37 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       readOnly={item.isFromMaster}
                     />
                   </div>
-                  <div className="mobile-field-group mobile-field-half">
-                    <label className="mobile-field-label">Disc %</label>
+                  {hospital?.discountAllowed && (
+                    <div className="mobile-field-group mobile-field-half">
+                      <label className="mobile-field-label">Disc %</label>
+                      <input
+                        type="number"
+                        className="unified-input mobile-field-input"
+                        value={item.discountPercentage}
+                        onChange={(e) => handleInputChange(index, 'discountPercentage', parseFloat(e.target.value) || 0)}
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {hospital?.discountAllowed && (
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Discount Amount</label>
                     <input
                       type="number"
                       className="unified-input mobile-field-input"
-                      value={item.discountPercentage}
-                      onChange={(e) => handleInputChange(index, 'discountPercentage', parseFloat(e.target.value) || 0)}
+                      value={item.discountAmount}
+                      onChange={(e) => handleInputChange(index, 'discountAmount', parseFloat(e.target.value) || 0)}
                       step="0.01"
                       min="0"
                     />
                   </div>
-                </div>
-
-                <div className="mobile-field-group">
-                  <label className="mobile-field-label">Discount Amount</label>
-                  <input
-                    type="number"
-                    className="unified-input mobile-field-input"
-                    value={item.discountAmount}
-                    onChange={(e) => handleInputChange(index, 'discountAmount', parseFloat(e.target.value) || 0)}
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
+                )}
 
                 <div className="mobile-field-row">
-                  <div className="mobile-field-group mobile-field-third">
+                  <div className="mobile-field-group mobile-field-half">
                     <label className="mobile-field-label">CGST Amt</label>
                     <input
                       type="text"
@@ -852,23 +892,28 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       readOnly
                     />
                   </div>
-                  <div className="mobile-field-group mobile-field-third">
-                    <label className="mobile-field-label">SGST Amt</label>
-                    <input
-                      type="text"
-                      className="unified-input mobile-field-input gst-amount"
-                      value={formatCurrency(item.sgstAmount || 0, item.currency)}
-                      readOnly
-                    />
-                  </div>
-                  <div className="mobile-field-group mobile-field-third">
-                    <label className="mobile-field-label">IGST Amt</label>
-                    <input
-                      type="text"
-                      className="unified-input mobile-field-input gst-amount"
-                      value={formatCurrency(item.igstAmount || 0, item.currency)}
-                      readOnly
-                    />
+                  <div className="mobile-field-group mobile-field-half">
+                    {isSameState() ? (
+                      <>
+                        <label className="mobile-field-label">SGST Amt</label>
+                        <input
+                          type="text"
+                          className="unified-input mobile-field-input gst-amount"
+                          value={formatCurrency(item.sgstAmount || 0, item.currency)}
+                          readOnly
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label className="mobile-field-label">IGST Amt</label>
+                        <input
+                          type="text"
+                          className="unified-input mobile-field-input gst-amount"
+                          value={formatCurrency(item.igstAmount || 0, item.currency)}
+                          readOnly
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
 
