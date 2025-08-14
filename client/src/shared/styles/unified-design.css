@@ -1640,13 +1640,16 @@ select.unified-input:disabled {
 /* Column widths for better content visibility */
 .inquiry-items-table th:nth-child(1) { width: 60px; }   /* S.No */
 .inquiry-items-table th:nth-child(2) { width: 120px; }  /* Material No. */
-.inquiry-items-table th:nth-child(3) { width: 90px; }   /* Unit Rate - made smaller and auto-fit */
+.inquiry-items-table th:nth-child(3) { width: 90px; }   /* Unit Rate */
 .inquiry-items-table th:nth-child(4) { width: 80px; }   /* Quantity */
 .inquiry-items-table th:nth-child(5) { width: 60px; }   /* Unit */
 .inquiry-items-table th:nth-child(6) { width: 70px; }   /* Disc % */
 .inquiry-items-table th:nth-child(7) { width: 90px; }   /* Disc Amt */
-.inquiry-items-table th:nth-child(8) { width: 120px; }  /* Total Amount */
-.inquiry-items-table th:nth-child(9) { width: 80px; }   /* Actions */
+.inquiry-items-table th:nth-child(8) { width: 80px; }   /* CGST Amt */
+.inquiry-items-table th:nth-child(9) { width: 80px; }   /* SGST Amt */
+.inquiry-items-table th:nth-child(10) { width: 80px; }  /* IGST Amt */
+.inquiry-items-table th:nth-child(11) { width: 120px; } /* Total Amount */
+.inquiry-items-table th:nth-child(12) { width: 80px; }  /* Actions */
 
 .inquiry-items-table .unified-input {
   width: 100%;
@@ -1781,8 +1784,11 @@ select.unified-input:disabled {
   }
   
   /* Adjust column widths for tablet */
-  .inquiry-items-table th:nth-child(3) { width: 80px; }   /* Unit Rate - made smaller */
-  .inquiry-items-table th:nth-child(8) { width: 110px; }  /* Total Amount */
+  .inquiry-items-table th:nth-child(3) { width: 80px; }   /* Unit Rate */
+  .inquiry-items-table th:nth-child(8) { width: 70px; }   /* CGST Amt */
+  .inquiry-items-table th:nth-child(9) { width: 70px; }   /* SGST Amt */
+  .inquiry-items-table th:nth-child(10) { width: 70px; }  /* IGST Amt */
+  .inquiry-items-table th:nth-child(11) { width: 110px; } /* Total Amount */
 }
 
 .inquiry-items-table th,
@@ -2414,6 +2420,11 @@ select.unified-input:disabled {
   margin-bottom: 0;
 }
 
+.mobile-field-third {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .mobile-field-label {
   display: block;
   font-weight: 600;
@@ -2491,6 +2502,15 @@ select.unified-input:disabled {
 /* Hide material description field in mobile view since it's shown in header */
 .mobile-description-field {
   display: none;
+}
+
+/* GST amount fields styling */
+.gst-amount {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  font-weight: 500 !important;
+  cursor: not-allowed !important;
+  border-color: var(--gray-300) !important;
 }
 
 /* Mobile responsive inquiry items */

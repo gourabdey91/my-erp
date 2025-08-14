@@ -75,8 +75,18 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     if (hasChanges) {
       console.log('Updating items with material data');
       const itemsWithTotals = updatedItems.map(item => {
-        const calculations = calculateItemTotal(item);
-        return { ...item, totalAmount: calculations.totalAmount };
+        // Get state codes for GST calculation
+        const customerStateCode = hospital?.stateCode || '';
+        const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+        
+        const calculations = calculateItemTotal(item, customerStateCode, companyStateCode);
+        return { 
+          ...item, 
+          totalAmount: calculations.totalAmount,
+          cgstAmount: calculations.cgstAmount,
+          sgstAmount: calculations.sgstAmount,
+          igstAmount: calculations.igstAmount
+        };
       });
 
       setInquiryItems(itemsWithTotals);
@@ -98,12 +108,32 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     unit: '',
     discountPercentage: 0,
     discountAmount: 0,
+    cgstAmount: 0,
+    sgstAmount: 0,
+    igstAmount: 0,
     totalAmount: 0,
     currency: 'INR'
   });
 
+  // Calculate GST amounts based on state codes
+  const calculateGSTAmounts = (gstAmount, customerStateCode, companyStateCode) => {
+    const cgstAmount = gstAmount * 0.5; // Always 50%
+    
+    // If same state: SGST = 50%, IGST = 0
+    // If different state: SGST = 0, IGST = 50%
+    const isSameState = customerStateCode === companyStateCode;
+    const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
+    const igstAmount = isSameState ? 0 : gstAmount * 0.5;
+    
+    return {
+      cgstAmount: Math.round(cgstAmount * 100) / 100,
+      sgstAmount: Math.round(sgstAmount * 100) / 100,
+      igstAmount: Math.round(igstAmount * 100) / 100
+    };
+  };
+
   // Calculate item totals
-  const calculateItemTotal = (item) => {
+  const calculateItemTotal = (item, customerStateCode = '', companyStateCode = '') => {
     const unitRate = parseFloat(item.unitRate) || 0;
     const quantity = parseFloat(item.quantity) || 0;
     const gstPercentage = parseFloat(item.gstPercentage) || 0;
@@ -113,6 +143,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     const baseAmount = unitRate * quantity;
     const gstAmount = (baseAmount * gstPercentage) / 100;
     
+    // Calculate GST breakdown
+    const gstBreakdown = calculateGSTAmounts(gstAmount, customerStateCode, companyStateCode);
+    
     // Use discount amount if provided, otherwise calculate from percentage
     const finalDiscountAmount = discountAmount > 0 ? discountAmount : (baseAmount * discountPercentage) / 100;
     
@@ -121,6 +154,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
       gstAmount: Math.round(gstAmount * 100) / 100,
+      cgstAmount: gstBreakdown.cgstAmount,
+      sgstAmount: gstBreakdown.sgstAmount,
+      igstAmount: gstBreakdown.igstAmount,
       discountAmount: Math.round(finalDiscountAmount * 100) / 100,
       totalAmount: Math.round(totalAmount * 100) / 100
     };
@@ -196,7 +232,11 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     
     // Auto-calculate totals when relevant fields change
     if (['unitRate', 'quantity', 'gstPercentage', 'discountPercentage', 'discountAmount'].includes(field)) {
-      const calculations = calculateItemTotal(updatedItems[index]);
+      // Get state codes for GST calculation
+      const customerStateCode = hospital?.stateCode || '';
+      const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+      
+      const calculations = calculateItemTotal(updatedItems[index], customerStateCode, companyStateCode);
       
       // If discount amount is entered, clear discount percentage
       if (field === 'discountAmount' && value > 0) {
@@ -209,6 +249,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       }
       
       updatedItems[index].totalAmount = calculations.totalAmount;
+      updatedItems[index].cgstAmount = calculations.cgstAmount;
+      updatedItems[index].sgstAmount = calculations.sgstAmount;
+      updatedItems[index].igstAmount = calculations.igstAmount;
     }
     
     // For serial number changes, just update without sorting (sort on save)
@@ -284,8 +327,14 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       };
       
       // Recalculate totals
-      const calculations = calculateItemTotal(updatedItems[selectedItemIndex]);
+      const customerStateCode = hospital?.stateCode || '';
+      const companyStateCode = 'YOUR_COMPANY_STATE'; // TODO: Get from company settings
+      
+      const calculations = calculateItemTotal(updatedItems[selectedItemIndex], customerStateCode, companyStateCode);
       updatedItems[selectedItemIndex].totalAmount = calculations.totalAmount;
+      updatedItems[selectedItemIndex].cgstAmount = calculations.cgstAmount;
+      updatedItems[selectedItemIndex].sgstAmount = calculations.sgstAmount;
+      updatedItems[selectedItemIndex].igstAmount = calculations.igstAmount;
       
       setInquiryItems(updatedItems);
       onItemsChange(updatedItems);
@@ -344,6 +393,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <th>Unit</th>
                   <th>Disc %</th>
                   <th>Disc Amt</th>
+                  <th>CGST Amt</th>
+                  <th>SGST Amt</th>
+                  <th>IGST Amt</th>
                   <th>Total Amount</th>
                   <th>Actions</th>
                 </tr>
@@ -468,6 +520,39 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         />
                       </td>
 
+                      <td data-label="CGST Amt">
+                        <input
+                          type="text"
+                          className="unified-input gst-amount"
+                          value={formatCurrency(item.cgstAmount || 0, item.currency)}
+                          readOnly
+                          style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
+                          title={`CGST amount: ${formatCurrency(item.cgstAmount || 0, item.currency)}`}
+                        />
+                      </td>
+
+                      <td data-label="SGST Amt">
+                        <input
+                          type="text"
+                          className="unified-input gst-amount"
+                          value={formatCurrency(item.sgstAmount || 0, item.currency)}
+                          readOnly
+                          style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
+                          title={`SGST amount: ${formatCurrency(item.sgstAmount || 0, item.currency)}`}
+                        />
+                      </td>
+
+                      <td data-label="IGST Amt">
+                        <input
+                          type="text"
+                          className="unified-input gst-amount"
+                          value={formatCurrency(item.igstAmount || 0, item.currency)}
+                          readOnly
+                          style={{ textAlign: 'right', fontWeight: '500', color: '#6c757d' }}
+                          title={`IGST amount: ${formatCurrency(item.igstAmount || 0, item.currency)}`}
+                        />
+                      </td>
+
                       <td data-label="Total Amount">
                         <input
                           type="text"
@@ -497,7 +582,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Secondary row for material description - SAP Fiori style */}
                     <tr className="inquiry-description-row">
-                      <td colSpan="9" className="material-description-cell">
+                      <td colSpan="12" className="material-description-cell">
                         <div className="material-description-container">
                           <span className="description-label">Material Description:</span>
                           <div className="description-content">
@@ -515,7 +600,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Third row for HSN Code - SAP Fiori style */}
                     <tr className="inquiry-hsn-row">
-                      <td colSpan="9" className="hsn-code-cell">
+                      <td colSpan="12" className="hsn-code-cell">
                         <div className="hsn-code-container">
                           <span className="hsn-label">HSN Code:</span>
                           <div className="hsn-content">
@@ -531,7 +616,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Fourth row for GST% - SAP Fiori style */}
                     <tr className="inquiry-gst-row">
-                      <td colSpan="9" className="gst-code-cell">
+                      <td colSpan="12" className="gst-code-cell">
                         <div className="gst-code-container">
                           <span className="gst-label">GST %:</span>
                           <div className="gst-content">
@@ -729,6 +814,36 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                     step="0.01"
                     min="0"
                   />
+                </div>
+
+                <div className="mobile-field-row">
+                  <div className="mobile-field-group mobile-field-third">
+                    <label className="mobile-field-label">CGST Amt</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input gst-amount"
+                      value={formatCurrency(item.cgstAmount || 0, item.currency)}
+                      readOnly
+                    />
+                  </div>
+                  <div className="mobile-field-group mobile-field-third">
+                    <label className="mobile-field-label">SGST Amt</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input gst-amount"
+                      value={formatCurrency(item.sgstAmount || 0, item.currency)}
+                      readOnly
+                    />
+                  </div>
+                  <div className="mobile-field-group mobile-field-third">
+                    <label className="mobile-field-label">IGST Amt</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input gst-amount"
+                      value={formatCurrency(item.igstAmount || 0, item.currency)}
+                      readOnly
+                    />
+                  </div>
                 </div>
 
                 <div className="mobile-field-group">
