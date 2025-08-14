@@ -185,6 +185,78 @@
   border-color: var(--gray-300) !important;
 }
 
+/* SAP Fiori-style two-row layout for inquiry items */
+.inquiry-items-table .inquiry-main-row {
+  border-bottom: none;
+}
+
+.inquiry-items-table .inquiry-description-row {
+  border-top: none;
+  background-color: #f8f9fa;
+}
+
+.inquiry-items-table .inquiry-description-row td {
+  padding: 0.5rem 0.75rem;
+  border-top: none;
+}
+
+.inquiry-items-table .description-spacer {
+  width: 40px;
+  background-color: transparent;
+  border-right: 1px solid var(--gray-200);
+}
+
+.inquiry-items-table .material-description-cell {
+  background-color: #f8f9fa;
+  padding: 0.75rem 1rem;
+}
+
+.material-description-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.description-label {
+  font-weight: 600;
+  color: var(--gray-600);
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.description-content {
+  flex: 1;
+}
+
+.description-text {
+  color: var(--gray-800);
+  line-height: 1.4;
+}
+
+.description-placeholder {
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+.description-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  background-color: var(--info-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive behavior for two-row layout */
+@media (max-width: 768px) {
+  .inquiry-items-table .inquiry-description-row {
+    display: none; /* Hide description row on mobile, use cards instead */
+  }
+}
+
 .unified-input:disabled {
   background-color: var(--white) !important;
   color: var(--gray-500);
