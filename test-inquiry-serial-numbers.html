@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiry Serial Numbers Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .test-table th, .test-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .test-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .serial-input {
+            width: 50px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .test-results {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #27ae60;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .description {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔢 Inquiry Serial Numbers - Test & Verification</h1>
+
+        <div class="test-section">
+            <h3>Serial Number Features Test</h3>
+            <div class="description">
+                This test verifies the new serial number functionality:
+                <br>• Manual serial number entry with 2-digit formatting
+                <br>• Deferred sorting/renumbering (only on save, not immediate)
+                <br>• User can enter custom order which will be applied when saving
+            </div>
+
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>Serial No.</th>
+                        <th>Material</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="testItems">
+                    <tr>
+                        <td><input type="text" class="serial-input" value="05" oninput="formatSerialNumber(this)"></td>
+                        <td>Surgical Implant A</td>
+                        <td>2</td>
+                        <td>₹1,250.00</td>
+                        <td>₹2,500.00</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" class="serial-input" value="02" oninput="formatSerialNumber(this)"></td>
+                        <td>Medical Device B</td>
+                        <td>1</td>
+                        <td>₹3,750.50</td>
+                        <td>₹3,750.50</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" class="serial-input" value="01" oninput="formatSerialNumber(this)"></td>
+                        <td>Orthopedic Screw C</td>
+                        <td>10</td>
+                        <td>₹125.75</td>
+                        <td>₹1,257.50</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" class="serial-input" value="03" oninput="formatSerialNumber(this)"></td>
+                        <td>Cardiac Stent D</td>
+                        <td>1</td>
+                        <td>₹25,000.00</td>
+                        <td>₹25,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button class="button" onclick="simulateSort()">🔄 Simulate Save (Sort & Renumber)</button>
+            <button class="button" onclick="resetTest()">↺ Reset Test</button>
+
+            <div class="test-results" id="sortResults" style="display: none;">
+                <h4>✅ Sort Results:</h4>
+                <div id="sortOutput"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Serial Number Formatting Test</h3>
+            <div class="description">
+                Test the 2-digit serial number formatting function:
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label>Enter a number: </label>
+                <input type="text" id="formatTest" oninput="testFormatting()" placeholder="1" style="margin: 0 10px;">
+                <span>Formatted: <strong id="formatResult">01</strong></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Expected Behavior</h3>
+            <ul>
+                <li><strong>Serial Number Input:</strong> Users can manually enter serial numbers to define custom order</li>
+                <li><strong>2-Digit Display:</strong> All serial numbers display as 2-digit format (01, 02, 03, etc.)</li>
+                <li><strong>Deferred Sorting:</strong> Items maintain user's order during editing, only sort when saving</li>
+                <li><strong>Automatic Renumbering:</strong> After sorting, serial numbers are renumbered sequentially from 01</li>
+                <li><strong>Numeric-Only Input:</strong> Serial number fields accept only numeric input</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Format serial number helper function (matching the React component)
+        function formatSerialNumber(input) {
+            let value = input.value.replace(/\D/g, ''); // Remove non-digits
+            if (value === '') value = '1';
+            input.value = value.padStart(2, '0');
+        }
+
+        // Test the formatting function directly
+        function testFormatting() {
+            const input = document.getElementById('formatTest');
+            const result = document.getElementById('formatResult');
+            
+            let value = input.value.replace(/\D/g, '');
+            if (value === '') value = '1';
+            const formatted = value.padStart(2, '0');
+            result.textContent = formatted;
+        }
+
+        // Simulate the sort and renumber functionality
+        function simulateSort() {
+            const rows = Array.from(document.querySelectorAll('#testItems tr'));
+            
+            // Extract data with serial numbers
+            const items = rows.map(row => {
+                const serialInput = row.querySelector('.serial-input');
+                const cells = row.querySelectorAll('td');
+                return {
+                    element: row,
+                    serialNumber: parseInt(serialInput.value) || 999,
+                    material: cells[1].textContent,
+                    quantity: cells[2].textContent,
+                    unitPrice: cells[3].textContent,
+                    total: cells[4].textContent
+                };
+            });
+
+            // Sort by serial number
+            items.sort((a, b) => a.serialNumber - b.serialNumber);
+
+            // Renumber sequentially and update display
+            items.forEach((item, index) => {
+                const newSerial = (index + 1).toString().padStart(2, '0');
+                item.element.querySelector('.serial-input').value = newSerial;
+            });
+
+            // Reorder rows in table
+            const tbody = document.getElementById('testItems');
+            items.forEach(item => tbody.appendChild(item.element));
+
+            // Show results
+            const resultDiv = document.getElementById('sortResults');
+            const outputDiv = document.getElementById('sortOutput');
+            
+            outputDiv.innerHTML = items.map((item, index) => 
+                `<div>${(index + 1).toString().padStart(2, '0')}. ${item.material}</div>`
+            ).join('');
+            
+            resultDiv.style.display = 'block';
+        }
+
+        // Reset test to original state
+        function resetTest() {
+            const inputs = document.querySelectorAll('.serial-input');
+            const originalValues = ['05', '02', '01', '03'];
+            inputs.forEach((input, index) => {
+                input.value = originalValues[index];
+            });
+            
+            document.getElementById('sortResults').style.display = 'none';
+            
+            // Reset table order
+            const tbody = document.getElementById('testItems');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const originalOrder = [0, 1, 2, 3]; // Original order
+            
+            originalOrder.forEach(index => {
+                tbody.appendChild(rows[index]);
+            });
+        }
+
+        // Initialize formatting test
+        testFormatting();
+    </script>
+</body>
+</html>

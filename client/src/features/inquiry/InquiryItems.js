@@ -58,6 +58,26 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     };
   };
 
+  // Format serial number as 2-digit string
+  const formatSerialNumber = (num) => {
+    const serialNum = parseInt(num) || 1;
+    return serialNum.toString().padStart(2, '0');
+  };
+
+  // Sort and renumber items (called before saving)
+  const sortAndRenumberItems = (items) => {
+    const sortedItems = [...items].sort((a, b) => {
+      const serialA = parseInt(a.serialNumber) || 999;
+      const serialB = parseInt(b.serialNumber) || 999;
+      return serialA - serialB;
+    });
+    
+    return sortedItems.map((item, index) => ({
+      ...item,
+      serialNumber: index + 1
+    }));
+  };
+
   // Handle input change
   const handleInputChange = (index, field, value) => {
     const updatedItems = [...inquiryItems];
@@ -80,24 +100,14 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       updatedItems[index].totalAmount = calculations.totalAmount;
     }
     
-    // Handle serial number changes - sort items when serial number is modified
+    // For serial number changes, just update without sorting (sort on save)
     if (field === 'serialNumber') {
       const serialNum = parseInt(value) || 1;
       updatedItems[index].serialNumber = serialNum;
-      
-      // Sort items by serial number and renumber them sequentially
-      const sortedItems = updatedItems.sort((a, b) => a.serialNumber - b.serialNumber);
-      const renumberedItems = sortedItems.map((item, i) => ({
-        ...item,
-        serialNumber: i + 1
-      }));
-      
-      setInquiryItems(renumberedItems);
-      onItemsChange(renumberedItems);
-    } else {
-      setInquiryItems(updatedItems);
-      onItemsChange(updatedItems);
     }
+    
+    setInquiryItems(updatedItems);
+    onItemsChange(updatedItems);
     
     // Clear field-specific errors
     if (errors[`${index}_${field}`]) {
@@ -246,13 +256,17 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <tr key={index}>
                     <td className="text-center">
                       <input
-                        type="number"
+                        type="text"
                         className="unified-input-sm text-center"
                         style={{ width: '50px' }}
-                        value={item.serialNumber}
-                        onChange={(e) => handleInputChange(index, 'serialNumber', e.target.value)}
-                        min="1"
-                        title="Edit to reorder items. Items will be sorted and renumbered automatically."
+                        value={formatSerialNumber(item.serialNumber)}
+                        onChange={(e) => {
+                          // Allow only numeric input
+                          const numericValue = e.target.value.replace(/\D/g, '');
+                          handleInputChange(index, 'serialNumber', numericValue || '1');
+                        }}
+                        placeholder="01"
+                        title="Enter serial number for custom ordering. Items will be sorted when saved."
                       />
                     </td>
                     <td>

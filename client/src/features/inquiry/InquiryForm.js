@@ -270,6 +270,16 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Helper function to sort and renumber items
+  const sortAndRenumberItems = (items) => {
+    return items
+      .sort((a, b) => (parseInt(a.serialNumber) || 999) - (parseInt(b.serialNumber) || 999))
+      .map((item, index) => ({
+        ...item,
+        serialNumber: index + 1
+      }));
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -281,9 +291,13 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     setLoading(true);
 
     try {
+      // Sort and renumber items before submission
+      const sortedItems = sortAndRenumberItems(formData.items);
+      
       // Clean up form data - convert empty strings to null for ObjectId fields
       const cleanedFormData = {
         ...formData,
+        items: sortedItems,
         hospital: formData.hospital || null,
         surgicalCategory: formData.surgicalCategory || null,
         surgicalProcedure: formData.surgicalProcedure || null,
