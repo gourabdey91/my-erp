@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MaterialSelector from './MaterialSelector';
-import MobileCard from '../../shared/components/MobileCard';
 import '../../shared/styles/unified-design.css';
 
 // Updated: All inputs now use unified-input class for consistency with main form
@@ -9,6 +8,16 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   const [errors, setErrors] = useState({});
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  // Dropdown management
+  const toggleDropdown = (dropdownId) => {
+    setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
+  };
+
+  const closeDropdown = () => {
+    setOpenDropdown(null);
+  };
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
@@ -436,40 +445,188 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         {/* Mobile Cards View */}
         <div className="unified-mobile-cards">
           {inquiryItems.map((item, index) => (
-            <MobileCard
-              key={`mobile-${index}`}
-              id={`item-${index}`}
-              title={item.materialNumber || `Item ${formatSerialNumber(item.serialNumber)}`}
-              subtitle={item.materialDescription || 'No description'}
-              badge={{
-                text: formatCurrency(item.totalAmount, item.currency),
-                type: 'success'
-              }}
-              fields={[
-                { label: 'Serial No.', value: formatSerialNumber(item.serialNumber) },
-                { label: 'Unit Rate', value: formatCurrency(item.unitRate) },
-                { label: 'Quantity', value: item.quantity },
-                { label: 'Unit', value: item.unit || 'N/A' },
-                { label: 'HSN Code', value: item.hsnCode || 'N/A' },
-                { label: 'GST %', value: `${item.gstPercentage || 0}%` },
-                { label: 'Discount %', value: `${item.discountPercentage || 0}%` },
-                { label: 'Discount Amount', value: formatCurrency(item.discountAmount) }
-              ]}
-              actions={[
-                {
-                  label: 'Select Material',
-                  icon: '🔍',
-                  onClick: () => openMaterialSelector(index),
-                  disabled: !hospital || !surgicalCategory
-                },
-                ...(inquiryItems.length > 1 ? [{
-                  label: 'Remove Item',
-                  icon: '🗑️',
-                  variant: 'danger',
-                  onClick: () => removeItem(index)
-                }] : [])
-              ]}
-            />
+            <div key={`mobile-${index}`} className="unified-mobile-card">
+              <div className="unified-card-header">
+                <div>
+                  <h3 className="unified-card-title">
+                    {item.materialNumber || `Item ${formatSerialNumber(item.serialNumber)}`}
+                  </h3>
+                  {item.materialDescription && (
+                    <div className="card-subtitle">{item.materialDescription}</div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="unified-card-badge">
+                    {formatCurrency(item.totalAmount, item.currency)}
+                  </span>
+                  <div className="unified-card-menu">
+                    <button
+                      type="button"
+                      className="unified-menu-trigger"
+                      onClick={() => toggleDropdown(`item-${index}`)}
+                    >
+                      ⋮
+                    </button>
+                    {openDropdown === `item-${index}` && (
+                      <div className="unified-dropdown-menu">
+                        <button
+                          className="unified-dropdown-item"
+                          onClick={() => {
+                            closeDropdown();
+                            openMaterialSelector(index);
+                          }}
+                          disabled={!hospital || !surgicalCategory}
+                        >
+                          <span className="action-icon">🔍</span>
+                          Select Material
+                        </button>
+                        {inquiryItems.length > 1 && (
+                          <button
+                            className="unified-dropdown-item danger"
+                            onClick={() => {
+                              closeDropdown();
+                              removeItem(index);
+                            }}
+                          >
+                            <span className="action-icon">🗑️</span>
+                            Remove Item
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="unified-card-content">
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Serial No.</label>
+                  <input
+                    type="text"
+                    className="unified-input mobile-field-input"
+                    value={formatSerialNumber(item.serialNumber)}
+                    onChange={(e) => handleInputChange(index, 'serialNumber', e.target.value)}
+                  />
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Material No.</label>
+                  <div className="material-number-container">
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input"
+                      value={item.materialNumber}
+                      onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
+                      placeholder="Enter material number"
+                    />
+                  </div>
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Material Description</label>
+                  <textarea
+                    className="unified-input mobile-field-input"
+                    value={item.materialDescription}
+                    onChange={(e) => handleInputChange(index, 'materialDescription', e.target.value)}
+                    placeholder="Enter material description"
+                    rows="2"
+                  />
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Unit Rate</label>
+                  <input
+                    type="number"
+                    className="unified-input mobile-field-input"
+                    value={item.unitRate}
+                    onChange={(e) => handleInputChange(index, 'unitRate', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="mobile-field-row">
+                  <div className="mobile-field-group mobile-field-half">
+                    <label className="mobile-field-label">Quantity</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.quantity}
+                      onChange={(e) => handleInputChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                      min="1"
+                    />
+                  </div>
+                  <div className="mobile-field-group mobile-field-half">
+                    <label className="mobile-field-label">Unit</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input"
+                      value={item.unit}
+                      onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
+                      placeholder="Unit"
+                    />
+                  </div>
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">HSN Code</label>
+                  <input
+                    type="text"
+                    className="unified-input mobile-field-input"
+                    value={item.hsnCode}
+                    onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
+                    placeholder="Enter HSN code"
+                  />
+                </div>
+
+                <div className="mobile-field-row">
+                  <div className="mobile-field-group mobile-field-half">
+                    <label className="mobile-field-label">GST %</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.gstPercentage}
+                      onChange={(e) => handleInputChange(index, 'gstPercentage', parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                  <div className="mobile-field-group mobile-field-half">
+                    <label className="mobile-field-label">Disc %</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.discountPercentage}
+                      onChange={(e) => handleInputChange(index, 'discountPercentage', parseFloat(e.target.value) || 0)}
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Discount Amount</label>
+                  <input
+                    type="number"
+                    className="unified-input mobile-field-input"
+                    value={item.discountAmount}
+                    onChange={(e) => handleInputChange(index, 'discountAmount', parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">Total Amount</label>
+                  <input
+                    type="text"
+                    className="unified-input mobile-field-input total-amount"
+                    value={formatCurrency(item.totalAmount, item.currency)}
+                    readOnly
+                  />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
