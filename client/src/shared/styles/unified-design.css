@@ -201,9 +201,7 @@
 }
 
 .inquiry-items-table .description-spacer {
-  width: 40px;
-  background-color: transparent;
-  border-right: 1px solid var(--gray-200);
+  display: none; /* Remove spacer - description starts from beginning */
 }
 
 .inquiry-items-table .material-description-cell {
@@ -250,10 +248,75 @@
   font-weight: 500;
 }
 
+/* Unit field width optimization */
+.inquiry-items-table td[data-label="Unit"] {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.inquiry-items-table td[data-label="Unit"] .unified-input {
+  width: 100%;
+  text-align: center;
+}
+
+/* HSN Code row styling - similar to description row */
+.inquiry-items-table .inquiry-hsn-row {
+  border-top: none;
+  background-color: #f1f3f4;
+}
+
+.inquiry-items-table .inquiry-hsn-row td {
+  padding: 0.5rem 0.75rem;
+  border-top: none;
+}
+
+.inquiry-items-table .hsn-code-cell {
+  background-color: #f1f3f4;
+  padding: 0.75rem 1rem;
+}
+
+.hsn-code-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.hsn-label {
+  font-weight: 600;
+  color: var(--gray-600);
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.hsn-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.hsn-input {
+  width: 200px;
+  max-width: 200px;
+}
+
+.hsn-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background-color: var(--info-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 /* Responsive behavior for two-row layout */
 @media (max-width: 768px) {
-  .inquiry-items-table .inquiry-description-row {
-    display: none; /* Hide description row on mobile, use cards instead */
+  .inquiry-items-table .inquiry-description-row,
+  .inquiry-items-table .inquiry-hsn-row {
+    display: none; /* Hide description and HSN rows on mobile, use cards instead */
   }
 }
 

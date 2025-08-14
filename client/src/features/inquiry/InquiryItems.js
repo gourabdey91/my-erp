@@ -342,7 +342,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <th>Unit Rate</th>
                   <th>Quantity</th>
                   <th>Unit</th>
-                  <th>HSN Code</th>
                   <th>GST %</th>
                   <th>Disc %</th>
                   <th>Disc Amt</th>
@@ -443,21 +442,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         />
                       </td>
 
-                      <td data-label="HSN Code">
-                        <input
-                          type="text"
-                          className={`unified-input ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
-                          value={item.hsnCode}
-                          onChange={(e) => !item.isFromMaster && handleInputChange(index, 'hsnCode', e.target.value)}
-                          placeholder="HSN Code"
-                          readOnly={item.isFromMaster}
-                          title={item.isFromMaster ? "HSN Code is from material master" : "Enter HSN Code"}
-                        />
-                        {errors[`${index}_hsnCode`] && (
-                          <span className="unified-error-text">{errors[`${index}_hsnCode`]}</span>
-                        )}
-                      </td>
-
                       <td data-label="GST %">
                         <input
                           type="number"
@@ -533,7 +517,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
                     {/* Secondary row for material description - SAP Fiori style */}
                     <tr className="inquiry-description-row">
-                      <td className="description-spacer"></td>
                       <td colSpan="10" className="material-description-cell">
                         <div className="material-description-container">
                           <span className="description-label">Material Description:</span>
@@ -550,6 +533,34 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                             )}
                           </div>
                         </div>
+                      </td>
+                    </tr>
+
+                    {/* Third row for HSN Code - SAP Fiori style */}
+                    <tr className="inquiry-hsn-row">
+                      <td colSpan="10" className="hsn-code-cell">
+                        <div className="hsn-code-container">
+                          <span className="hsn-label">HSN Code:</span>
+                          <div className="hsn-content">
+                            <input
+                              type="text"
+                              className={`unified-input hsn-input ${errors[`${index}_hsnCode`] ? 'error' : ''}`}
+                              value={item.hsnCode}
+                              onChange={(e) => !item.isFromMaster && handleInputChange(index, 'hsnCode', e.target.value)}
+                              placeholder="Enter HSN Code"
+                              readOnly={item.isFromMaster}
+                              title={item.isFromMaster ? "HSN Code is from material master" : "Enter HSN Code"}
+                            />
+                            {item.isFromMaster && (
+                              <span className="hsn-badge">(From Master)</span>
+                            )}
+                          </div>
+                        </div>
+                        {errors[`${index}_hsnCode`] && (
+                          <div className="unified-error-text" style={{ marginTop: '0.25rem' }}>
+                            {errors[`${index}_hsnCode`]}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   </React.Fragment>
