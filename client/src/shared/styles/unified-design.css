@@ -187,47 +187,62 @@
 
 /* SAP Fiori-style two-row layout for inquiry items */
 .inquiry-items-table .inquiry-main-row {
-  border-bottom: none; /* Remove underline from primary row */
+  border-bottom: none !important; /* Force remove underline from primary row */
+}
+
+.inquiry-items-table .inquiry-main-row td {
+  border-bottom: none !important; /* Force remove underline from all cells in primary row */
 }
 
 .inquiry-items-table .inquiry-description-row {
-  border-top: none;
-  border-bottom: none; /* No underline for description row */
+  border-top: none !important;
+  border-bottom: none !important; /* Force remove underline from description row */
   background-color: #f8f9fa;
 }
 
+.inquiry-items-table .inquiry-description-row td {
+  border-top: none !important;
+  border-bottom: none !important; /* Force remove underline from description cells */
+}
+
 .inquiry-items-table .inquiry-hsn-row {
-  border-top: none;
-  border-bottom: 1px solid var(--gray-300); /* Only last secondary row has underline */
-  background-color: #f1f3f4;
+  border-top: none !important;
+  border-bottom: 1px solid var(--gray-300) !important; /* Only last secondary row has underline */
+  background-color: #f8f9fa; /* Same background as description row */
+}
+
+.inquiry-items-table .inquiry-hsn-row td {
+  padding: 0.5rem 0.75rem;
+  border-top: none !important;
+  border-bottom: 1px solid var(--gray-300) !important; /* Underline only on HSN row */
 }
 
 .inquiry-items-table .inquiry-description-row td,
 .inquiry-items-table .inquiry-hsn-row td {
   padding: 0.5rem 0.75rem;
-  border-top: none;
 }
 
 .inquiry-items-table .description-spacer {
   display: none; /* Remove spacer - description starts from beginning */
 }
 
-.inquiry-items-table .material-description-cell {
-  background-color: #f8f9fa;
+.inquiry-items-table .material-description-cell,
+.inquiry-items-table .hsn-code-cell {
+  background-color: #f8f9fa; /* Same background for both secondary rows */
   padding: 0.75rem 1rem;
 }
 
 .material-description-container {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem; /* Reduced spacing between label and value */
+  gap: 0.25rem; /* Further reduced spacing between label and value */
   font-size: 0.9rem;
 }
 
 .description-label {
   font-weight: 600;
   color: var(--gray-600);
-  min-width: 140px;
+  min-width: 120px; /* Reduced minimum width */
   flex-shrink: 0;
 }
 
@@ -261,34 +276,19 @@
   text-align: center;
 }
 
-/* HSN Code row styling - similar to description row */
-.inquiry-items-table .inquiry-hsn-row {
-  border-top: none;
-  border-bottom: 1px solid var(--gray-300); /* Only last secondary row has underline */
-  background-color: #f1f3f4;
-}
-
-.inquiry-items-table .inquiry-hsn-row td {
-  padding: 0.5rem 0.75rem;
-  border-top: none;
-}
-
-.inquiry-items-table .hsn-code-cell {
-  background-color: #f1f3f4;
-  padding: 0.75rem 1rem;
-}
+/* HSN Code row styling - matches description row */
 
 .hsn-code-container {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Reduced spacing between label and value */
+  gap: 0.25rem; /* Further reduced spacing between label and value */
   font-size: 0.9rem;
 }
 
 .hsn-label {
   font-weight: 600;
   color: var(--gray-600);
-  min-width: 80px;
+  min-width: 70px; /* Reduced minimum width */
   flex-shrink: 0;
 }
 
@@ -301,7 +301,7 @@
 
 .hsn-text {
   color: var(--gray-800);
-  font-weight: 500;
+  font-weight: 400; /* Normal font weight, not bold */
 }
 
 .hsn-placeholder {
