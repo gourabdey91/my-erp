@@ -22,24 +22,31 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
   // Initialize with one empty item if no items provided
   useEffect(() => {
+    console.log('InquiryItems useEffect - items:', items, 'hospital:', hospital);
     if (items.length === 0) {
       const emptyItem = createEmptyItem(1);
       setInquiryItems([emptyItem]);
     } else {
       setInquiryItems(items);
       // Simple: if hospital is available and items have material numbers, fetch descriptions
-      if (hospital?.id) {
-        fetchDescriptionsForItems(items, hospital.id);
+      const hospitalId = hospital?._id || hospital?.id;
+      if (hospitalId) {
+        console.log('Hospital available, calling fetchDescriptionsForItems with hospitalId:', hospitalId);
+        fetchDescriptionsForItems(items, hospitalId);
+      } else {
+        console.log('Hospital not available yet:', hospital);
       }
     }
-  }, [items, hospital?.id]);
+  }, [items, hospital?._id, hospital?.id]);
 
   // Simple function to fetch material descriptions for items that have material numbers
   const fetchDescriptionsForItems = async (itemsToProcess, hospitalId) => {
+    console.log('fetchDescriptionsForItems called with:', itemsToProcess.length, 'items');
     let hasChanges = false;
     const updatedItems = [];
 
     for (const item of itemsToProcess) {
+      console.log('Processing item:', item.materialNumber, 'has description:', !!item.materialDescription);
       if (item.materialNumber && !item.materialDescription) {
         console.log('Fetching material data for:', item.materialNumber);
         const materialData = await fetchMaterialByNumber(item.materialNumber, hospitalId);
@@ -74,6 +81,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
       setInquiryItems(itemsWithTotals);
       onItemsChange(itemsWithTotals);
+    } else {
+      console.log('No changes needed, all items already have descriptions or no material numbers');
     }
   };
 
