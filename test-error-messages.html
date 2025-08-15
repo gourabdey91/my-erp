@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Specific Error Messages</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .message-box { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .message-box.success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724;
+        }
+        .message-box.error { 
+            background-color: #f8d7da; 
+            border-color: #dc3545; 
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Specific Error Messages</h1>
+    <p>This page tests that specific validation error messages are displayed correctly in the UI.</p>
+    
+    <div class="section">
+        <h3>Test Scenario 1: Material Validation Error</h3>
+        <p>Create an inquiry with materials from wrong surgical categories to test specific error message display.</p>
+        <button onclick="testMaterialValidationError()" class="danger">Test Material Validation Error</button>
+        <div id="materialTestResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Scenario 2: Missing Required Field</h3>
+        <p>Create an inquiry missing required fields to test field validation error messages.</p>
+        <button onclick="testRequiredFieldError()" class="danger">Test Required Field Error</button>
+        <div id="requiredFieldTestResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Scenario 3: Invalid Data Type</h3>
+        <p>Create an inquiry with invalid data types to test type validation error messages.</p>
+        <button onclick="testDataTypeError()" class="danger">Test Data Type Error</button>
+        <div id="dataTypeTestResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+
+        async function testMaterialValidationError() {
+            const resultDiv = document.getElementById('materialTestResult');
+            resultDiv.innerHTML = '<p>Testing material validation error message...</p>';
+            
+            // Create an inquiry with invalid material that doesn't belong to procedure's categories
+            const invalidInquiry = {
+                hospital: "674032a5ca2b7c001f123456", // Use fake ID
+                surgicalProcedure: "67403025ca2b7c001f234567", // Use fake ID
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient",
+                patientUHID: "TEST" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: "674032a5ca2b7c001f789012", // Use fake ID
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: "INVALID_MAT_001",
+                        hsnCode: "12345678",
+                        unitRate: 100,
+                        gstPercentage: 18,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test material validation error"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="message-box ${response.ok ? 'success' : 'error'}">
+                        <h4>${response.ok ? '✅ Unexpected Success' : '❌ Validation Error (Expected)'}</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Error Message Displayed:</strong></p>
+                        <div style="background: #fff; padding: 10px; border: 1px solid #ccc; margin: 10px 0;">
+                            "${responseData.message}"
+                        </div>
+                        ${responseData.errors ? `<p><strong>Additional Errors:</strong> ${JSON.stringify(responseData.errors)}</p>` : ''}
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testRequiredFieldError() {
+            const resultDiv = document.getElementById('requiredFieldTestResult');
+            resultDiv.innerHTML = '<p>Testing required field error message...</p>';
+            
+            // Create an inquiry missing required fields
+            const incompleteInquiry = {
+                // Missing hospital, surgicalProcedure, patientName, etc.
+                inquiryDate: new Date().toISOString(),
+                patientAge: 45,
+                items: []
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(incompleteInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="message-box ${response.ok ? 'success' : 'error'}">
+                        <h4>${response.ok ? '✅ Unexpected Success' : '❌ Validation Error (Expected)'}</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Error Message Displayed:</strong></p>
+                        <div style="background: #fff; padding: 10px; border: 1px solid #ccc; margin: 10px 0;">
+                            "${responseData.message}"
+                        </div>
+                        ${responseData.errors ? `<p><strong>Additional Errors:</strong> ${JSON.stringify(responseData.errors)}</p>` : ''}
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testDataTypeError() {
+            const resultDiv = document.getElementById('dataTypeTestResult');
+            resultDiv.innerHTML = '<p>Testing data type error message...</p>';
+            
+            // Create an inquiry with invalid data types
+            const invalidDataInquiry = {
+                hospital: "674032a5ca2b7c001f123456",
+                surgicalProcedure: "67403025ca2b7c001f234567",
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient",
+                patientUHID: "TEST" + Date.now(),
+                patientAge: "invalid_age", // Should be number
+                patientGender: "Male",
+                paymentMethod: "674032a5ca2b7c001f789012",
+                items: [
+                    {
+                        serialNumber: "invalid", // Should be number
+                        materialNumber: "MAT001",
+                        hsnCode: "12345678",
+                        unitRate: "invalid_price", // Should be number
+                        gstPercentage: 18,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test data type validation error"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidDataInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="message-box ${response.ok ? 'success' : 'error'}">
+                        <h4>${response.ok ? '✅ Unexpected Success' : '❌ Validation Error (Expected)'}</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Error Message Displayed:</strong></p>
+                        <div style="background: #fff; padding: 10px; border: 1px solid #ccc; margin: 10px 0;">
+                            "${responseData.message}"
+                        </div>
+                        ${responseData.errors ? `<p><strong>Additional Errors:</strong> ${JSON.stringify(responseData.errors)}</p>` : ''}
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

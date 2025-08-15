@@ -121,7 +121,7 @@ const inquirySchema = new mongoose.Schema({
   surgicalCategory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: true
+    required: false  // Will be derived from procedure if not provided
   },
   surgicalProcedure: {
     type: mongoose.Schema.Types.ObjectId,
@@ -211,6 +211,78 @@ inquirySchema.methods.calculateInquiryTotal = function() {
   return Math.round(total * 100) / 100;
 };
 
+// Pre-save middleware to derive surgical category from procedure
+inquirySchema.pre('save', async function(next) {
+  // If surgical category is not provided but procedure is, derive it from procedure
+  if (!this.surgicalCategory && this.surgicalProcedure) {
+    try {
+      const Procedure = mongoose.model('Procedure');
+      const procedure = await Procedure.findById(this.surgicalProcedure).populate('items.surgicalCategoryId');
+      
+      if (procedure && procedure.items && procedure.items.length > 0) {
+        // Use the first surgical category from the procedure's items
+        this.surgicalCategory = procedure.items[0].surgicalCategoryId._id || procedure.items[0].surgicalCategoryId;
+      }
+    } catch (error) {
+      // Don't fail the save if category derivation fails
+    }
+  }
+  next();
+});
+
+// Pre-save middleware to validate materials belong to allowed surgical categories
+inquirySchema.pre('save', async function(next) {
+  if (this.surgicalProcedure && this.items && this.items.length > 0) {
+    try {
+      const Procedure = mongoose.model('Procedure');
+      const MaterialMaster = mongoose.model('MaterialMaster');
+      
+      // Get the procedure with its surgical categories
+      const procedure = await Procedure.findById(this.surgicalProcedure).populate('items.surgicalCategoryId');
+      
+      if (!procedure) {
+        return next(new Error('Invalid surgical procedure'));
+      }
+      
+      // Get all allowed surgical category IDs from the procedure
+      const allowedCategoryIds = procedure.items.map(item => 
+        item.surgicalCategoryId._id ? item.surgicalCategoryId._id.toString() : item.surgicalCategoryId.toString()
+      );
+      
+      // Validate each material in the inquiry items
+      const materialNumbers = this.items.map(item => item.materialNumber);
+      const materials = await MaterialMaster.find({ 
+        materialNumber: { $in: materialNumbers } 
+      }).populate('surgicalCategory');
+      
+      // Create a map of material numbers to their surgical categories
+      const materialCategoryMap = {};
+      materials.forEach(material => {
+        materialCategoryMap[material.materialNumber] = material.surgicalCategory._id.toString();
+      });
+      
+      // Check each inquiry item
+      const invalidMaterials = [];
+      this.items.forEach(item => {
+        const materialCategory = materialCategoryMap[item.materialNumber];
+        if (!materialCategory) {
+          invalidMaterials.push(`Material ${item.materialNumber} not found`);
+        } else if (!allowedCategoryIds.includes(materialCategory)) {
+          invalidMaterials.push(`Material ${item.materialNumber} does not belong to any surgical category allowed for this procedure`);
+        }
+      });
+      
+      if (invalidMaterials.length > 0) {
+        return next(new Error(`Material validation failed: ${invalidMaterials.join('; ')}`));
+      }
+      
+    } catch (error) {
+      return next(new Error(`Material validation error: ${error.message}`));
+    }
+  }
+  next();
+});
+
 // Pre-save hook for items to calculate totals
 inquirySchema.pre('save', function(next) {
   // Calculate total for each item
@@ -235,7 +307,6 @@ inquirySchema.pre('save', async function(next) {
       );
       this.inquiryNumber = `INCS${counter.seq.toString().padStart(8, '0')}`;
     } catch (error) {
-      console.error('Error generating inquiry number:', error);
       next(error);
     }
   }

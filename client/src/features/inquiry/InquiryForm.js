@@ -12,7 +12,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     patientName: inquiry?.patientName || '',
     patientUHID: inquiry?.patientUHID || '',
     hospital: inquiry?.hospital || '',
-    surgicalCategory: inquiry?.surgicalCategory || '',
     surgicalProcedure: inquiry?.surgicalProcedure || '',
     paymentMethod: inquiry?.paymentMethod || '',
     limit: {
@@ -81,7 +80,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientName: inquiry.patientName || '',
         patientUHID: inquiry.patientUHID || '',
         hospital: inquiry.hospital?._id || inquiry.hospital || '',
-        surgicalCategory: inquiry.surgicalCategory?._id || inquiry.surgicalCategory || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || inquiry.surgicalProcedure || '',
         paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || '',
         limit: {
@@ -98,9 +96,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       if (newFormData.hospital) {
         fetchSurgicalCategories(newFormData.hospital);
         
-        // If both category and payment method are available, fetch procedures
-        if (newFormData.surgicalCategory || newFormData.paymentMethod) {
-          fetchSurgicalProcedures(newFormData.hospital, newFormData.surgicalCategory, newFormData.paymentMethod);
+        // If payment method is available, fetch procedures
+        if (newFormData.paymentMethod) {
+          fetchSurgicalProcedures(newFormData.hospital, '', newFormData.paymentMethod);
         }
       }
     } else {
@@ -110,7 +108,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientName: '',
         patientUHID: '',
         hospital: '',
-        surgicalCategory: '',
         surgicalProcedure: '',
         paymentMethod: '',
         limit: {
@@ -128,11 +125,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   // Handle input changes - CASCADING LOGIC LIKE MATERIAL MASTER
   const handleChange = (field, value) => {
     if (field === 'hospital') {
-      // Hospital changed - clear category and procedure, fetch new data
+      // Hospital changed - clear procedure and fetch new procedures
       setFormData(prev => ({
         ...prev,
         hospital: value,
-        surgicalCategory: '',   // Clear surgical category when hospital changes
         surgicalProcedure: ''   // Clear surgical procedure when hospital changes
       }));
       
@@ -154,21 +150,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       
       // Fetch new procedures based on hospital and payment method
       if (formData.hospital) {
-        fetchSurgicalProcedures(formData.hospital, formData.surgicalCategory, value); // Include category filter
-      } else {
-        setFilteredSurgicalProcedures([]);
-      }
-    } else if (field === 'surgicalCategory') {
-      // Surgical category changed - clear procedure and fetch new procedures
-      setFormData(prev => ({
-        ...prev,
-        surgicalCategory: value,
-        surgicalProcedure: '' // Clear surgical procedure when category changes
-      }));
-      
-      // Fetch new procedures based on hospital, category, and payment method
-      if (formData.hospital) {
-        fetchSurgicalProcedures(formData.hospital, value, formData.paymentMethod);
+        fetchSurgicalProcedures(formData.hospital, '', value); // No category filter, just hospital and payment method
       } else {
         setFilteredSurgicalProcedures([]);
       }
@@ -264,9 +246,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     if (!formData.hospital) {
       newErrors.hospital = 'Hospital is required';
     }
-    if (!formData.surgicalCategory) {
-      newErrors.surgicalCategory = 'Surgical category is required';
-    }
     if (!formData.paymentMethod) {
       newErrors.paymentMethod = 'Payment method is required';
     }
@@ -302,12 +281,17 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       // Sort and renumber items before submission
       const sortedItems = sortAndRenumberItems(formData.items);
       
+      // Derive surgical category from selected procedure
+      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+      const derivedSurgicalCategory = selectedProcedure?.items?.[0]?.surgicalCategoryId?._id || 
+                                      selectedProcedure?.items?.[0]?.surgicalCategoryId || null;
+      
       // Clean up form data - convert empty strings to null for ObjectId fields
       const cleanedFormData = {
         ...formData,
         items: sortedItems,
         hospital: formData.hospital || null,
-        surgicalCategory: formData.surgicalCategory || null,
+        surgicalCategory: derivedSurgicalCategory, // Derived from procedure, not user input
         surgicalProcedure: formData.surgicalProcedure || null,
         paymentMethod: formData.paymentMethod || null
       };
@@ -395,25 +379,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                   </select>
                   {errors.hospital && (
                     <span className="unified-error-text">{errors.hospital}</span>
-                  )}
-                </div>
-
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Category</label>
-                  <select
-                    className="unified-input"
-                    value={formData.surgicalCategory}
-                    onChange={(e) => handleChange('surgicalCategory', e.target.value)}
-                  >
-                    <option value="">Select Surgical Category</option>
-                    {filteredSurgicalCategories.map(category => (
-                      <option key={category._id} value={category._id}>
-                        {category.code} - {category.description}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.surgicalCategory && (
-                    <span className="unified-error-text">{errors.surgicalCategory}</span>
                   )}
                 </div>
 

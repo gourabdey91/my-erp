@@ -132,8 +132,6 @@ router.post('/', async (req, res) => {
       data: inquiry
     });
   } catch (error) {
-    console.error('Error creating inquiry:', error);
-    
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -146,15 +144,24 @@ router.post('/', async (req, res) => {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        message: 'Validation error',
+        message: errors.length === 1 ? errors[0] : 'Validation errors occurred',
         errors
+      });
+    }
+
+    // Handle custom validation errors (like material validation)
+    if (error.message && error.message.includes('Material validation failed')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        error: 'Material validation error'
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Error creating inquiry',
-      error: error.message
+      message: error.message || 'Error creating inquiry',
+      error: 'Internal server error'
     });
   }
 });

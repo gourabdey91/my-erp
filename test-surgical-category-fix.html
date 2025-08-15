@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Inquiry Creation - Surgical Category Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test Inquiry Creation - Surgical Category Fix</h1>
+    
+    <div class="section">
+        <h3>Step 1: Get Real IDs from Database</h3>
+        <button onclick="getRealIds()">Get Real IDs</button>
+        <div id="idsResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Inquiry Creation (No Surgical Category)</h3>
+        <p>This will test creating an inquiry WITHOUT providing surgical category. The backend should derive it from the procedure.</p>
+        <button onclick="testInquiryCreation()" id="testBtn" disabled>Test Inquiry Creation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        let realIds = {};
+
+        async function getRealIds() {
+            const resultDiv = document.getElementById('idsResult');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const baseURL = 'http://localhost:5000/api';
+                
+                // Get hospitals
+                const hospitalsResponse = await fetch(`${baseURL}/hospital`);
+                const hospitalsData = await hospitalsResponse.json();
+                
+                // Get procedures  
+                const proceduresResponse = await fetch(`${baseURL}/procedures`);
+                const proceduresData = await proceduresResponse.json();
+                
+                // Get payment methods
+                const paymentMethodsResponse = await fetch(`${baseURL}/payment-method`);
+                const paymentMethodsData = await paymentMethodsResponse.json();
+                
+                // Get materials
+                const materialsResponse = await fetch(`${baseURL}/material`);
+                const materialsData = await materialsResponse.json();
+                
+                if (hospitalsData.success && proceduresData.success && paymentMethodsData.success && materialsData.success) {
+                    const hospitals = hospitalsData.data;
+                    const procedures = proceduresData.data;
+                    const paymentMethods = paymentMethodsData.data;
+                    const materials = materialsData.data;
+                    
+                    if (hospitals.length > 0 && procedures.length > 0 && paymentMethods.length > 0 && materials.length > 0) {
+                        realIds = {
+                            hospital: hospitals[0]._id,
+                            procedure: procedures[0]._id,
+                            paymentMethod: paymentMethods[0]._id,
+                            material: materials[0]._id
+                        };
+                        
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <p><strong>✅ Successfully retrieved real IDs:</strong></p>
+                                <p><strong>Hospital:</strong> ${hospitals[0].shortName} (${hospitals[0]._id})</p>
+                                <p><strong>Procedure:</strong> ${procedures[0].name} (${procedures[0]._id})</p>
+                                <p><strong>Payment Method:</strong> ${paymentMethods[0].description} (${paymentMethods[0]._id})</p>
+                                <p><strong>Material:</strong> ${materials[0].description} (${materials[0]._id})</p>
+                            </div>
+                        `;
+                        
+                        document.getElementById('testBtn').disabled = false;
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ Could not find required data in database</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ API calls failed</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testInquiryCreation() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Creating inquiry...</p>';
+            
+            const testInquiry = {
+                hospital: realIds.hospital,
+                surgicalProcedure: realIds.procedure,
+                // Note: NOT providing surgicalCategory - it should be derived from procedure
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient",
+                patientUHID: "TEST" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: realIds.paymentMethod,
+                items: [
+                    {
+                        material: realIds.material,
+                        description: "Test Material",
+                        qty: 2,
+                        unitPrice: 100,
+                        discount: {
+                            type: "percentage",
+                            value: 5
+                        }
+                    }
+                ],
+                remarks: "Test inquiry without surgical category - should be derived from procedure"
+            };
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/inquiry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                if (response.ok && responseData.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Success! Inquiry created successfully</h4>
+                            <p><strong>Inquiry ID:</strong> ${responseData.data._id}</p>
+                            <p><strong>Inquiry Number:</strong> ${responseData.data.inquiryNumber}</p>
+                            <p><strong>Surgical Category:</strong> ${responseData.data.surgicalCategory ? 'Derived: ' + responseData.data.surgicalCategory : 'Not set'}</p>
+                            <p><strong>Total Amount:</strong> ${responseData.data.totalInquiryAmount}</p>
+                            <details>
+                                <summary>View Full Response</summary>
+                                <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Failed to create inquiry</h4>
+                            <p><strong>Message:</strong> ${responseData.message}</p>
+                            <p><strong>Errors:</strong> ${JSON.stringify(responseData.errors || responseData.error)}</p>
+                            <details>
+                                <summary>View Full Response</summary>
+                                <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

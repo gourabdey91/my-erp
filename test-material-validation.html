@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Material Validation in Inquiry</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Test Material Validation in Inquiry</h1>
+    <p>This page tests that inquiry materials must belong to surgical categories allowed by the selected procedure.</p>
+    
+    <div class="section">
+        <h3>Step 1: Get Test Data</h3>
+        <button onclick="getTestData()">Load Test Data</button>
+        <div id="testDataResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Valid Inquiry (Materials from correct categories)</h3>
+        <button onclick="testValidInquiry()" id="validTestBtn" disabled>Test Valid Inquiry</button>
+        <div id="validTestResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 3: Test Invalid Inquiry (Materials from wrong categories)</h3>
+        <button onclick="testInvalidInquiry()" class="danger" id="invalidTestBtn" disabled>Test Invalid Inquiry</button>
+        <div id="invalidTestResult"></div>
+    </div>
+
+    <script>
+        let testData = {};
+        const baseURL = 'http://localhost:5000/api';
+
+        async function getTestData() {
+            const resultDiv = document.getElementById('testDataResult');
+            resultDiv.innerHTML = '<p>Loading test data...</p>';
+            
+            try {
+                // Get procedures with their surgical categories
+                const proceduresResponse = await fetch(`${baseURL}/procedures`);
+                const proceduresData = await proceduresResponse.json();
+                
+                // Get all materials with their surgical categories
+                const materialsResponse = await fetch(`${baseURL}/material`);
+                const materialsData = await materialsResponse.json();
+                
+                // Get other required data
+                const hospitalsResponse = await fetch(`${baseURL}/hospital`);
+                const hospitalsData = await hospitalsResponse.json();
+                
+                const paymentMethodsResponse = await fetch(`${baseURL}/payment-method`);
+                const paymentMethodsData = await paymentMethodsResponse.json();
+                
+                if (proceduresData.success && materialsData.success && hospitalsData.success && paymentMethodsData.success) {
+                    const procedures = proceduresData.data;
+                    const materials = materialsData.data;
+                    const hospitals = hospitalsData.data;
+                    const paymentMethods = paymentMethodsData.data;
+                    
+                    if (procedures.length > 0 && materials.length > 0 && hospitals.length > 0 && paymentMethods.length > 0) {
+                        // Find a procedure with surgical categories
+                        const procedureWithCategories = procedures.find(p => p.items && p.items.length > 0);
+                        
+                        if (procedureWithCategories) {
+                            // Get materials that belong to this procedure's categories
+                            const procedureCategoryIds = procedureWithCategories.items.map(item => 
+                                item.surgicalCategoryId._id || item.surgicalCategoryId
+                            );
+                            
+                            const validMaterials = materials.filter(m => 
+                                procedureCategoryIds.includes(m.surgicalCategory._id || m.surgicalCategory)
+                            );
+                            
+                            const invalidMaterials = materials.filter(m => 
+                                !procedureCategoryIds.includes(m.surgicalCategory._id || m.surgicalCategory)
+                            );
+                            
+                            testData = {
+                                procedure: procedureWithCategories,
+                                validMaterials: validMaterials.slice(0, 2), // Take first 2 valid materials
+                                invalidMaterials: invalidMaterials.slice(0, 2), // Take first 2 invalid materials
+                                hospital: hospitals[0],
+                                paymentMethod: paymentMethods[0]
+                            };
+                            
+                            let html = `
+                                <div class="success">
+                                    <h4>✅ Test Data Loaded Successfully</h4>
+                                    <p><strong>Selected Procedure:</strong> ${testData.procedure.name} (${testData.procedure.code})</p>
+                                    <p><strong>Allowed Surgical Categories:</strong></p>
+                                    <ul>
+                                        ${testData.procedure.items.map(item => 
+                                            `<li>${item.surgicalCategoryId.description || item.surgicalCategoryId} (ID: ${item.surgicalCategoryId._id || item.surgicalCategoryId})</li>`
+                                        ).join('')}
+                                    </ul>
+                                    
+                                    <p><strong>Valid Materials (belong to allowed categories):</strong></p>
+                                    <table>
+                                        <tr><th>Material Number</th><th>Description</th><th>Surgical Category</th></tr>
+                                        ${testData.validMaterials.map(m => 
+                                            `<tr><td>${m.materialNumber}</td><td>${m.description}</td><td>${m.surgicalCategory.description || m.surgicalCategory}</td></tr>`
+                                        ).join('')}
+                                    </table>
+                                    
+                                    <p><strong>Invalid Materials (belong to different categories):</strong></p>
+                                    <table>
+                                        <tr><th>Material Number</th><th>Description</th><th>Surgical Category</th></tr>
+                                        ${testData.invalidMaterials.map(m => 
+                                            `<tr><td>${m.materialNumber}</td><td>${m.description}</td><td>${m.surgicalCategory.description || m.surgicalCategory}</td></tr>`
+                                        ).join('')}
+                                    </table>
+                                </div>
+                            `;
+                            
+                            resultDiv.innerHTML = html;
+                            document.getElementById('validTestBtn').disabled = false;
+                            document.getElementById('invalidTestBtn').disabled = false;
+                            
+                        } else {
+                            resultDiv.innerHTML = '<div class="error">❌ No procedures with surgical categories found</div>';
+                        }
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ Insufficient test data in database</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Failed to load test data</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testValidInquiry() {
+            const resultDiv = document.getElementById('validTestResult');
+            resultDiv.innerHTML = '<p>Testing valid inquiry with correct materials...</p>';
+            
+            const validInquiry = {
+                hospital: testData.hospital._id,
+                surgicalProcedure: testData.procedure._id,
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient Valid",
+                patientUHID: "VALID" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: testData.paymentMethod._id,
+                items: testData.validMaterials.map((material, index) => ({
+                    serialNumber: index + 1,
+                    materialNumber: material.materialNumber,
+                    hsnCode: material.hsnCode,
+                    unitRate: material.institutionalPrice,
+                    gstPercentage: material.gstPercentage,
+                    quantity: 1,
+                    unit: "PCS",
+                    discountPercentage: 0
+                })),
+                remarks: "Test inquiry with valid materials from correct surgical categories"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(validInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                if (response.ok && responseData.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ SUCCESS: Valid inquiry created</h4>
+                            <p><strong>Inquiry ID:</strong> ${responseData.data._id}</p>
+                            <p><strong>Inquiry Number:</strong> ${responseData.data.inquiryNumber}</p>
+                            <p>✅ Material validation passed - all materials belong to allowed surgical categories</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ UNEXPECTED: Valid inquiry failed</h4>
+                            <p><strong>Message:</strong> ${responseData.message}</p>
+                            <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testInvalidInquiry() {
+            const resultDiv = document.getElementById('invalidTestResult');
+            resultDiv.innerHTML = '<p>Testing invalid inquiry with incorrect materials...</p>';
+            
+            const invalidInquiry = {
+                hospital: testData.hospital._id,
+                surgicalProcedure: testData.procedure._id,
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient Invalid",
+                patientUHID: "INVALID" + Date.now(),
+                patientAge: 45,
+                patientGender: "Female",
+                paymentMethod: testData.paymentMethod._id,
+                items: testData.invalidMaterials.map((material, index) => ({
+                    serialNumber: index + 1,
+                    materialNumber: material.materialNumber,
+                    hsnCode: material.hsnCode,
+                    unitRate: material.institutionalPrice,
+                    gstPercentage: material.gstPercentage,
+                    quantity: 1,
+                    unit: "PCS",
+                    discountPercentage: 0
+                })),
+                remarks: "Test inquiry with invalid materials from wrong surgical categories"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                if (!response.ok && responseData.message && responseData.message.includes('Material validation failed')) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ SUCCESS: Invalid inquiry correctly rejected</h4>
+                            <p><strong>Validation Message:</strong> ${responseData.message}</p>
+                            <p>✅ Material validation working correctly - rejected materials from wrong surgical categories</p>
+                        </div>
+                    `;
+                } else if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ VALIDATION FAILURE: Invalid inquiry was accepted</h4>
+                            <p>This should have been rejected due to materials from wrong surgical categories</p>
+                            <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="info">
+                            <h4>ℹ️ Different validation error (not material-related):</h4>
+                            <p><strong>Message:</strong> ${responseData.message}</p>
+                            <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
