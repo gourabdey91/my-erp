@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Multiple Validation Errors</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .message-box { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .message-box.success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724;
+        }
+        .message-box.error { 
+            background-color: #f8d7da; 
+            border-color: #dc3545; 
+            color: #721c24;
+        }
+        .message-display {
+            background: #fff; 
+            padding: 15px; 
+            border: 2px solid #ccc; 
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #d73502;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Multiple Validation Errors Fix</h1>
+    <p>This page tests that multiple validation errors are displayed with specific messages instead of generic "Validation error".</p>
+    
+    <div class="section">
+        <h3>Test Scenario: Multiple Required Field Errors</h3>
+        <p>Create an inquiry with missing required fields (hsnCode, quantity, unit) to test multiple validation error display.</p>
+        <button onclick="testMultipleValidationErrors()" class="danger">Test Multiple Validation Errors</button>
+        <div id="multipleErrorTestResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Scenario: Single Validation Error</h3>
+        <p>Create an inquiry with a single validation error to test single error message display.</p>
+        <button onclick="testSingleValidationError()" class="danger">Test Single Validation Error</button>
+        <div id="singleErrorTestResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+
+        async function testMultipleValidationErrors() {
+            const resultDiv = document.getElementById('multipleErrorTestResult');
+            resultDiv.innerHTML = '<p>Testing multiple validation errors...</p>';
+            
+            // Create an inquiry with multiple missing required fields
+            const invalidInquiry = {
+                hospital: "674032a5ca2b7c001f123456", // Valid format
+                surgicalProcedure: "67403025ca2b7c001f234567", // Valid format
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient",
+                patientUHID: "TEST" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: "674032a5ca2b7c001f789012", // Valid format
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: "MAT001",
+                        // Missing hsnCode (required)
+                        unitRate: 100,
+                        gstPercentage: 18,
+                        quantity: 0, // Invalid (less than 0.01)
+                        // Missing unit (required)
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test multiple validation errors"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="message-box error">
+                        <h4>❌ Expected Multiple Validation Errors</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Error Message Displayed to User:</strong></p>
+                        <div class="message-display">
+                            "${responseData.message}"
+                        </div>
+                        
+                        <p><strong>Expected Issues:</strong></p>
+                        <ul>
+                            <li>hsnCode is required</li>
+                            <li>quantity (0) is less than minimum allowed value (0.01)</li>
+                            <li>unit is required</li>
+                        </ul>
+                        
+                        <p><strong>Individual Error Details:</strong></p>
+                        <ul>
+                            ${responseData.errors ? responseData.errors.map(err => `<li>${err}</li>`).join('') : '<li>No individual errors provided</li>'}
+                        </ul>
+                        
+                        <p><strong>Analysis:</strong></p>
+                        <p style="color: ${responseData.message.includes('Multiple validation errors:') ? 'green' : 'red'};">
+                            ${responseData.message.includes('Multiple validation errors:') ? 
+                                '✅ SUCCESS - Specific multiple error message displayed' : 
+                                '❌ STILL GENERIC - Should show specific combined message'}
+                        </p>
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testSingleValidationError() {
+            const resultDiv = document.getElementById('singleErrorTestResult');
+            resultDiv.innerHTML = '<p>Testing single validation error...</p>';
+            
+            // Create an inquiry with only one validation error
+            const invalidInquiry = {
+                // Missing hospital (required) - this should be the only error
+                surgicalProcedure: "67403025ca2b7c001f234567",
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient",
+                patientUHID: "TEST" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: "674032a5ca2b7c001f789012",
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: "MAT001",
+                        hsnCode: "12345678",
+                        unitRate: 100,
+                        gstPercentage: 18,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test single validation error"
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="message-box error">
+                        <h4>❌ Expected Single Validation Error</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Error Message Displayed to User:</strong></p>
+                        <div class="message-display">
+                            "${responseData.message}"
+                        </div>
+                        
+                        <p><strong>Expected Issue:</strong> Hospital is required</p>
+                        
+                        <p><strong>Individual Error Details:</strong></p>
+                        <ul>
+                            ${responseData.errors ? responseData.errors.map(err => `<li>${err}</li>`).join('') : '<li>No individual errors provided</li>'}
+                        </ul>
+                        
+                        <p><strong>Analysis:</strong></p>
+                        <p style="color: ${responseData.errors && responseData.errors.length === 1 && responseData.message === responseData.errors[0] ? 'green' : 'red'};">
+                            ${responseData.errors && responseData.errors.length === 1 && responseData.message === responseData.errors[0] ? 
+                                '✅ SUCCESS - Single error message displayed directly' : 
+                                '❌ ISSUE - Single error should display the exact error message'}
+                        </p>
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

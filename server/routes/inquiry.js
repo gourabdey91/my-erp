@@ -144,7 +144,7 @@ router.post('/', async (req, res) => {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        message: errors.length === 1 ? errors[0] : 'Validation errors occurred',
+        message: errors.length === 1 ? errors[0] : `Multiple validation errors: ${errors.join('; ')}`,
         errors
       });
     }
@@ -200,21 +200,28 @@ router.put('/:id', async (req, res) => {
       data: inquiry
     });
   } catch (error) {
-    console.error('Error updating inquiry:', error);
-
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        message: 'Validation error',
+        message: errors.length === 1 ? errors[0] : `Multiple validation errors: ${errors.join('; ')}`,
         errors
+      });
+    }
+
+    // Handle custom validation errors (like material validation)
+    if (error.message && error.message.includes('Material validation failed')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        error: 'Material validation error'
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Error updating inquiry',
-      error: error.message
+      message: error.message || 'Error updating inquiry',
+      error: 'Internal server error'
     });
   }
 });
