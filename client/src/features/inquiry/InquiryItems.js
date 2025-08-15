@@ -4,7 +4,7 @@ import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
 
 // Updated: All inputs now use unified-input class for consistency with main form
-const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, dropdownData }) => {
+const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdownData }) => {
   const [inquiryItems, setInquiryItems] = useState(items);
   const [errors, setErrors] = useState({});
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
@@ -1000,7 +1000,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         onClose={closeMaterialSelector}
         onSelect={handleMaterialSelect}
         hospital={hospital}
-        surgicalCategory={surgicalCategory}
+        procedure={procedure}
         dropdownData={dropdownData}
       />
     </div>

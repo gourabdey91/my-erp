@@ -7,7 +7,7 @@ const MaterialSelector = ({
   onClose, 
   onSelect, 
   hospital, 
-  surgicalCategory,
+  procedure, // Changed from surgicalCategory to procedure
   dropdownData 
 }) => {
   const [materials, setMaterials] = useState([]);
@@ -16,6 +16,7 @@ const MaterialSelector = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(''); // Add error state
   const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [selectedSurgicalCategory, setSelectedSurgicalCategory] = useState(''); // Add surgical category selection
   
   // Filter states
   const [implantTypes, setImplantTypes] = useState([]);
@@ -27,21 +28,34 @@ const MaterialSelector = ({
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [selectedLength, setSelectedLength] = useState('');
 
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedSurgicalCategory('');
+      setSelectedImplantType('');
+      setSelectedSubcategory('');
+      setSelectedLength('');
+      setError('');
+      setMaterials([]);
+      setFilteredMaterials([]);
+    }
+  }, [isOpen]);
+
   // Load implant types when component opens
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (isOpen && hospital && surgicalCategory) {
+    if (isOpen && hospital && selectedSurgicalCategory) {
       loadAvailableImplantTypes();
     }
-  }, [isOpen, hospital, surgicalCategory]);
+  }, [isOpen, hospital, selectedSurgicalCategory]);
 
   // Fetch materials when filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (isOpen && hospital && surgicalCategory) {
+    if (isOpen && hospital && selectedSurgicalCategory) {
       fetchMaterials();
     }
-  }, [isOpen, hospital, surgicalCategory, selectedImplantType, selectedSubcategory, selectedLength]);
+  }, [isOpen, hospital, selectedSurgicalCategory, selectedImplantType, selectedSubcategory, selectedLength]);
 
   // Filter materials based on search term and sort by unit rate
   useEffect(() => {
@@ -71,11 +85,10 @@ const MaterialSelector = ({
     try {
       // Extract IDs from objects if necessary
       const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
-      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
       
-      console.log('🚀 Loading implant types for:', { hospitalId, surgicalCategoryId });
+      console.log('🚀 Loading implant types for:', { hospitalId, selectedSurgicalCategory });
       
-      if (!hospitalId || !surgicalCategoryId) {
+      if (!hospitalId || !selectedSurgicalCategory) {
         console.warn('⚠️ Missing hospital or surgical category ID');
         setImplantTypes([]);
         setError('Please select both hospital and surgical category first');
@@ -85,7 +98,7 @@ const MaterialSelector = ({
       setLoading(true);
       setError(''); // Clear any previous errors
       
-      const response = await materialAPI.getAvailableImplantTypesForInquiry(hospitalId, surgicalCategoryId);
+      const response = await materialAPI.getAvailableImplantTypesForInquiry(hospitalId, selectedSurgicalCategory);
       console.log('📊 Implant types API response:', response);
       
       if (response && response.success) {
@@ -117,10 +130,9 @@ const MaterialSelector = ({
     try {
       // Extract IDs from objects if necessary
       const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
-      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
       
       const filters = {
-        surgicalCategory: surgicalCategoryId,
+        surgicalCategory: selectedSurgicalCategory,
         ...(selectedImplantType && { implantType: selectedImplantType }),
         ...(selectedSubcategory && { subCategory: selectedSubcategory }),
         ...(selectedLength && { lengthMm: selectedLength })
@@ -252,6 +264,10 @@ const MaterialSelector = ({
   const handleClose = () => {
     setSelectedMaterial(null);
     setSearchTerm('');
+    setSelectedSurgicalCategory(''); // Reset surgical category selection
+    setSelectedImplantType('');
+    setSelectedSubcategory('');
+    setSelectedLength('');
     onClose();
   };
 
@@ -276,15 +292,15 @@ const MaterialSelector = ({
     }
   };
 
-  const getCategoryName = () => {
-    try {
-      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
-      const categoryData = dropdownData?.surgicalCategories?.find(c => c._id === surgicalCategoryId);
-      return categoryData ? (categoryData.description || 'Unknown Category') : 'Unknown Category';
-    } catch (error) {
-      console.error('Error getting category name:', error);
-      return 'Unknown Category';
+  // Get available surgical categories from selected procedure
+  const getAvailableSurgicalCategories = () => {
+    if (!procedure || !procedure.items) {
+      return [];
     }
+    return procedure.items.map(item => ({
+      _id: item.surgicalCategoryId._id || item.surgicalCategoryId,
+      description: item.surgicalCategoryId.description || 'Unknown Category'
+    }));
   };
 
   if (!isOpen) return null;
@@ -307,12 +323,8 @@ const MaterialSelector = ({
           {/* Context Information */}
           <div className="material-selector-context">
             <div className="context-item">
-              <span className="context-label">Hospital:</span>
-              <span className="context-value">{getHospitalName()}</span>
-            </div>
-            <div className="context-item">
-              <span className="context-label">Surgical Category:</span>
-              <span className="context-value">{getCategoryName()}</span>
+              <span className="context-label">Procedure:</span>
+              <span className="context-value">{procedure ? `${procedure.code} - ${procedure.name}` : 'No Procedure Selected'}</span>
             </div>
           </div>
 
@@ -334,12 +346,34 @@ const MaterialSelector = ({
             
             <div className="filter-row">
               <div className="filter-group">
+                <label>Surgical Category:</label>
+                <select 
+                  value={selectedSurgicalCategory} 
+                  onChange={(e) => {
+                    setSelectedSurgicalCategory(e.target.value);
+                    setSelectedImplantType('');
+                    setSelectedSubcategory('');
+                    setSelectedLength('');
+                  }}
+                  className="filter-select"
+                  disabled={loading || !procedure}
+                >
+                  <option value="">{procedure ? "Select Surgical Category" : "No Procedure Selected"}</option>
+                  {getAvailableSurgicalCategories().map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
                 <label>Implant Type:</label>
                 <select 
                   value={selectedImplantType} 
                   onChange={(e) => handleImplantTypeChange(e.target.value)}
                   className="filter-select"
-                  disabled={loading}
+                  disabled={loading || !selectedSurgicalCategory}
                 >
                   <option value="">{loading ? "Loading..." : "All Types"}</option>
                   {implantTypes.map(type => (
