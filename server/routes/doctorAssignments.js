@@ -22,6 +22,7 @@ router.get('/hospital/:hospitalId', async (req, res) => {
     .populate('paymentType', 'code description')
     .populate('surgicalCategory', 'code description')
     .populate('procedure', 'code name')
+    .populate('items.surgicalCategory', 'code description')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ priority: -1, validityFrom: -1 }); // Sort by priority first, then by date
@@ -129,8 +130,18 @@ router.post('/', async (req, res) => {
       paymentType, 
       surgicalCategory, 
       procedure, 
+      
+      // New fields
+      amountType,
+      percentage,
+      amount,
+      splitCategoryWise,
+      items,
+      
+      // Legacy fields (for backward compatibility)
       chargeType, 
       chargeValue, 
+      
       validityFrom, 
       validityTo, 
       description, 
@@ -144,7 +155,79 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate charge value if provided
+    // Validate new amount/percentage fields
+    if (splitCategoryWise) {
+      // Validate category-wise items
+      if (!items || items.length === 0) {
+        return res.status(400).json({ 
+          message: 'Items are required when maintaining values category-wise' 
+        });
+      }
+      
+      // Validate each item
+      for (const item of items) {
+        if (!item.surgicalCategory) {
+          return res.status(400).json({ 
+            message: 'Surgical category is required for each item' 
+          });
+        }
+        
+        if (item.amountType === 'percentage') {
+          if (item.percentage === undefined || item.percentage === null || item.percentage === '') {
+            return res.status(400).json({ 
+              message: 'Percentage is required for percentage-type items' 
+            });
+          }
+          const percentageValue = parseFloat(item.percentage);
+          if (percentageValue < 0 || percentageValue > 100) {
+            return res.status(400).json({ 
+              message: 'Percentage must be between 0 and 100' 
+            });
+          }
+        } else if (item.amountType === 'amount') {
+          if (item.amount === undefined || item.amount === null || item.amount === '') {
+            return res.status(400).json({ 
+              message: 'Amount is required for amount-type items' 
+            });
+          }
+          const amountValue = parseFloat(item.amount);
+          if (amountValue < 0) {
+            return res.status(400).json({ 
+              message: 'Amount cannot be negative' 
+            });
+          }
+        }
+      }
+    } else {
+      // Validate header-level values
+      if (amountType === 'percentage') {
+        if (percentage === undefined || percentage === null || percentage === '') {
+          return res.status(400).json({ 
+            message: 'Percentage is required when amount type is percentage' 
+          });
+        }
+        const percentageValue = parseFloat(percentage);
+        if (percentageValue < 0 || percentageValue > 100) {
+          return res.status(400).json({ 
+            message: 'Percentage must be between 0 and 100' 
+          });
+        }
+      } else if (amountType === 'amount') {
+        if (amount === undefined || amount === null || amount === '') {
+          return res.status(400).json({ 
+            message: 'Amount is required when amount type is amount' 
+          });
+        }
+        const amountValue = parseFloat(amount);
+        if (amountValue < 0) {
+          return res.status(400).json({ 
+            message: 'Amount cannot be negative' 
+          });
+        }
+      }
+    }
+
+    // Validate legacy charge value if provided (for backward compatibility)
     if (chargeType && chargeValue !== undefined && chargeValue !== null) {
       if (chargeType === 'percentage' && (chargeValue < 0 || chargeValue > 100)) {
         return res.status(400).json({ 
@@ -220,8 +303,23 @@ router.post('/', async (req, res) => {
       paymentType: paymentType || undefined,
       surgicalCategory: surgicalCategory || undefined,
       procedure: procedure || undefined,
+      
+      // New fields
+      amountType: amountType || 'percentage',
+      percentage: !splitCategoryWise && amountType === 'percentage' ? parseFloat(percentage) : undefined,
+      amount: !splitCategoryWise && amountType === 'amount' ? parseFloat(amount) : undefined,
+      splitCategoryWise: splitCategoryWise || false,
+      items: splitCategoryWise && items ? items.map(item => ({
+        surgicalCategory: item.surgicalCategory,
+        amountType: item.amountType,
+        percentage: item.amountType === 'percentage' ? parseFloat(item.percentage) : undefined,
+        amount: item.amountType === 'amount' ? parseFloat(item.amount) : undefined
+      })) : [],
+      
+      // Legacy fields (for backward compatibility)
       chargeType: chargeType || undefined,
       chargeValue: chargeValue !== undefined && chargeValue !== null ? parseFloat(chargeValue) : undefined,
+      
       validityFrom: fromDate,
       validityTo: toDate,
       description: description ? description.trim() : '',
@@ -237,6 +335,7 @@ router.post('/', async (req, res) => {
       .populate('paymentType', 'code description')
       .populate('surgicalCategory', 'code description')
       .populate('procedure', 'code name')
+      .populate('items.surgicalCategory', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -255,7 +354,23 @@ router.post('/', async (req, res) => {
 // Update doctor assignment
 router.put('/:id', async (req, res) => {
   try {
-    const { chargeType, chargeValue, validityFrom, validityTo, description, updatedBy } = req.body;
+    const { 
+      // New fields
+      amountType,
+      percentage,
+      amount,
+      splitCategoryWise,
+      items,
+      
+      // Legacy fields
+      chargeType, 
+      chargeValue, 
+      
+      validityFrom, 
+      validityTo, 
+      description, 
+      updatedBy 
+    } = req.body;
 
     if (!validityFrom || !validityTo || !updatedBy) {
       return res.status(400).json({ 
@@ -263,7 +378,81 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    // Validate charge value if provided
+    // Validate new amount/percentage fields
+    if (splitCategoryWise !== undefined) {
+      if (splitCategoryWise) {
+        // Validate category-wise items
+        if (!items || items.length === 0) {
+          return res.status(400).json({ 
+            message: 'Items are required when maintaining values category-wise' 
+          });
+        }
+        
+        // Validate each item
+        for (const item of items) {
+          if (!item.surgicalCategory) {
+            return res.status(400).json({ 
+              message: 'Surgical category is required for each item' 
+            });
+          }
+          
+          if (item.amountType === 'percentage') {
+            if (item.percentage === undefined || item.percentage === null || item.percentage === '') {
+              return res.status(400).json({ 
+                message: 'Percentage is required for percentage-type items' 
+              });
+            }
+            const percentageValue = parseFloat(item.percentage);
+            if (percentageValue < 0 || percentageValue > 100) {
+              return res.status(400).json({ 
+                message: 'Percentage must be between 0 and 100' 
+              });
+            }
+          } else if (item.amountType === 'amount') {
+            if (item.amount === undefined || item.amount === null || item.amount === '') {
+              return res.status(400).json({ 
+                message: 'Amount is required for amount-type items' 
+              });
+            }
+            const amountValue = parseFloat(item.amount);
+            if (amountValue < 0) {
+              return res.status(400).json({ 
+                message: 'Amount cannot be negative' 
+              });
+            }
+          }
+        }
+      } else {
+        // Validate header-level values
+        if (amountType === 'percentage') {
+          if (percentage === undefined || percentage === null || percentage === '') {
+            return res.status(400).json({ 
+              message: 'Percentage is required when amount type is percentage' 
+            });
+          }
+          const percentageValue = parseFloat(percentage);
+          if (percentageValue < 0 || percentageValue > 100) {
+            return res.status(400).json({ 
+              message: 'Percentage must be between 0 and 100' 
+            });
+          }
+        } else if (amountType === 'amount') {
+          if (amount === undefined || amount === null || amount === '') {
+            return res.status(400).json({ 
+              message: 'Amount is required when amount type is amount' 
+            });
+          }
+          const amountValue = parseFloat(amount);
+          if (amountValue < 0) {
+            return res.status(400).json({ 
+              message: 'Amount cannot be negative' 
+            });
+          }
+        }
+      }
+    }
+
+    // Validate legacy charge value if provided (for backward compatibility)
     if (chargeType && chargeValue !== undefined && chargeValue !== null) {
       if (chargeType === 'percentage' && (chargeValue < 0 || chargeValue > 100)) {
         return res.status(400).json({ 
@@ -292,8 +481,63 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Doctor assignment not found' });
     }
 
-    doctorAssignment.chargeType = chargeType || undefined;
-    doctorAssignment.chargeValue = chargeValue !== undefined && chargeValue !== null ? parseFloat(chargeValue) : undefined;
+    // Update new fields if provided
+    if (amountType !== undefined) {
+      doctorAssignment.amountType = amountType;
+    }
+    if (splitCategoryWise !== undefined) {
+      doctorAssignment.splitCategoryWise = splitCategoryWise;
+      
+      if (splitCategoryWise) {
+        // Clear header values when using category-wise
+        doctorAssignment.percentage = undefined;
+        doctorAssignment.amount = undefined;
+        // Set category-wise items
+        doctorAssignment.items = items ? items.map(item => ({
+          surgicalCategory: item.surgicalCategory,
+          amountType: item.amountType,
+          percentage: item.amountType === 'percentage' ? parseFloat(item.percentage) : undefined,
+          amount: item.amountType === 'amount' ? parseFloat(item.amount) : undefined
+        })) : [];
+      } else {
+        // Clear items when not using category-wise
+        doctorAssignment.items = [];
+        // Set header values
+        if (amountType === 'percentage' && percentage !== undefined) {
+          doctorAssignment.percentage = parseFloat(percentage);
+          doctorAssignment.amount = undefined;
+        } else if (amountType === 'amount' && amount !== undefined) {
+          doctorAssignment.amount = parseFloat(amount);
+          doctorAssignment.percentage = undefined;
+        }
+      }
+    } else {
+      // Update header values if not switching mode
+      if (percentage !== undefined) {
+        doctorAssignment.percentage = parseFloat(percentage);
+      }
+      if (amount !== undefined) {
+        doctorAssignment.amount = parseFloat(amount);
+      }
+      if (items !== undefined) {
+        doctorAssignment.items = items.map(item => ({
+          surgicalCategory: item.surgicalCategory,
+          amountType: item.amountType,
+          percentage: item.amountType === 'percentage' ? parseFloat(item.percentage) : undefined,
+          amount: item.amountType === 'amount' ? parseFloat(item.amount) : undefined
+        }));
+      }
+    }
+    
+    // Update legacy fields (for backward compatibility)
+    if (chargeType !== undefined) {
+      doctorAssignment.chargeType = chargeType || undefined;
+    }
+    if (chargeValue !== undefined) {
+      doctorAssignment.chargeValue = chargeValue !== null ? parseFloat(chargeValue) : undefined;
+    }
+    
+    // Always update these fields
     doctorAssignment.validityFrom = fromDate;
     doctorAssignment.validityTo = toDate;
     doctorAssignment.description = description ? description.trim() : '';
@@ -307,6 +551,7 @@ router.put('/:id', async (req, res) => {
       .populate('paymentType', 'code description')
       .populate('surgicalCategory', 'code description')
       .populate('procedure', 'code name')
+      .populate('items.surgicalCategory', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
