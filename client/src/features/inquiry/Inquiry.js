@@ -408,7 +408,19 @@ const Inquiry = () => {
             </div>
           </div>
         ) : (
-          <div className="unified-table-responsive">
+          <>
+            {/* Selection Instruction - only show when no items selected */}
+            {selectedInquiries.length === 0 && (
+              <div className="unified-instruction-banner">
+                <div className="instruction-content">
+                  <span className="instruction-icon">💡</span>
+                  <span className="instruction-text">
+                    <strong>Two ways to take action:</strong> 1) Hover over any row to see edit/delete buttons, or 2) Select multiple inquiries using checkboxes to see bulk action menu (⋮) in the header.
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="unified-table-responsive">
             <table className="unified-table">
               <thead>
                 <tr>
@@ -427,6 +439,7 @@ const Inquiry = () => {
                   <th>Payment Method</th>
                   <th>Total Amount</th>
                   <th>Status</th>
+                  <th className="quick-actions-header">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -460,6 +473,24 @@ const Inquiry = () => {
                       <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
                         {inquiry.isActive ? 'Active' : 'Inactive'}
                       </span>
+                    </td>
+                    <td data-label="Quick Actions" className="quick-actions-cell">
+                      <div className="quick-actions">
+                        <button
+                          className="quick-action-btn edit"
+                          onClick={() => handleEdit(inquiry)}
+                          title="Edit"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="quick-action-btn delete"
+                          onClick={() => handleDelete(inquiry._id)}
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

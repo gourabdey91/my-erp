@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug: 3-Dot Menu Selection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        
+        .debug-info {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .debug-info h3 {
+            margin: 0 0 10px 0;
+            color: #92400e;
+        }
+        
+        .debug-steps {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #d1d5db;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        /* Simulation styles */
+        .unified-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .unified-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .unified-header-text h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #1e293b;
+        }
+        
+        .unified-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .unified-selected-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background-color: #e0e7ff;
+            border-radius: 8px;
+            color: #3730a3;
+            font-weight: 500;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .unified-action-menu {
+            position: relative;
+        }
+        
+        .unified-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .unified-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .unified-btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .unified-action-menu-trigger {
+            min-width: 40px !important;
+            height: 40px;
+            border-radius: 50% !important;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+        }
+        
+        .unified-action-menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 150px;
+            margin-top: 4px;
+        }
+        
+        .unified-action-menu-item {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        
+        .unified-action-menu-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .unified-action-menu-item.delete {
+            color: #dc2626;
+        }
+        
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .unified-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .unified-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .unified-table tbody tr.selected {
+            background-color: #e0e7ff !important;
+        }
+        
+        .unified-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+        
+        .unified-code-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h3>🐛 Debug: Why 3-Dot Menu Isn't Visible</h3>
+        <p><strong>The 3-dot menu only appears when you SELECT items using checkboxes!</strong></p>
+        <p>This is intentional design - the action menu is contextual and only shows when there are items to act upon.</p>
+    </div>
+    
+    <div class="debug-steps">
+        <h3>📋 How to Use the 3-Dot Menu:</h3>
+        
+        <div class="step">
+            <div class="step-number">1</div>
+            <div>
+                <strong>Select items:</strong> Click checkboxes next to inquiries you want to edit/delete
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">2</div>
+            <div>
+                <strong>Menu appears:</strong> The "X selected" indicator and 3-dot menu will appear in the header
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">3</div>
+            <div>
+                <strong>Click 3-dot menu:</strong> Click the ⋮ button to see Edit/Delete options
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">4</div>
+            <div>
+                <strong>Perform action:</strong> Choose Edit (single item) or Delete (single/multiple items)
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Demo -->
+    <div class="unified-header">
+        <div class="unified-header-content">
+            <div class="unified-header-text">
+                <h1>Inquiries (Live Demo)</h1>
+            </div>
+            <div class="unified-header-actions">
+                <div class="unified-selected-info hidden" id="selectedInfo">
+                    <span id="selectedCount">0 selected</span>
+                    <div class="unified-action-menu">
+                        <button class="unified-btn unified-btn-secondary unified-action-menu-trigger" id="menuTrigger">
+                            ⋮
+                        </button>
+                        <div class="unified-action-menu-dropdown hidden" id="menuDropdown">
+                            <button class="unified-action-menu-item" id="editBtn">
+                                ✏️ Edit
+                            </button>
+                            <button class="unified-action-menu-item delete" id="deleteBtn">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button class="unified-btn unified-btn-primary">
+                    Add New Inquiry
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="status info">Select items below to see the 3-dot menu appear!</div>
+    
+    <table class="unified-table">
+        <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" class="unified-checkbox" id="selectAll">
+                </th>
+                <th>Inquiry #</th>
+                <th>Hospital</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="row1">
+                <td>
+                    <input type="checkbox" class="unified-checkbox row-checkbox" data-id="1">
+                </td>
+                <td><span class="unified-code-badge">INQ001</span></td>
+                <td>Apollo Hospital</td>
+                <td>Active</td>
+            </tr>
+            <tr id="row2">
+                <td>
+                    <input type="checkbox" class="unified-checkbox row-checkbox" data-id="2">
+                </td>
+                <td><span class="unified-code-badge">INQ002</span></td>
+                <td>Fortis Healthcare</td>
+                <td>Active</td>
+            </tr>
+            <tr id="row3">
+                <td>
+                    <input type="checkbox" class="unified-checkbox row-checkbox" data-id="3">
+                </td>
+                <td><span class="unified-code-badge">INQ003</span></td>
+                <td>Max Super Speciality</td>
+                <td>Active</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        let selectedItems = [];
+        
+        const selectedInfo = document.getElementById('selectedInfo');
+        const selectedCount = document.getElementById('selectedCount');
+        const menuTrigger = document.getElementById('menuTrigger');
+        const menuDropdown = document.getElementById('menuDropdown');
+        const editBtn = document.getElementById('editBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const status = document.getElementById('status');
+        const selectAll = document.getElementById('selectAll');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        
+        function updateUI() {
+            const count = selectedItems.length;
+            
+            if (count === 0) {
+                selectedInfo.classList.add('hidden');
+                status.textContent = 'Select items below to see the 3-dot menu appear!';
+                status.className = 'status info';
+            } else {
+                selectedInfo.classList.remove('hidden');
+                selectedCount.textContent = `${count} selected`;
+                
+                // Update button text
+                if (count === 1) {
+                    editBtn.style.display = 'flex';
+                    deleteBtn.textContent = '🗑️ Delete';
+                    status.textContent = `✅ Menu visible! You can Edit or Delete the selected item.`;
+                } else {
+                    editBtn.style.display = 'none';
+                    deleteBtn.textContent = `🗑️ Delete (${count})`;
+                    status.textContent = `✅ Menu visible! You can Delete ${count} selected items.`;
+                }
+                status.className = 'status success';
+            }
+            
+            // Update select all checkbox
+            selectAll.checked = count === rowCheckboxes.length;
+            selectAll.indeterminate = count > 0 && count < rowCheckboxes.length;
+            
+            // Update row selection
+            rowCheckboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                if (selectedItems.includes(checkbox.dataset.id)) {
+                    checkbox.checked = true;
+                    row.classList.add('selected');
+                } else {
+                    checkbox.checked = false;
+                    row.classList.remove('selected');
+                }
+            });
+        }
+        
+        // Row checkbox handlers
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const id = checkbox.dataset.id;
+                if (checkbox.checked) {
+                    if (!selectedItems.includes(id)) {
+                        selectedItems.push(id);
+                    }
+                } else {
+                    selectedItems = selectedItems.filter(item => item !== id);
+                }
+                updateUI();
+            });
+        });
+        
+        // Select all handler
+        selectAll.addEventListener('change', () => {
+            if (selectAll.checked) {
+                selectedItems = Array.from(rowCheckboxes).map(cb => cb.dataset.id);
+            } else {
+                selectedItems = [];
+            }
+            updateUI();
+        });
+        
+        // Menu toggle
+        menuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuDropdown.classList.toggle('hidden');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            menuDropdown.classList.add('hidden');
+        });
+        
+        // Action handlers
+        editBtn.addEventListener('click', () => {
+            alert(`Edit inquiry ${selectedItems[0]}`);
+            menuDropdown.classList.add('hidden');
+        });
+        
+        deleteBtn.addEventListener('click', () => {
+            if (confirm(`Delete ${selectedItems.length} inquiry(s)?`)) {
+                alert(`Deleted ${selectedItems.length} inquiry(s)`);
+                selectedItems = [];
+                updateUI();
+            }
+            menuDropdown.classList.add('hidden');
+        });
+        
+        // Initial update
+        updateUI();
+    </script>
+</body>
+</html>

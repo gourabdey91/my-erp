@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Inquiry Actions Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f8fafc;
+            margin: 0;
+        }
+        
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Instruction Banner */
+        .unified-instruction-banner {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            border: 1px solid #0891b2;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .instruction-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .instruction-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .instruction-text {
+            color: #0c4a6e;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .instruction-text strong {
+            color: #0369a1;
+        }
+        
+        /* Header with 3-dot menu */
+        .unified-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .unified-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .unified-header-text h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #1e293b;
+        }
+        
+        .unified-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .unified-selected-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background-color: #e0e7ff;
+            border-radius: 8px;
+            color: #3730a3;
+            font-weight: 500;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .unified-action-menu {
+            position: relative;
+        }
+        
+        .unified-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .unified-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .unified-btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .unified-action-menu-trigger {
+            min-width: 40px !important;
+            height: 40px;
+            border-radius: 50% !important;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 !important;
+        }
+        
+        .unified-action-menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 150px;
+            margin-top: 4px;
+        }
+        
+        .unified-action-menu-item {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        
+        .unified-action-menu-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .unified-action-menu-item.delete {
+            color: #dc2626;
+        }
+        
+        /* Table styles */
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .unified-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .unified-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .unified-table tbody tr.selected {
+            background-color: #e0e7ff !important;
+        }
+        
+        .unified-table tbody tr.selected:hover {
+            background-color: #c7d2fe !important;
+        }
+        
+        .unified-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+        
+        .unified-code-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Quick Action Buttons */
+        .quick-actions-header {
+            width: 100px;
+            text-align: center;
+        }
+
+        .quick-actions-cell {
+            width: 100px;
+            text-align: center;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .unified-table tbody tr:hover .quick-actions {
+            opacity: 1;
+        }
+
+        .quick-action-btn {
+            background: none;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: scale(1.1);
+        }
+
+        .quick-action-btn.edit:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .quick-action-btn.delete:hover {
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .demo-notes {
+            background: #fef7cd;
+            border: 1px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .demo-notes h3 {
+            margin: 0 0 10px 0;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-notes">
+            <h3>🎯 Complete Inquiry Actions Demo</h3>
+            <p><strong>Now you have TWO ways to edit/delete:</strong></p>
+            <ul>
+                <li><strong>Method 1:</strong> Hover over any row to see quick edit/delete buttons</li>
+                <li><strong>Method 2:</strong> Select rows with checkboxes to use bulk actions (3-dot menu appears in header)</li>
+            </ul>
+        </div>
+        
+        <!-- Instruction Banner -->
+        <div class="unified-instruction-banner">
+            <div class="instruction-content">
+                <span class="instruction-icon">💡</span>
+                <span class="instruction-text">
+                    <strong>Two ways to take action:</strong> 1) Hover over any row to see edit/delete buttons, or 2) Select multiple inquiries using checkboxes to see bulk action menu (⋮) in the header.
+                </span>
+            </div>
+        </div>
+        
+        <!-- Header with conditional 3-dot menu -->
+        <div class="unified-header">
+            <div class="unified-header-content">
+                <div class="unified-header-text">
+                    <h1>Inquiries</h1>
+                </div>
+                <div class="unified-header-actions">
+                    <div class="unified-selected-info hidden" id="selectedInfo">
+                        <span id="selectedCount">0 selected</span>
+                        <div class="unified-action-menu">
+                            <button class="unified-btn unified-btn-secondary unified-action-menu-trigger" id="menuTrigger">
+                                ⋮
+                            </button>
+                            <div class="unified-action-menu-dropdown hidden" id="menuDropdown">
+                                <button class="unified-action-menu-item" id="editBtn">
+                                    ✏️ Edit
+                                </button>
+                                <button class="unified-action-menu-item delete" id="deleteBtn">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="unified-btn unified-btn-primary">
+                        Add New Inquiry
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table with both quick actions and selection -->
+        <table class="unified-table">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" class="unified-checkbox" id="selectAll">
+                    </th>
+                    <th>Inquiry #</th>
+                    <th>Hospital</th>
+                    <th>Status</th>
+                    <th class="quick-actions-header">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="row1">
+                    <td>
+                        <input type="checkbox" class="unified-checkbox row-checkbox" data-id="1">
+                    </td>
+                    <td><span class="unified-code-badge">INQ001</span></td>
+                    <td>Apollo Hospital</td>
+                    <td>Active</td>
+                    <td class="quick-actions-cell">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn edit" onclick="editInquiry('INQ001')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="quick-action-btn delete" onclick="deleteInquiry('INQ001')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="row2">
+                    <td>
+                        <input type="checkbox" class="unified-checkbox row-checkbox" data-id="2">
+                    </td>
+                    <td><span class="unified-code-badge">INQ002</span></td>
+                    <td>Fortis Healthcare</td>
+                    <td>Active</td>
+                    <td class="quick-actions-cell">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn edit" onclick="editInquiry('INQ002')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="quick-action-btn delete" onclick="deleteInquiry('INQ002')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="row3">
+                    <td>
+                        <input type="checkbox" class="unified-checkbox row-checkbox" data-id="3">
+                    </td>
+                    <td><span class="unified-code-badge">INQ003</span></td>
+                    <td>Max Super Speciality</td>
+                    <td>Active</td>
+                    <td class="quick-actions-cell">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn edit" onclick="editInquiry('INQ003')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="quick-action-btn delete" onclick="deleteInquiry('INQ003')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        let selectedItems = [];
+        
+        const selectedInfo = document.getElementById('selectedInfo');
+        const selectedCount = document.getElementById('selectedCount');
+        const menuTrigger = document.getElementById('menuTrigger');
+        const menuDropdown = document.getElementById('menuDropdown');
+        const editBtn = document.getElementById('editBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const selectAll = document.getElementById('selectAll');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const instructionBanner = document.querySelector('.unified-instruction-banner');
+        
+        // Quick action functions
+        window.editInquiry = function(inquiryId) {
+            alert(`🔧 Quick Edit: ${inquiryId}`);
+        };
+        
+        window.deleteInquiry = function(inquiryId) {
+            if (confirm(`🗑️ Quick Delete: ${inquiryId}?`)) {
+                alert(`Deleted ${inquiryId}`);
+            }
+        };
+        
+        function updateUI() {
+            const count = selectedItems.length;
+            
+            if (count === 0) {
+                selectedInfo.classList.add('hidden');
+                instructionBanner.classList.remove('hidden');
+            } else {
+                selectedInfo.classList.remove('hidden');
+                instructionBanner.classList.add('hidden');
+                selectedCount.textContent = `${count} selected`;
+                
+                if (count === 1) {
+                    editBtn.style.display = 'flex';
+                    deleteBtn.textContent = '🗑️ Delete';
+                } else {
+                    editBtn.style.display = 'none';
+                    deleteBtn.textContent = `🗑️ Delete (${count})`;
+                }
+            }
+            
+            selectAll.checked = count === rowCheckboxes.length;
+            selectAll.indeterminate = count > 0 && count < rowCheckboxes.length;
+            
+            rowCheckboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                if (selectedItems.includes(checkbox.dataset.id)) {
+                    checkbox.checked = true;
+                    row.classList.add('selected');
+                } else {
+                    checkbox.checked = false;
+                    row.classList.remove('selected');
+                }
+            });
+        }
+        
+        // Row checkbox handlers
+        rowCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const id = checkbox.dataset.id;
+                if (checkbox.checked) {
+                    if (!selectedItems.includes(id)) {
+                        selectedItems.push(id);
+                    }
+                } else {
+                    selectedItems = selectedItems.filter(item => item !== id);
+                }
+                updateUI();
+            });
+        });
+        
+        // Select all handler
+        selectAll.addEventListener('change', () => {
+            if (selectAll.checked) {
+                selectedItems = Array.from(rowCheckboxes).map(cb => cb.dataset.id);
+            } else {
+                selectedItems = [];
+            }
+            updateUI();
+        });
+        
+        // Menu toggle
+        menuTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuDropdown.classList.toggle('hidden');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', () => {
+            menuDropdown.classList.add('hidden');
+        });
+        
+        // Bulk action handlers
+        editBtn.addEventListener('click', () => {
+            alert(`📋 Bulk Edit: ${selectedItems[0]}`);
+            menuDropdown.classList.add('hidden');
+        });
+        
+        deleteBtn.addEventListener('click', () => {
+            if (confirm(`📋 Bulk Delete: ${selectedItems.length} item(s)?`)) {
+                alert(`Bulk deleted ${selectedItems.length} inquiry(s)`);
+                selectedItems = [];
+                updateUI();
+            }
+            menuDropdown.classList.add('hidden');
+        });
+        
+        // Initial update
+        updateUI();
+    </script>
+</body>
+</html>
