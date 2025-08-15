@@ -165,11 +165,10 @@ const MaterialSelector = ({
     if (value) {
       // Extract IDs from objects if necessary
       const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
-      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
       
       // Load subcategories for selected implant type
       try {
-        const response = await materialAPI.getSubcategoriesByImplantTypeAndCategory(value, surgicalCategoryId, hospitalId);
+        const response = await materialAPI.getSubcategoriesByImplantTypeAndCategory(value, selectedSurgicalCategory, hospitalId);
         if (response.success) {
           setSubcategories(response.data || []);
         }
@@ -218,12 +217,11 @@ const MaterialSelector = ({
     if (value && selectedImplantType) {
       // Extract IDs from objects if necessary
       const hospitalId = typeof hospital === 'object' ? hospital._id : hospital;
-      const surgicalCategoryId = typeof surgicalCategory === 'object' ? surgicalCategory._id : surgicalCategory;
       
       // Load lengths for selected implant type and subcategory
       try {
         const lengthResponse = await materialAPI.getLengthsByCriteria(hospitalId, { 
-          surgicalCategory: surgicalCategoryId,
+          surgicalCategory: selectedSurgicalCategory,
           implantType: selectedImplantType,
           subCategory: value
         });
