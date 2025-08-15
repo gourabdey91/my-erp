@@ -454,3 +454,17 @@
   border-color: #d1d5db !important;
   opacity: 1 !important;
 }
+
+/* Force pointer cursor for all select dropdowns in inquiry form */
+.inquiry-form-container select,
+.inquiry-form-container select.unified-input,
+.inquiry-form-container select:hover,
+.inquiry-form-container select.unified-input:hover,
+.inquiry-form-container select:focus,
+.inquiry-form-container select.unified-input:focus,
+.inquiry-form-container select:disabled,
+.inquiry-form-container select.unified-input:disabled,
+.inquiry-form-container select[readonly],
+.inquiry-form-container select.unified-input[readonly] {
+  cursor: pointer !important;
+}

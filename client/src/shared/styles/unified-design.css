@@ -381,14 +381,18 @@
 }
 
 /* Ensure select dropdowns are always pure white and editable */
-select.unified-input {
+select.unified-input,
+select.unified-input:hover,
+select.unified-input:focus,
+select.unified-input:disabled,
+select.unified-input[readonly] {
   background-color: var(--white) !important;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 select.unified-input:disabled {
   background-color: var(--white) !important;
-  cursor: pointer;
+  cursor: pointer !important;
 }
 
 /* Updated: Ensure normal appearance for all form fields with correct cursors */
@@ -403,7 +407,7 @@ input.unified-input:disabled {
 select.unified-input:disabled {
   background-color: var(--white) !important;
   color: var(--gray-900) !important;
-  cursor: pointer;
+  cursor: pointer !important;
   border-color: var(--gray-300);
   opacity: 1;
 }
