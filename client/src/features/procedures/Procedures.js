@@ -99,6 +99,38 @@ const Procedures = () => {
     setFilteredProcedures(filtered);
   }, [procedures, filters]);
 
+  // Generate next procedure code
+  const generateNextCode = useCallback(() => {
+    if (procedures.length === 0) {
+      return 'P00001';
+    }
+    
+    // Find all procedure codes that match the P##### pattern
+    const procedureCodes = procedures
+      .map(p => p.code)
+      .filter(code => /^P\d{5}$/.test(code))
+      .map(code => parseInt(code.substring(1)))
+      .sort((a, b) => b - a);
+    
+    if (procedureCodes.length === 0) {
+      return 'P00001';
+    }
+    
+    const nextNumber = procedureCodes[0] + 1;
+    return `P${nextNumber.toString().padStart(5, '0')}`;
+  }, [procedures]);
+
+  // Set auto-generated code when creating new procedure
+  useEffect(() => {
+    if (showForm && !editingProcedure && formData.code === '') {
+      const nextCode = generateNextCode();
+      setFormData(prev => ({
+        ...prev,
+        code: nextCode
+      }));
+    }
+  }, [showForm, editingProcedure, formData.code, generateNextCode]);
+
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
       ...prev,
@@ -155,8 +187,10 @@ const Procedures = () => {
         await procedureAPI.create(procedureData);
       }
 
+      // Reset form with new auto-generated code for next procedure
+      const nextCode = generateNextCode();
       setFormData({
-        code: '',
+        code: nextCode,
         name: '',
         paymentTypeId: '',
         description: '',
@@ -222,8 +256,9 @@ const Procedures = () => {
   };
 
   const resetForm = () => {
+    const nextCode = !editingProcedure ? generateNextCode() : '';
     setFormData({
-      code: '',
+      code: nextCode,
       name: '',
       paymentTypeId: '',
       description: '',
@@ -410,21 +445,42 @@ const Procedures = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Procedure Code * (6 chars)
+                  Procedure Code * {!editingProcedure && '(Auto-generated)'}
                 </label>
-                <input
-                  type="text"
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  required
-                  maxLength="6"
-                  pattern="[A-Z]{3}[0-9]{3}"
-                  placeholder="CRA001, MAX001, etc."
-                  disabled={editingProcedure}
-                  className="unified-search-input"
-                  style={{ textTransform: 'uppercase' }}
-                />
-                <small style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>Format: 3 letters + 3 digits (e.g., CRA001)</small>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                    required
+                    maxLength="6"
+                    placeholder="P00001"
+                    readOnly={!editingProcedure}
+                    className="unified-search-input"
+                    style={{ 
+                      textTransform: 'uppercase',
+                      backgroundColor: !editingProcedure ? '#f8f9fa' : 'white',
+                      cursor: !editingProcedure ? 'default' : 'text'
+                    }}
+                  />
+                  {!editingProcedure && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextCode = generateNextCode();
+                        setFormData(prev => ({ ...prev, code: nextCode }));
+                      }}
+                      className="unified-btn unified-btn-secondary"
+                      style={{ padding: '0.5rem', fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+                      title="Generate new code"
+                    >
+                      🔄
+                    </button>
+                  )}
+                </div>
+                <small style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+                  {editingProcedure ? 'Format: 3 letters + 3 digits (e.g., CRA001)' : 'Auto-generated format: P##### (e.g., P00001)'}
+                </small>
               </div>
 
               <div>
