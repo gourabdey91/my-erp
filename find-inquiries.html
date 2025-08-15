@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Existing Inquiries</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .error { color: red; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .clickable-id { color: #007bff; cursor: pointer; text-decoration: underline; }
+        .clickable-id:hover { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+    <h1>Find Existing Inquiries</h1>
+    
+    <div class="section">
+        <h3>Available Inquiries</h3>
+        <button onclick="loadInquiries()">Load All Inquiries</button>
+        <div id="inquiriesResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Specific Inquiry</h3>
+        <div id="inquiryDetails"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+
+        async function loadInquiries() {
+            const resultDiv = document.getElementById('inquiriesResult');
+            resultDiv.innerHTML = '<p>Loading inquiries...</p>';
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry?limit=50`);
+                const responseData = await response.json();
+                
+                if (responseData.success && responseData.data && responseData.data.docs) {
+                    const inquiries = responseData.data.docs;
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📋 Found ${inquiries.length} Inquiries</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Inquiry Number</th>
+                                        <th>Patient Name</th>
+                                        <th>Total Amount</th>
+                                        <th>Limit</th>
+                                        <th>Hospital</th>
+                                        <th>Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    inquiries.forEach(inquiry => {
+                        html += `
+                            <tr>
+                                <td><span class="clickable-id" onclick="loadSpecificInquiry('${inquiry._id}')">${inquiry._id}</span></td>
+                                <td>${inquiry.inquiryNumber || 'N/A'}</td>
+                                <td>${inquiry.patientName || 'N/A'}</td>
+                                <td>${inquiry.totalInquiryAmount || 0} INR</td>
+                                <td>${inquiry.limit ? inquiry.limit.amount + ' ' + inquiry.limit.currency : 'No limit'}</td>
+                                <td>${inquiry.hospital ? inquiry.hospital.shortName : 'N/A'}</td>
+                                <td>${new Date(inquiry.createdAt).toLocaleDateString()}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <p><strong>Click on any ID to test that specific inquiry</strong></p>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Check if our target inquiry exists
+                    const targetInquiry = inquiries.find(inq => inq._id === '689f288da52efc8a20d9e43b');
+                    if (targetInquiry) {
+                        resultDiv.innerHTML += `
+                            <div class="debug-box">
+                                <h4>✅ Target Inquiry Found!</h4>
+                                <p>The inquiry <strong>689f288da52efc8a20d9e43b</strong> exists in the database.</p>
+                                <p><strong>Number:</strong> ${targetInquiry.inquiryNumber}</p>
+                                <p><strong>Total:</strong> ${targetInquiry.totalInquiryAmount} INR</p>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML += `
+                            <div class="debug-box">
+                                <h4>❌ Target Inquiry NOT Found!</h4>
+                                <p>The inquiry <strong>689f288da52efc8a20d9e43b</strong> does not exist in the database.</p>
+                                <p>This explains the 404 error. The inquiry may have been deleted or the ID is incorrect.</p>
+                            </div>
+                        `;
+                    }
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load inquiries: ${responseData.message}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSpecificInquiry(id) {
+            const resultDiv = document.getElementById('inquiryDetails');
+            resultDiv.innerHTML = `<p>Loading inquiry ${id}...</p>`;
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry/${id}`);
+                const responseData = await response.json();
+                
+                if (responseData.success && responseData.data) {
+                    const inquiry = responseData.data;
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📄 Inquiry Details: ${id}</h4>
+                            <p><strong>Number:</strong> ${inquiry.inquiryNumber}</p>
+                            <p><strong>Patient:</strong> ${inquiry.patientName}</p>
+                            <p><strong>Total:</strong> ${inquiry.totalInquiryAmount} INR</p>
+                            <p><strong>Limit:</strong> ${inquiry.limit ? inquiry.limit.amount + ' ' + inquiry.limit.currency : 'No limit'}</p>
+                            <p><strong>Items:</strong> ${inquiry.items ? inquiry.items.length : 0}</p>
+                            <button onclick="testLimitValidation('${inquiry._id}')" style="margin-top: 10px;">Test Limit Validation</button>
+                        </div>
+                        
+                        <details>
+                            <summary>View Full Details</summary>
+                            <pre>${JSON.stringify(inquiry, null, 2)}</pre>
+                        </details>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load inquiry: ${responseData.message}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testLimitValidation(id) {
+            const resultDiv = document.getElementById('inquiryDetails');
+            
+            try {
+                // First get the current inquiry
+                const getResponse = await fetch(`${baseURL}/inquiry/${id}`);
+                const getResponseData = await getResponse.json();
+                
+                if (!getResponseData.success) {
+                    alert('Failed to load inquiry for testing');
+                    return;
+                }
+                
+                const currentInquiry = getResponseData.data;
+                
+                // Create update payload with very low limit
+                const updatePayload = {
+                    ...currentInquiry,
+                    limit: {
+                        amount: 100, // Very low limit
+                        currency: "INR"
+                    }
+                };
+                
+                // Remove MongoDB specific fields
+                delete updatePayload._id;
+                delete updatePayload.__v;
+                delete updatePayload.createdAt;
+                delete updatePayload.updatedAt;
+                delete updatePayload.id;
+                
+                // Try to update
+                const updateResponse = await fetch(`${baseURL}/inquiry/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+                
+                const updateResponseData = await updateResponse.json();
+                
+                let testResultHtml = `
+                    <div class="debug-box" style="margin-top: 20px;">
+                        <h4>🧪 Limit Validation Test Result</h4>
+                        <p><strong>Original Total:</strong> ${currentInquiry.totalInquiryAmount} INR</p>
+                        <p><strong>Test Limit:</strong> 100 INR</p>
+                        <p><strong>Should Exceed:</strong> ${currentInquiry.totalInquiryAmount > 100 ? 'YES' : 'NO'}</p>
+                        <p><strong>HTTP Status:</strong> ${updateResponse.status}</p>
+                        <p><strong>Success:</strong> ${updateResponseData.success}</p>
+                        <p><strong>Message:</strong> "${updateResponseData.message}"</p>
+                `;
+                
+                if (updateResponse.ok && updateResponseData.success) {
+                    testResultHtml += `
+                        <p style="color: red;"><strong>❌ VALIDATION FAILED!</strong> Inquiry was updated despite exceeding limit.</p>
+                    `;
+                } else if (updateResponseData.message && updateResponseData.message.includes('exceeds the limit')) {
+                    testResultHtml += `
+                        <p style="color: green;"><strong>✅ VALIDATION WORKING!</strong> Inquiry was correctly rejected.</p>
+                    `;
+                } else {
+                    testResultHtml += `
+                        <p style="color: orange;"><strong>❓ OTHER ERROR:</strong> Different validation error occurred.</p>
+                    `;
+                }
+                
+                testResultHtml += `</div>`;
+                
+                resultDiv.innerHTML += testResultHtml;
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="error">❌ Test Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

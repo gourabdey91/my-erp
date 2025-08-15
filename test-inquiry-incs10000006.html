@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Inquiry INCS10000006</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Inquiry INCS10000006 Limit Validation</h1>
+    
+    <div class="section">
+        <h3>Step 1: Get Current Inquiry Data</h3>
+        <button onclick="getCurrentInquiry()">Load INCS10000006</button>
+        <div id="currentResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Limit Validation</h3>
+        <button onclick="testLimitValidation()" id="testBtn" disabled class="danger">Test with Low Limit</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+        const inquiryId = '689f288da52efc8a20d9e43b';
+        let currentInquiry = null;
+
+        async function getCurrentInquiry() {
+            const resultDiv = document.getElementById('currentResult');
+            resultDiv.innerHTML = '<p>Loading inquiry INCS10000006...</p>';
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry/${inquiryId}`);
+                const responseData = await response.json();
+                
+                if (responseData.success && responseData.data) {
+                    currentInquiry = responseData.data;
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📄 Current Inquiry Data</h4>
+                            <p><strong>ID:</strong> ${currentInquiry._id}</p>
+                            <p><strong>Number:</strong> ${currentInquiry.inquiryNumber}</p>
+                            <p><strong>Patient:</strong> ${currentInquiry.patientName}</p>
+                            <p><strong>Current Total:</strong> ${currentInquiry.totalInquiryAmount} INR</p>
+                            <p><strong>Current Limit:</strong> ${currentInquiry.limit ? currentInquiry.limit.amount + ' ' + currentInquiry.limit.currency : 'No limit set'}</p>
+                            <p><strong>Items:</strong> ${currentInquiry.items ? currentInquiry.items.length : 0}</p>
+                        </div>
+                    `;
+                    
+                    if (currentInquiry.items && currentInquiry.items.length > 0) {
+                        html += `
+                            <div class="debug-box">
+                                <h4>📦 Items Details</h4>
+                        `;
+                        currentInquiry.items.forEach((item, index) => {
+                            html += `
+                                <p><strong>Item ${index + 1}:</strong> ${item.materialNumber} - Qty: ${item.quantity}, Rate: ${item.unitRate}, Total: ${item.totalAmount}</p>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                    document.getElementById('testBtn').disabled = false;
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load inquiry: ${responseData.message}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testLimitValidation() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Testing limit validation...</p>';
+            
+            if (!currentInquiry) {
+                resultDiv.innerHTML = '<div class="error">❌ Please load the inquiry first</div>';
+                return;
+            }
+            
+            // Create update payload with a very low limit
+            const updatePayload = {
+                ...currentInquiry,
+                limit: {
+                    amount: 1000, // Very low limit - 1000 INR
+                    currency: "INR"
+                }
+            };
+            
+            // Remove MongoDB specific fields
+            delete updatePayload._id;
+            delete updatePayload.__v;
+            delete updatePayload.createdAt;
+            delete updatePayload.updatedAt;
+            delete updatePayload.id;
+            
+            let html = `
+                <div class="debug-box">
+                    <h4>🧪 Test Setup:</h4>
+                    <p><strong>Current Total:</strong> ${currentInquiry.totalInquiryAmount} INR</p>
+                    <p><strong>New Limit:</strong> ${updatePayload.limit.amount} INR</p>
+                    <p><strong>Should Be Rejected:</strong> ${currentInquiry.totalInquiryAmount > updatePayload.limit.amount ? '✅ YES' : '❌ NO'}</p>
+                    <p><strong>Expected Error:</strong> "Total inquiry amount exceeds the limit"</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry/${inquiryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+                
+                const responseData = await response.json();
+                
+                html += `
+                    <div class="debug-box">
+                        <h4>📋 Response Details:</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Success:</strong> ${responseData.success}</p>
+                        <p><strong>Message:</strong> "${responseData.message}"</p>
+                    </div>
+                `;
+                
+                if (response.ok && responseData.success) {
+                    html += `
+                        <div class="warning-box">
+                            <h4>🚨 LIMIT VALIDATION FAILED!</h4>
+                            <p>❌ The inquiry was updated successfully even though it exceeds the limit!</p>
+                            <p><strong>This means the limit validation middleware is not working.</strong></p>
+                            <p><strong>Updated Total:</strong> ${responseData.data.totalInquiryAmount} INR</p>
+                            <p><strong>Set Limit:</strong> ${responseData.data.limit.amount} INR</p>
+                            <p><strong>Difference:</strong> ${responseData.data.totalInquiryAmount - responseData.data.limit.amount} INR over limit</p>
+                        </div>
+                    `;
+                } else if (responseData.message && responseData.message.includes('exceeds the limit')) {
+                    html += `
+                        <div class="success-box">
+                            <h4>✅ LIMIT VALIDATION WORKING!</h4>
+                            <p>✅ The inquiry was correctly rejected for exceeding the limit!</p>
+                            <p><strong>Validation Message:</strong> "${responseData.message}"</p>
+                            <p><strong>The middleware is working as expected.</strong></p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="warning-box">
+                            <h4>❓ OTHER ERROR</h4>
+                            <p>The inquiry was rejected, but with a different error:</p>
+                            <p><strong>Error:</strong> "${responseData.message}"</p>
+                            <p>This might indicate another validation issue.</p>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                    
+                    <details>
+                        <summary>View Update Payload</summary>
+                        <pre>${JSON.stringify(updatePayload, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

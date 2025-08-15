@@ -183,11 +183,24 @@ router.put('/:id', async (req, res) => {
       updatedBy: req.user?.id || '507f1f77bcf86cd799439011' // Default user ID for development
     };
 
-    const inquiry = await Inquiry.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate([
+    // First find the inquiry
+    const inquiry = await Inquiry.findById(req.params.id);
+    
+    if (!inquiry) {
+      return res.status(404).json({
+        success: false,
+        message: 'Inquiry not found'
+      });
+    }
+
+    // Update the inquiry properties
+    Object.assign(inquiry, updateData);
+    
+    // Save the inquiry (this will trigger pre-save middleware including limit validation)
+    await inquiry.save();
+    
+    // Populate the saved inquiry for response
+    await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
       { path: 'surgicalProcedure', select: 'name code amount currency' },
@@ -195,13 +208,6 @@ router.put('/:id', async (req, res) => {
       { path: 'createdBy', select: 'name email' },
       { path: 'updatedBy', select: 'name email' }
     ]);
-
-    if (!inquiry) {
-      return res.status(404).json({
-        success: false,
-        message: 'Inquiry not found'
-      });
-    }
 
     res.json({
       success: true,

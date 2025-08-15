@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Inquiry INCS10000006</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Inquiry INCS10000006 - Limit Validation Issue</h1>
+    
+    <div class="section">
+        <h3>Step 1: Retrieve Inquiry Details</h3>
+        <button onclick="getInquiryDetails()">Get Inquiry INCS10000006 Details</button>
+        <div id="inquiryDetailsResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Limit Validation on This Inquiry</h3>
+        <button onclick="testLimitValidation()" id="testBtn" disabled>Test Limit Validation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        let inquiryData = null;
+        const baseURL = 'http://localhost:5000/api';
+
+        async function getInquiryDetails() {
+            const resultDiv = document.getElementById('inquiryDetailsResult');
+            resultDiv.innerHTML = '<p>Loading inquiry details...</p>';
+            
+            try {
+                // First, get all inquiries to find the one with INCS10000006
+                const response = await fetch(`${baseURL}/inquiry?search=INCS10000006`);
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    inquiryData = data.data[0];
+                    
+                    // Calculate totals manually to verify
+                    let calculatedTotal = 0;
+                    if (inquiryData.items) {
+                        inquiryData.items.forEach(item => {
+                            const baseAmount = item.unitRate * item.quantity;
+                            const gstAmount = (baseAmount * item.gstPercentage) / 100;
+                            const discountAmount = item.discountAmount || ((baseAmount * (item.discountPercentage || 0)) / 100);
+                            const itemTotal = baseAmount + gstAmount - discountAmount;
+                            calculatedTotal += itemTotal;
+                        });
+                    }
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📋 Inquiry Details: ${inquiryData.inquiryNumber}</h4>
+                            <p><strong>Patient:</strong> ${inquiryData.patientName} (${inquiryData.patientUHID})</p>
+                            <p><strong>Hospital:</strong> ${inquiryData.hospital?.shortName || inquiryData.hospital}</p>
+                            <p><strong>Created:</strong> ${new Date(inquiryData.createdAt).toLocaleString()}</p>
+                            <p><strong>Updated:</strong> ${new Date(inquiryData.updatedAt).toLocaleString()}</p>
+                        </div>
+                        
+                        <div class="debug-box">
+                            <h4>💰 Financial Details:</h4>
+                            <p><strong>Stored Total Amount:</strong> ${inquiryData.totalInquiryAmount} ${inquiryData.limit?.currency || 'INR'}</p>
+                            <p><strong>Manually Calculated Total:</strong> ${calculatedTotal.toFixed(2)} ${inquiryData.limit?.currency || 'INR'}</p>
+                            <p><strong>Set Limit:</strong> ${inquiryData.limit?.amount || 'No limit set'} ${inquiryData.limit?.currency || ''}</p>
+                            <p><strong>Exceeds Limit:</strong> ${inquiryData.limit?.amount ? 
+                                (inquiryData.totalInquiryAmount > inquiryData.limit.amount ? 
+                                    '🚨 YES - Should have been blocked!' : 
+                                    '✅ NO - Within limit') : 
+                                '⚠️ No limit to validate against'}</p>
+                        </div>
+                        
+                        <div class="debug-box">
+                            <h4>📦 Items Breakdown:</h4>
+                            <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Unit Rate</th>
+                                    <th>Qty</th>
+                                    <th>GST%</th>
+                                    <th>Discount</th>
+                                    <th>Stored Total</th>
+                                    <th>Calc Total</th>
+                                </tr>
+                                ${inquiryData.items ? inquiryData.items.map(item => {
+                                    const baseAmount = item.unitRate * item.quantity;
+                                    const gstAmount = (baseAmount * item.gstPercentage) / 100;
+                                    const discountAmount = item.discountAmount || ((baseAmount * (item.discountPercentage || 0)) / 100);
+                                    const itemTotal = baseAmount + gstAmount - discountAmount;
+                                    return `
+                                        <tr>
+                                            <td>${item.materialNumber}</td>
+                                            <td>${item.unitRate}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>${item.gstPercentage}%</td>
+                                            <td>${item.discountPercentage || 0}%</td>
+                                            <td>${item.totalAmount}</td>
+                                            <td>${itemTotal.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }).join('') : '<tr><td colspan="7">No items found</td></tr>'}
+                            </table>
+                        </div>
+                        
+                        ${inquiryData.limit?.amount && inquiryData.totalInquiryAmount > inquiryData.limit.amount ? `
+                            <div class="warning-box">
+                                <h4>⚠️ VALIDATION ISSUE DETECTED!</h4>
+                                <p>This inquiry has a total of <strong>${inquiryData.totalInquiryAmount} ${inquiryData.limit.currency}</strong> 
+                                   which exceeds the limit of <strong>${inquiryData.limit.amount} ${inquiryData.limit.currency}</strong>, 
+                                   but it was still saved successfully.</p>
+                                <p><strong>This indicates the limit validation is not working properly!</strong></p>
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    document.getElementById('testBtn').disabled = false;
+                    
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Inquiry INCS10000006 not found</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error fetching inquiry: ${error.message}</div>`;
+            }
+        }
+
+        async function testLimitValidation() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Testing limit validation by updating this inquiry...</p>';
+            
+            if (!inquiryData) {
+                resultDiv.innerHTML = '<div class="error">❌ No inquiry data loaded</div>';
+                return;
+            }
+            
+            try {
+                // Try to update the inquiry with the same data to trigger validation
+                const updateData = {
+                    hospital: inquiryData.hospital._id || inquiryData.hospital,
+                    surgicalProcedure: inquiryData.surgicalProcedure?._id || inquiryData.surgicalProcedure,
+                    inquiryDate: inquiryData.inquiryDate,
+                    patientName: inquiryData.patientName,
+                    patientUHID: inquiryData.patientUHID,
+                    patientAge: inquiryData.patientAge,
+                    patientGender: inquiryData.patientGender,
+                    paymentMethod: inquiryData.paymentMethod._id || inquiryData.paymentMethod,
+                    limit: inquiryData.limit,
+                    items: inquiryData.items.map(item => ({
+                        serialNumber: item.serialNumber,
+                        materialNumber: item.materialNumber,
+                        hsnCode: item.hsnCode,
+                        unitRate: item.unitRate,
+                        gstPercentage: item.gstPercentage,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        discountPercentage: item.discountPercentage || 0
+                    })),
+                    remarks: (inquiryData.remarks || '') + ' [TESTING LIMIT VALIDATION]'
+                };
+                
+                const response = await fetch(`${baseURL}/inquiry/${inquiryData._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="debug-box">
+                        <h4>🧪 Test Results:</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Success:</strong> ${responseData.success}</p>
+                        <p><strong>Message:</strong> "${responseData.message}"</p>
+                    </div>
+                    
+                    <div class="${response.ok ? 'warning-box' : 'debug-box'}">
+                        <h4>${response.ok ? '⚠️ VALIDATION NOT WORKING' : '✅ VALIDATION WORKING'}</h4>
+                        <p><strong>Expected Behavior:</strong> Since total (${inquiryData.totalInquiryAmount}) > limit (${inquiryData.limit?.amount}), 
+                           the update should fail with limit validation error.</p>
+                        <p><strong>Actual Behavior:</strong> ${response.ok ? 
+                            'Update succeeded - VALIDATION FAILED TO TRIGGER!' : 
+                            'Update failed - Validation working correctly'}</p>
+                    </div>
+                    
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                    
+                    <details>
+                        <summary>View Update Payload</summary>
+                        <pre>${JSON.stringify(updateData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

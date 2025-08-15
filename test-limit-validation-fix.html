@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Limit Validation Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .error-box {
+            background: #f8d7da;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Limit Validation Fix</h1>
+    
+    <div class="warning-box">
+        <h4>⚠️ What was the problem?</h4>
+        <p>The update route was using <code>findByIdAndUpdate()</code> which bypasses Mongoose pre-save middleware.</p>
+        <p>The limit validation middleware only runs on <code>.save()</code>, not on direct MongoDB updates.</p>
+    </div>
+    
+    <div class="success-box">
+        <h4>✅ The Fix</h4>
+        <p>Changed the update route to:</p>
+        <ol>
+            <li>Find the inquiry with <code>findById()</code></li>
+            <li>Update properties with <code>Object.assign()</code></li>
+            <li>Save with <code>.save()</code> - this triggers all pre-save middleware including limit validation</li>
+        </ol>
+    </div>
+    
+    <div class="section">
+        <h3>Test the Fix</h3>
+        <button onclick="testLimitValidation()" class="danger">Test Limit Validation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+
+        async function testLimitValidation() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Testing limit validation with real data...</p>';
+            
+            try {
+                // First, create a test inquiry
+                const testInquiry = {
+                    hospital: "68931d3fbbf0c2b8481c523f",
+                    surgicalProcedure: "689f212d4d81ac7dc8365db8",
+                    inquiryDate: new Date().toISOString(),
+                    patientName: "Test Limit Validation Patient",
+                    patientUHID: "TEST" + Date.now(),
+                    patientAge: 35,
+                    patientGender: "Male",
+                    paymentMethod: "68923d411749da61eef5370c",
+                    limit: {
+                        amount: 50000,
+                        currency: "INR"
+                    },
+                    items: [
+                        {
+                            serialNumber: 1,
+                            materialNumber: "1000001",
+                            hsnCode: "90211000",
+                            unitRate: 764,
+                            gstPercentage: 5,
+                            quantity: 100, // This should result in ~80,220 INR total, exceeding 50,000 limit
+                            unit: "NOS",
+                            discountPercentage: 0
+                        }
+                    ],
+                    remarks: "Test inquiry for limit validation"
+                };
+                
+                let html = `
+                    <div class="debug-box">
+                        <h4>📋 Step 1: Create Test Inquiry</h4>
+                        <p><strong>Expected Item Total:</strong> 764 × 100 + GST ≈ 80,220 INR</p>
+                        <p><strong>Set Limit:</strong> 50,000 INR</p>
+                        <p><strong>Should Exceed:</strong> ✅ YES</p>
+                    </div>
+                `;
+                
+                // Create the inquiry
+                const createResponse = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testInquiry)
+                });
+                
+                const createData = await createResponse.json();
+                
+                if (createResponse.ok && createData.success) {
+                    html += `
+                        <div class="error-box">
+                            <h4>❌ CREATE FAILED - Validation Not Working!</h4>
+                            <p>The inquiry was created despite exceeding the limit during creation.</p>
+                            <p><strong>Created ID:</strong> ${createData.data._id}</p>
+                            <p><strong>Total:</strong> ${createData.data.totalInquiryAmount} INR</p>
+                        </div>
+                    `;
+                } else if (createData.message && createData.message.includes('exceeds the limit')) {
+                    html += `
+                        <div class="success-box">
+                            <h4>✅ CREATE VALIDATION WORKING!</h4>
+                            <p>The inquiry was correctly rejected during creation for exceeding limit.</p>
+                            <p><strong>Message:</strong> "${createData.message}"</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="warning-box">
+                            <h4>❓ CREATE OTHER ERROR</h4>
+                            <p><strong>Error:</strong> "${createData.message}"</p>
+                        </div>
+                    `;
+                }
+                
+                // If creation succeeded, test update
+                if (createResponse.ok && createData.success) {
+                    const createdInquiry = createData.data;
+                    
+                    html += `
+                        <div class="debug-box">
+                            <h4>📋 Step 2: Test Update with Lower Limit</h4>
+                            <p>Since creation succeeded, now test updating with an even lower limit.</p>
+                        </div>
+                    `;
+                    
+                    // Try to update with an even lower limit
+                    const updatePayload = {
+                        ...createdInquiry,
+                        limit: {
+                            amount: 10000, // Very low limit - 10,000 INR
+                            currency: "INR"
+                        }
+                    };
+                    
+                    // Remove MongoDB specific fields
+                    delete updatePayload._id;
+                    delete updatePayload.__v;
+                    delete updatePayload.createdAt;
+                    delete updatePayload.updatedAt;
+                    delete updatePayload.id;
+                    
+                    const updateResponse = await fetch(`${baseURL}/inquiry/${createdInquiry._id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatePayload)
+                    });
+                    
+                    const updateData = await updateResponse.json();
+                    
+                    if (updateResponse.ok && updateData.success) {
+                        html += `
+                            <div class="error-box">
+                                <h4>❌ UPDATE FAILED - Validation Not Working!</h4>
+                                <p>The inquiry was updated despite exceeding the limit.</p>
+                                <p><strong>Updated Total:</strong> ${updateData.data.totalInquiryAmount} INR</p>
+                                <p><strong>New Limit:</strong> ${updateData.data.limit.amount} INR</p>
+                                <p><strong>Still over by:</strong> ${updateData.data.totalInquiryAmount - updateData.data.limit.amount} INR</p>
+                            </div>
+                        `;
+                    } else if (updateData.message && updateData.message.includes('exceeds the limit')) {
+                        html += `
+                            <div class="success-box">
+                                <h4>✅ UPDATE VALIDATION WORKING!</h4>
+                                <p>The inquiry update was correctly rejected for exceeding limit.</p>
+                                <p><strong>Message:</strong> "${updateData.message}"</p>
+                                <p><strong>🎉 The fix is working!</strong></p>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="warning-box">
+                                <h4>❓ UPDATE OTHER ERROR</h4>
+                                <p><strong>Error:</strong> "${updateData.message}"</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-box">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

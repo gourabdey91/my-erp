@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Data Limit Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real Data Limit Test</h1>
+    
+    <div class="section">
+        <h3>Step 1: Get Real Data</h3>
+        <button onclick="getRealData()">Load Real IDs</button>
+        <div id="realDataResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test with Real Data</h3>
+        <button onclick="testWithRealData()" id="testBtn" disabled class="danger">Test Limit Validation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        let realData = {};
+        const baseURL = 'http://localhost:5000/api';
+
+        async function getRealData() {
+            const resultDiv = document.getElementById('realDataResult');
+            resultDiv.innerHTML = '<p>Loading real data...</p>';
+            
+            try {
+                // Get hospitals
+                const hospitalsResponse = await fetch(`${baseURL}/hospital`);
+                const hospitalsData = await hospitalsResponse.json();
+                
+                // Get procedures  
+                const proceduresResponse = await fetch(`${baseURL}/procedures`);
+                const proceduresData = await proceduresResponse.json();
+                
+                // Get payment methods
+                const paymentMethodsResponse = await fetch(`${baseURL}/payment-method`);
+                const paymentMethodsData = await paymentMethodsResponse.json();
+                
+                // Get materials
+                const materialsResponse = await fetch(`${baseURL}/material`);
+                const materialsData = await materialsResponse.json();
+                
+                if (hospitalsData.success && proceduresData.success && paymentMethodsData.success && materialsData.success) {
+                    const hospitals = hospitalsData.data;
+                    const procedures = proceduresData.data;
+                    const paymentMethods = paymentMethodsData.data;
+                    const materials = materialsData.data;
+                    
+                    if (hospitals.length > 0 && procedures.length > 0 && paymentMethods.length > 0 && materials.length > 0) {
+                        // Find a procedure with surgical categories and a valid material
+                        const procedureWithCategories = procedures.find(p => p.items && p.items.length > 0);
+                        
+                        if (procedureWithCategories) {
+                            const procedureCategoryIds = procedureWithCategories.items.map(item => 
+                                item.surgicalCategoryId._id || item.surgicalCategoryId
+                            );
+                            
+                            const validMaterial = materials.find(m => 
+                                procedureCategoryIds.includes(m.surgicalCategory._id || m.surgicalCategory)
+                            );
+                            
+                            if (validMaterial) {
+                                realData = {
+                                    hospital: hospitals[0],
+                                    procedure: procedureWithCategories,
+                                    paymentMethod: paymentMethods[0],
+                                    material: validMaterial
+                                };
+                                
+                                let html = `
+                                    <div class="debug-box">
+                                        <h4>✅ Real Data Loaded Successfully</h4>
+                                        <p><strong>Hospital:</strong> ${realData.hospital.shortName} (${realData.hospital._id})</p>
+                                        <p><strong>Procedure:</strong> ${realData.procedure.name} (${realData.procedure._id})</p>
+                                        <p><strong>Payment Method:</strong> ${realData.paymentMethod.description} (${realData.paymentMethod._id})</p>
+                                        <p><strong>Material:</strong> ${realData.material.description} (${realData.material.materialNumber})</p>
+                                        <p><strong>Material Price:</strong> ${realData.material.institutionalPrice} ${realData.material.currency}</p>
+                                        <p><strong>GST:</strong> ${realData.material.gstPercentage}%</p>
+                                    </div>
+                                `;
+                                
+                                resultDiv.innerHTML = html;
+                                document.getElementById('testBtn').disabled = false;
+                                
+                            } else {
+                                resultDiv.innerHTML = '<div class="error">❌ No valid material found for procedure</div>';
+                            }
+                        } else {
+                            resultDiv.innerHTML = '<div class="error">❌ No procedures with categories found</div>';
+                        }
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ Insufficient data in database</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Failed to load data</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testWithRealData() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<p>Testing limit validation with real data...</p>';
+            
+            // Create inquiry that should exceed limit
+            const testInquiry = {
+                hospital: realData.hospital._id,
+                surgicalProcedure: realData.procedure._id,
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Limit Validation",
+                patientUHID: "LIMIT" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: realData.paymentMethod._id,
+                limit: {
+                    amount: 10, // Very low limit - 10 INR
+                    currency: "INR"
+                },
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: realData.material.materialNumber,
+                        hsnCode: realData.material.hsnCode,
+                        unitRate: realData.material.institutionalPrice, // Use real price
+                        gstPercentage: realData.material.gstPercentage,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Real data limit validation test"
+            };
+            
+            // Calculate expected total
+            const baseAmount = testInquiry.items[0].unitRate * testInquiry.items[0].quantity;
+            const gstAmount = (baseAmount * testInquiry.items[0].gstPercentage) / 100;
+            const expectedTotal = baseAmount + gstAmount;
+            
+            let html = `
+                <div class="debug-box">
+                    <h4>📊 Test Calculation:</h4>
+                    <p><strong>Item Cost:</strong> ${testInquiry.items[0].unitRate} × ${testInquiry.items[0].quantity} = ${baseAmount} INR</p>
+                    <p><strong>GST (${testInquiry.items[0].gstPercentage}%):</strong> ${gstAmount.toFixed(2)} INR</p>
+                    <p><strong>Expected Total:</strong> ${expectedTotal.toFixed(2)} INR</p>
+                    <p><strong>Set Limit:</strong> ${testInquiry.limit.amount} INR</p>
+                    <p><strong>Should Exceed:</strong> ${expectedTotal > testInquiry.limit.amount ? '✅ YES' : '❌ NO'}</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                html += `
+                    <div class="debug-box">
+                        <h4>🧪 Test Results:</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Success:</strong> ${responseData.success}</p>
+                        <p><strong>Message:</strong> "${responseData.message}"</p>
+                    </div>
+                    
+                    <div class="${response.ok ? 'warning-box' : (responseData.message && responseData.message.includes('exceeds the limit') ? 'debug-box' : 'warning-box')}">
+                        <h4>${response.ok ? '🚨 LIMIT VALIDATION FAILED!' : 
+                             (responseData.message && responseData.message.includes('exceeds the limit') ? '✅ LIMIT VALIDATION WORKING!' : '❓ OTHER ERROR')}</h4>
+                        
+                        ${response.ok ? `
+                            <p>❌ Inquiry was created despite exceeding limit!</p>
+                            <p><strong>Created ID:</strong> ${responseData.data._id}</p>
+                            <p><strong>Actual Total:</strong> ${responseData.data.totalInquiryAmount} INR</p>
+                            <p><strong>This indicates the limit validation middleware is not working properly.</strong></p>
+                        ` : responseData.message && responseData.message.includes('exceeds the limit') ? `
+                            <p>✅ Inquiry was correctly rejected for exceeding limit!</p>
+                            <p><strong>Validation Message:</strong> "${responseData.message}"</p>
+                            <p><strong>The limit validation is working correctly.</strong></p>
+                        ` : `
+                            <p>❓ Inquiry was rejected but with a different error:</p>
+                            <p><strong>Error:</strong> "${responseData.message}"</p>
+                            <p>This might be due to other validation issues (material validation, missing fields, etc.)</p>
+                        `}
+                    </div>
+                    
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                    
+                    <details>
+                        <summary>View Request Payload</summary>
+                        <pre>${JSON.stringify(testInquiry, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
