@@ -579,30 +579,6 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
               )}
 
               <div className="unified-form-grid">
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Valid From *</label>
-                  <input
-                    type="date"
-                    value={formData.validityFrom}
-                    onChange={(e) => setFormData({ ...formData, validityFrom: e.target.value })}
-                    required
-                    className="unified-search-input"
-                  />
-                </div>
-
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Valid To *</label>
-                  <input
-                    type="date"
-                    value={formData.validityTo}
-                    onChange={(e) => setFormData({ ...formData, validityTo: e.target.value })}
-                    required
-                    className="unified-search-input"
-                  />
-                </div>
-              </div>
-
-              <div className="unified-form-grid">
                 <div className="unified-form-field" style={{ gridColumn: '1 / -1' }}>
                   <label className="unified-form-label">Description</label>
                   <input
