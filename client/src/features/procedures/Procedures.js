@@ -31,10 +31,16 @@ const Procedures = () => {
   const [formData, setFormData] = useState({
     code: '',
     name: '',
-    categoryId: '',
     paymentTypeId: '',
-    amount: '',
-    currency: 'INR'
+    description: '',
+    // Items array for multiple surgical categories with limits
+    items: [
+      {
+        surgicalCategoryId: '',
+        limit: '',
+        currency: 'INR'
+      }
+    ]
   });
 
   const loadData = useCallback(async () => {
@@ -105,9 +111,19 @@ const Procedures = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Process items to ensure proper data types
+      const processedItems = formData.items.map(item => ({
+        surgicalCategoryId: item.surgicalCategoryId,
+        limit: parseFloat(item.limit) || 0,
+        currency: item.currency
+      })).filter(item => item.surgicalCategoryId && item.limit > 0); // Filter out empty items
+
       const procedureData = {
-        ...formData,
-        amount: parseFloat(formData.amount),
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        paymentTypeId: formData.paymentTypeId,
+        items: processedItems,
         createdBy: currentUser.id,
         updatedBy: currentUser.id
       };
@@ -124,10 +140,15 @@ const Procedures = () => {
       setFormData({
         code: '',
         name: '',
-        categoryId: '',
         paymentTypeId: '',
-        amount: '',
-        currency: 'INR'
+        description: '',
+        items: [
+          {
+            surgicalCategoryId: '',
+            limit: '',
+            currency: 'INR'
+          }
+        ]
       });
       setShowForm(false);
       setEditingProcedure(null);
@@ -143,10 +164,20 @@ const Procedures = () => {
     setFormData({
       code: procedure.code,
       name: procedure.name,
-      categoryId: procedure.categoryId._id,
+      description: procedure.description || '',
       paymentTypeId: procedure.paymentTypeId._id,
-      amount: procedure.amount.toString(),
-      currency: procedure.currency
+      // Convert procedure items to form items, or create default item if none exist
+      items: procedure.items && procedure.items.length > 0 
+        ? procedure.items.map(item => ({
+            surgicalCategoryId: item.surgicalCategoryId._id || item.surgicalCategoryId,
+            limit: item.limit.toString(),
+            currency: item.currency
+          }))
+        : [{
+            surgicalCategoryId: '',
+            limit: '',
+            currency: 'INR'
+          }]
     });
     setShowForm(true);
     scrollToTop();
@@ -174,14 +205,58 @@ const Procedures = () => {
     setFormData({
       code: '',
       name: '',
-      categoryId: '',
       paymentTypeId: '',
-      amount: '',
-      currency: 'INR'
+      description: '',
+      items: [
+        {
+          surgicalCategoryId: '',
+          limit: '',
+          currency: 'INR'
+        }
+      ]
     });
     setShowForm(false);
     setEditingProcedure(null);
     setError('');
+  };
+
+  // Function to add a new item line
+  const addItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, {
+        surgicalCategoryId: '',
+        limit: '',
+        currency: 'INR'
+      }]
+    }));
+  };
+
+  // Function to remove an item line
+  const removeItem = (index) => {
+    if (formData.items.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        items: prev.items.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  // Function to update an item field
+  const updateItem = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  // Function to calculate total limit from all items
+  const calculateTotalLimit = () => {
+    return formData.items.reduce((total, item) => {
+      return total + (parseFloat(item.limit) || 0);
+    }, 0);
   };
 
   const formatCurrency = (amount, currency = 'INR') => {
@@ -350,25 +425,6 @@ const Procedures = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Category *
-                </label>
-                <select
-                  value={formData.categoryId}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="unified-search-input"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {category.code} - {category.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
                   Payment Type *
                 </label>
                 <select
@@ -387,40 +443,116 @@ const Procedures = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Amount *
+            {/* Surgical Categories Line Items */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <label style={{ fontWeight: '500', color: 'var(--gray-700)', fontSize: '1.1rem' }}>
+                  Surgical Categories *
                 </label>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  required
-                  min="0"
-                  step="0.01"
-                  placeholder="Enter amount"
-                  className="unified-search-input"
-                />
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="unified-btn unified-btn-primary"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                >
+                  + Add Category
+                </button>
               </div>
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                  Currency *
-                </label>
-                <select
-                  value={formData.currency}
-                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  required
-                  className="unified-search-input"
-                >
-                  <option value="INR">INR - Indian Rupee</option>
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="GBP">GBP - British Pound</option>
-                  <option value="AUD">AUD - Australian Dollar</option>
-                  <option value="CAD">CAD - Canadian Dollar</option>
-                </select>
+              {formData.items.map((item, index) => (
+                <div key={index} style={{ 
+                  border: '1px solid var(--gray-300)', 
+                  borderRadius: '0.5rem', 
+                  padding: '1rem', 
+                  marginBottom: '1rem',
+                  backgroundColor: 'var(--gray-50)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ margin: 0, color: 'var(--gray-700)' }}>Category {index + 1}</h4>
+                    {formData.items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index)}
+                        className="unified-btn unified-btn-danger"
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                        Surgical Category *
+                      </label>
+                      <select
+                        value={item.surgicalCategoryId}
+                        onChange={(e) => updateItem(index, 'surgicalCategoryId', e.target.value)}
+                        required
+                        className="unified-search-input"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map((category) => (
+                          <option key={category._id} value={category._id}>
+                            {category.code} - {category.description}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                        Limit *
+                      </label>
+                      <input
+                        type="number"
+                        value={item.limit}
+                        onChange={(e) => updateItem(index, 'limit', e.target.value)}
+                        required
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter limit"
+                        className="unified-search-input"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                        Currency *
+                      </label>
+                      <select
+                        value={item.currency}
+                        onChange={(e) => updateItem(index, 'currency', e.target.value)}
+                        required
+                        className="unified-search-input"
+                      >
+                        <option value="INR">INR - Indian Rupee</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="AUD">AUD - Australian Dollar</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Total Limit Display */}
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '1rem', 
+                backgroundColor: 'var(--primary-50)', 
+                borderRadius: '0.5rem',
+                border: '1px solid var(--primary-200)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '600', color: 'var(--primary-700)' }}>Total Limit:</span>
+                  <span style={{ fontWeight: '700', color: 'var(--primary-800)', fontSize: '1.1rem' }}>
+                    ₹{calculateTotalLimit().toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -456,9 +588,9 @@ const Procedures = () => {
                     <tr>
                       <th>Code</th>
                       <th>Name</th>
-                      <th>Category</th>
+                      <th>Categories</th>
                       <th>Payment Type</th>
-                      <th>Amount</th>
+                      <th>Total Limit</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -472,11 +604,30 @@ const Procedures = () => {
                         <td>
                           <span className="name-text">{procedure.name}</span>
                         </td>
-                        <td>{procedure.categoryId?.code} - {procedure.categoryId?.description}</td>
+                        <td>
+                          <div style={{ maxWidth: '200px' }}>
+                            {procedure.items && procedure.items.length > 0 ? (
+                              procedure.items.map((item, index) => (
+                                <div key={index} style={{ 
+                                  fontSize: '0.85rem', 
+                                  marginBottom: index < procedure.items.length - 1 ? '0.25rem' : '0',
+                                  color: 'var(--gray-600)'
+                                }}>
+                                  {item.surgicalCategoryId?.code} - {item.surgicalCategoryId?.description}
+                                  <span style={{ color: 'var(--primary-600)', fontWeight: '500', marginLeft: '0.5rem' }}>
+                                    ({formatCurrency(item.limit, item.currency)})
+                                  </span>
+                                </div>
+                              ))
+                            ) : (
+                              <span style={{ color: 'var(--gray-400)', fontStyle: 'italic' }}>No categories</span>
+                            )}
+                          </div>
+                        </td>
                         <td>{procedure.paymentTypeId?.code} - {procedure.paymentTypeId?.description}</td>
                         <td>
-                          <span className="amount-text">
-                            {formatCurrency(procedure.amount, procedure.currency)}
+                          <span className="amount-text" style={{ fontWeight: '600', color: 'var(--primary-700)' }}>
+                            {formatCurrency(procedure.totalLimit || 0, 'INR')}
                           </span>
                         </td>
                         <td>
@@ -520,8 +671,8 @@ const Procedures = () => {
                     badge={procedure.code}
                     fields={[
                       { 
-                        label: 'Amount', 
-                        value: formatCurrency(procedure.amount, procedure.currency) 
+                        label: 'Total Limit', 
+                        value: formatCurrency(procedure.totalLimit || 0, 'INR') 
                       },
                       { 
                         label: 'Status', 
@@ -530,12 +681,17 @@ const Procedures = () => {
                     ]}
                     sections={[
                       {
+                        title: 'Categories',
+                        items: procedure.items && procedure.items.length > 0 ? 
+                          procedure.items.map((item, index) => ({
+                            label: `Category ${index + 1}`,
+                            value: `${item.surgicalCategoryId?.code} - ${item.surgicalCategoryId?.description} (${formatCurrency(item.limit, item.currency)})`
+                          })) : 
+                          [{ label: 'Categories', value: 'No categories assigned' }]
+                      },
+                      {
                         title: 'Details',
                         items: [
-                          {
-                            label: 'Category',
-                            value: `${procedure.categoryId?.code} - ${procedure.categoryId?.description}`
-                          },
                           {
                             label: 'Payment Type',
                             value: `${procedure.paymentTypeId?.code} - ${procedure.paymentTypeId?.description}`

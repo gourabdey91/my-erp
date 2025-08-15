@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+// Schema for procedure line items (multiple surgical categories)
+const procedureItemSchema = new mongoose.Schema({
+  surgicalCategoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category', // Reference to surgical category
+    required: true
+  },
+  limit: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  currency: {
+    type: String,
+    required: true,
+    default: 'INR',
+    enum: ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD']
+  }
+});
+
 const procedureSchema = new mongoose.Schema({
   code: {
     type: String,
@@ -21,27 +41,21 @@ const procedureSchema = new mongoose.Schema({
     trim: true,
     maxLength: 500
   },
-  categoryId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
-  },
+  // Removed categoryId - now handled at line item level
   paymentTypeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PaymentType',
     required: true
   },
-  amount: {
+  // Procedure items - multiple surgical categories with individual limits
+  items: [procedureItemSchema],
+  // Calculated total limit (sum of all line item limits)
+  totalLimit: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0
   },
-  currency: {
-    type: String,
-    required: true,
-    default: 'INR',
-    enum: ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD']
-  },
+  // Removed individual amount and currency - now calculated from items
   isActive: {
     type: Boolean,
     default: true
@@ -65,12 +79,33 @@ const procedureSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Pre-save middleware to calculate totalLimit from items
+procedureSchema.pre('save', function(next) {
+  // Calculate total limit as sum of all item limits
+  this.totalLimit = this.items.reduce((total, item) => {
+    return total + (item.limit || 0);
+  }, 0);
+  next();
+});
+
+// Pre-findOneAndUpdate middleware to calculate totalLimit from items
+procedureSchema.pre('findOneAndUpdate', function(next) {
+  const update = this.getUpdate();
+  if (update.items) {
+    const totalLimit = update.items.reduce((total, item) => {
+      return total + (item.limit || 0);
+    }, 0);
+    update.totalLimit = totalLimit;
+  }
+  next();
+});
+
 // Unique index on procedure code
 procedureSchema.index({ code: 1 }, { unique: true });
 
 // Index for efficient queries
 procedureSchema.index({ businessUnitId: 1, isActive: 1 });
-procedureSchema.index({ categoryId: 1, isActive: 1 });
+procedureSchema.index({ 'items.surgicalCategoryId': 1, isActive: 1 }); // Updated index for surgical categories
 procedureSchema.index({ paymentTypeId: 1, isActive: 1 });
 procedureSchema.index({ code: 1, isActive: 1 });
 
