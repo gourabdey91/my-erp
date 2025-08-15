@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hospital Procedure Filtering</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .hospital-selector { margin: 10px 0; }
+        select { padding: 8px; margin: 5px; }
+        .comparison { display: flex; gap: 20px; }
+        .comparison > div { flex: 1; }
+        .info-box {
+            background: #d1ecf1;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Hospital Procedure Filtering</h1>
+    
+    <div class="info-box">
+        <h4>📋 What This Tests:</h4>
+        <p><strong>Requirement:</strong> Procedures should only appear in dropdown if ALL surgical categories assigned to that procedure are also assigned to the selected hospital.</p>
+        <p><strong>Logic:</strong> For each procedure, check if every surgical category required by that procedure exists in the hospital's surgical categories.</p>
+    </div>
+    
+    <div class="section">
+        <h3>Step 1: Load Hospitals</h3>
+        <button onclick="loadHospitals()">Load All Hospitals</button>
+        <div id="hospitalsResult"></div>
+        
+        <div class="hospital-selector">
+            <label for="hospitalSelect">Select Hospital:</label>
+            <select id="hospitalSelect" disabled>
+                <option value="">Select a hospital...</option>
+            </select>
+            <button onclick="testProcedureFiltering()" id="testBtn" disabled>Test Procedure Filtering</button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Compare Results</h3>
+        <div id="comparisonResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+        let hospitals = [];
+
+        async function loadHospitals() {
+            const resultDiv = document.getElementById('hospitalsResult');
+            resultDiv.innerHTML = '<p>Loading hospitals...</p>';
+            
+            try {
+                const response = await fetch(`${baseURL}/hospital`);
+                const responseData = await response.json();
+                
+                if (responseData.success && responseData.data) {
+                    hospitals = responseData.data;
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>🏥 Found ${hospitals.length} Hospitals</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Short Name</th>
+                                        <th>Legal Name</th>
+                                        <th>Surgical Categories</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    // Populate hospital dropdown
+                    const select = document.getElementById('hospitalSelect');
+                    select.innerHTML = '<option value="">Select a hospital...</option>';
+                    
+                    hospitals.forEach(hospital => {
+                        const categoryCount = hospital.surgicalCategories ? hospital.surgicalCategories.length : 0;
+                        html += `
+                            <tr>
+                                <td>${hospital.shortName}</td>
+                                <td>${hospital.legalName}</td>
+                                <td>${categoryCount} categories</td>
+                            </tr>
+                        `;
+                        
+                        // Add to dropdown
+                        const option = document.createElement('option');
+                        option.value = hospital._id;
+                        option.textContent = `${hospital.shortName} (${categoryCount} categories)`;
+                        select.appendChild(option);
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    document.getElementById('hospitalSelect').disabled = false;
+                    
+                    // Enable test button when hospital is selected
+                    select.addEventListener('change', function() {
+                        document.getElementById('testBtn').disabled = !this.value;
+                    });
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load hospitals: ${responseData.message}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testProcedureFiltering() {
+            const hospitalId = document.getElementById('hospitalSelect').value;
+            const resultDiv = document.getElementById('comparisonResult');
+            
+            if (!hospitalId) {
+                alert('Please select a hospital first');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Testing procedure filtering...</p>';
+            
+            try {
+                // Get all procedures (unfiltered)
+                const allProceduresResponse = await fetch(`${baseURL}/procedures`);
+                const allProceduresData = await allProceduresResponse.json();
+                
+                // Get filtered procedures for the hospital
+                const filteredProceduresResponse = await fetch(`${baseURL}/procedures/hospital/${hospitalId}`);
+                const filteredProceduresData = await filteredProceduresResponse.json();
+                
+                if (allProceduresData.success && filteredProceduresData.success) {
+                    const allProcedures = allProceduresData.data;
+                    const filteredProcedures = filteredProceduresData.data;
+                    const hospitalInfo = filteredProceduresData.hospitalInfo;
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>🏥 Hospital: ${hospitalInfo.name}</h4>
+                            <p><strong>Available Surgical Categories:</strong> ${hospitalInfo.availableCategories}</p>
+                            <p><strong>Total Procedures in System:</strong> ${hospitalInfo.totalProcedures}</p>
+                            <p><strong>Available Procedures for Hospital:</strong> ${hospitalInfo.availableProcedures}</p>
+                            <p><strong>Filtering Efficiency:</strong> ${((hospitalInfo.availableProcedures / hospitalInfo.totalProcedures) * 100).toFixed(1)}% procedures available</p>
+                        </div>
+                        
+                        <div class="comparison">
+                            <div>
+                                <h4>🔍 All Procedures (${allProcedures.length})</h4>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Name</th>
+                                            <th>Categories Required</th>
+                                            <th>Available?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    // Create a map of filtered procedure IDs for quick lookup
+                    const filteredProcedureIds = new Set(filteredProcedures.map(p => p._id));
+                    
+                    allProcedures.forEach(procedure => {
+                        const isAvailable = filteredProcedureIds.has(procedure._id);
+                        const categories = procedure.items.map(item => 
+                            item.surgicalCategoryId.description || item.surgicalCategoryId.code
+                        ).join(', ');
+                        
+                        html += `
+                            <tr style="${isAvailable ? 'background-color: #d4edda;' : 'background-color: #f8d7da;'}">
+                                <td>${procedure.code}</td>
+                                <td>${procedure.name}</td>
+                                <td>${categories}</td>
+                                <td>${isAvailable ? '✅ Yes' : '❌ No'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="debug-box">
+                            <h4>📊 Filtering Analysis</h4>
+                            <p><strong>Filtered OUT:</strong> ${allProcedures.length - filteredProcedures.length} procedures</p>
+                            <p><strong>Available FOR this hospital:</strong> ${filteredProcedures.length} procedures</p>
+                    `;
+                    
+                    // Show some examples of filtered out procedures
+                    const filteredOutProcedures = allProcedures.filter(p => !filteredProcedureIds.has(p._id));
+                    if (filteredOutProcedures.length > 0) {
+                        html += `
+                            <p><strong>Examples of filtered out procedures:</strong></p>
+                            <ul>
+                        `;
+                        filteredOutProcedures.slice(0, 3).forEach(procedure => {
+                            const categories = procedure.items.map(item => 
+                                item.surgicalCategoryId.description || item.surgicalCategoryId.code
+                            ).join(', ');
+                            html += `<li>${procedure.code} - ${procedure.name} (requires: ${categories})</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    
+                    html += `</div>`;
+                    
+                    resultDiv.innerHTML = html;
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load procedures</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

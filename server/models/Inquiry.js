@@ -285,10 +285,6 @@ inquirySchema.pre('save', async function(next) {
 
 // Pre-save hook for items to calculate totals and validate limit
 inquirySchema.pre('save', function(next) {
-  console.log('🔄 Pre-save middleware executing...');
-  console.log('📊 Current limit:', this.limit);
-  console.log('📊 Items count:', this.items ? this.items.length : 0);
-  
   // Calculate total for each item
   this.items.forEach(item => {
     // Call calculateTotal with default state codes (same state)
@@ -297,15 +293,10 @@ inquirySchema.pre('save', function(next) {
   
   // Calculate total inquiry amount
   this.totalInquiryAmount = this.calculateInquiryTotal();
-  console.log('📊 Calculated total:', this.totalInquiryAmount);
   
   // Validate total amount doesn't exceed limit (must be done after calculation)
   if (this.limit && this.limit.amount && this.totalInquiryAmount > this.limit.amount) {
-    console.log('❌ LIMIT EXCEEDED!');
-    console.log(`❌ Total: ${this.totalInquiryAmount}, Limit: ${this.limit.amount}`);
     return next(new Error(`Total inquiry amount (${this.totalInquiryAmount} ${this.limit.currency || 'INR'}) exceeds the limit (${this.limit.amount} ${this.limit.currency || 'INR'})`));
-  } else {
-    console.log('✅ Limit check passed or no limit set');
   }
   
   next();

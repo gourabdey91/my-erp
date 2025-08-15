@@ -56,6 +56,71 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get procedures available for a specific hospital
+// Only return procedures where ALL surgical categories are assigned to the hospital
+router.get('/hospital/:hospitalId', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    
+    // First get the hospital with its surgical categories
+    const Hospital = require('../models/Hospital');
+    const hospital = await Hospital.findById(hospitalId).populate('surgicalCategories');
+    
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
+    
+    // Get hospital's surgical category IDs
+    const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id.toString());
+    
+    // Get all active procedures with populated surgical categories
+    const allProcedures = await Procedure.find({ isActive: true })
+      .populate('paymentTypeId', 'code description')
+      .populate('items.surgicalCategoryId', 'code description')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .sort({ code: 1 });
+    
+    // Filter procedures where ALL surgical categories are available at the hospital
+    const availableProcedures = allProcedures.filter(procedure => {
+      // Get all surgical category IDs required by this procedure
+      const procedureCategoryIds = procedure.items.map(item => 
+        item.surgicalCategoryId._id.toString()
+      );
+      
+      // Check if ALL procedure categories are available at the hospital
+      const allCategoriesAvailable = procedureCategoryIds.every(categoryId => 
+        hospitalCategoryIds.includes(categoryId)
+      );
+      
+      return allCategoriesAvailable;
+    });
+
+    res.json({
+      success: true,
+      data: availableProcedures,
+      hospitalInfo: {
+        id: hospital._id,
+        name: hospital.shortName,
+        availableCategories: hospital.surgicalCategories.length,
+        totalProcedures: allProcedures.length,
+        availableProcedures: availableProcedures.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching procedures for hospital:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching procedures for hospital',
+      error: error.message
+    });
+  }
+});
+
 // Create new procedure
 router.post('/', async (req, res) => {
   try {
