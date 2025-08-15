@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Inquiry List Test - Updated</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background-color: #f8fafc;
+        }
+        
+        /* Updated responsive table styles */
+        .unified-table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: -1.5rem;
+            margin-top: 0;
+        }
+        
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .unified-table th,
+        .unified-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .unified-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .unified-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        /* Mobile responsive improvements */
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            
+            .unified-table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .unified-table {
+                min-width: 650px; /* Ensure table doesn't get too cramped */
+                font-size: 0.8rem;
+            }
+            
+            .unified-table th,
+            .unified-table td {
+                padding: 0.5rem 0.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .unified-table th,
+            .unified-table td {
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+            
+            /* Make specific columns more compact on very small screens */
+            .unified-table th:first-child,
+            .unified-table td:first-child {
+                min-width: 60px; /* Inquiry # column */
+            }
+            
+            .unified-table th:nth-child(6),
+            .unified-table td:nth-child(6) {
+                min-width: 80px; /* Total Amount column */
+            }
+        }
+        
+        .unified-code-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .unified-amount-text {
+            font-weight: 500;
+            color: #059669;
+        }
+        
+        .unified-status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .unified-status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .test-info {
+            background: #dbeafe;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #374151;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info" id="viewportInfo">
+        Viewport: <span id="width"></span>px
+    </div>
+    
+    <div class="test-info">
+        <strong>Mobile Inquiry List Test - Updated</strong><br>
+        ✅ Fixed: Table no longer hidden on mobile<br>
+        ✅ Enhanced: Better responsive design<br>
+        📱 Test: Resize browser window or use device tools
+    </div>
+    
+    <div class="unified-table-responsive">
+        <table class="unified-table">
+            <thead>
+                <tr>
+                    <th>Inquiry #</th>
+                    <th>Hospital</th>
+                    <th>Date</th>
+                    <th>Surgical Category</th>
+                    <th>Payment Method</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="unified-code-badge">INQ001</span></td>
+                    <td>Apollo Hospital</td>
+                    <td>2025-08-15</td>
+                    <td>Cardiology</td>
+                    <td>Insurance</td>
+                    <td><span class="unified-amount-text">₹1,50,000</span></td>
+                    <td><span class="unified-status-badge unified-status-active">Active</span></td>
+                    <td>✏️ 🗑️</td>
+                </tr>
+                <tr>
+                    <td><span class="unified-code-badge">INQ002</span></td>
+                    <td>Fortis Healthcare</td>
+                    <td>2025-08-14</td>
+                    <td>Orthopedics</td>
+                    <td>Cash</td>
+                    <td><span class="unified-amount-text">₹75,000</span></td>
+                    <td><span class="unified-status-badge unified-status-active">Active</span></td>
+                    <td>✏️ 🗑️</td>
+                </tr>
+                <tr>
+                    <td><span class="unified-code-badge">INQ003</span></td>
+                    <td>Max Super Speciality</td>
+                    <td>2025-08-13</td>
+                    <td>Neurology</td>
+                    <td>Corporate</td>
+                    <td><span class="unified-amount-text">₹2,25,000</span></td>
+                    <td><span class="unified-status-badge unified-status-active">Active</span></td>
+                    <td>✏️ 🗑️</td>
+                </tr>
+                <tr>
+                    <td><span class="unified-code-badge">INQ004</span></td>
+                    <td>AIIMS Delhi</td>
+                    <td>2025-08-12</td>
+                    <td>Gastroenterology</td>
+                    <td>Government</td>
+                    <td><span class="unified-amount-text">₹50,000</span></td>
+                    <td><span class="unified-status-badge unified-status-active">Active</span></td>
+                    <td>✏️ 🗑️</td>
+                </tr>
+                <tr>
+                    <td><span class="unified-code-badge">INQ005</span></td>
+                    <td>Manipal Hospital</td>
+                    <td>2025-08-11</td>
+                    <td>Pulmonology</td>
+                    <td>Insurance</td>
+                    <td><span class="unified-amount-text">₹1,25,000</span></td>
+                    <td><span class="unified-status-badge unified-status-active">Active</span></td>
+                    <td>✏️ 🗑️</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <script>
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            document.getElementById('width').textContent = width;
+            
+            // Log breakpoint info
+            if (width <= 480) {
+                console.log('Mobile breakpoint: ≤480px');
+            } else if (width <= 768) {
+                console.log('Tablet breakpoint: ≤768px');
+            } else {
+                console.log('Desktop breakpoint: >768px');
+            }
+        }
+        
+        // Update on load
+        updateViewportInfo();
+        
+        // Update on resize
+        window.addEventListener('resize', updateViewportInfo);
+    </script>
+</body>
+</html>

@@ -2615,14 +2615,26 @@ select.unified-input {
 
 /* Mobile responsive inquiry items */
 @media (max-width: 768px) {
-  /* Hide table on mobile */
+  /* Improve table display on mobile instead of hiding */
   .unified-table-responsive {
-    display: none !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
-  /* Show mobile cards */
+  .unified-table {
+    min-width: 600px; /* Minimum width to prevent cramping */
+    font-size: 0.8rem;
+  }
+  
+  .unified-table th,
+  .unified-table td {
+    padding: 0.5rem 0.25rem;
+    white-space: nowrap;
+  }
+  
+  /* Show mobile cards as fallback if needed */
   .unified-mobile-cards {
-    display: block !important;
+    display: none; /* Keep hidden unless specifically implemented */
   }
   
   /* Style mobile inquiry items summary */
