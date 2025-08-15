@@ -41,27 +41,27 @@ api.interceptors.response.use(
 export const inquiryAPI = {
   // Get all inquiries with filters and pagination
   getInquiries: (params = {}) => 
-    api.get('/inquiry', { params }).then(response => response.data),
+    api.get('/inquiries', { params }).then(response => response.data),
 
   // Get inquiry by ID
   getInquiry: (id) => 
-    api.get(`/inquiry/${id}`).then(response => response.data),
+    api.get(`/inquiries/${id}`).then(response => response.data),
 
   // Create new inquiry
   createInquiry: (data) => 
-    api.post('/inquiry', data).then(response => response.data),
+    api.post('/inquiries', data).then(response => response.data),
 
   // Update inquiry
   updateInquiry: (id, data) => 
-    api.put(`/inquiry/${id}`, data).then(response => response.data),
+    api.put(`/inquiries/${id}`, data).then(response => response.data),
 
   // Delete inquiry (soft delete)
   deleteInquiry: (id) => 
-    api.delete(`/inquiry/${id}`).then(response => response.data),
+    api.delete(`/inquiries/${id}`).then(response => response.data),
 
   // Get surgical categories by hospital
   getSurgicalCategoriesByHospital: (hospitalId) =>
-    api.get(`/inquiry/hospital/${hospitalId}/surgical-categories`).then(response => response.data),
+    api.get(`/inquiries/hospital/${hospitalId}/surgical-categories`).then(response => response.data),
 
   // Get procedures filtered by hospital, category, and payment method
   getProceduresByHospital: (hospitalId, filters = {}) =>
@@ -74,7 +74,7 @@ export const inquiryAPI = {
 
   // Get inquiry statistics
   getInquiryStats: () =>
-    api.get('/inquiry/stats/overview').then(response => response.data)
+    api.get('/inquiries/stats/overview').then(response => response.data)
 };
 
 export default inquiryAPI;
