@@ -42,15 +42,29 @@ const doctorAssignmentSchema = new mongoose.Schema({
     type: Number,
     min: [0, 'Percentage cannot be negative'],
     max: [100, 'Percentage cannot exceed 100'],
-    required: function() {
-      return this.amountType === 'percentage' && !this.splitCategoryWise;
+    validate: {
+      validator: function(v) {
+        // Only required if amountType is percentage AND not using category-wise
+        if (this.amountType === 'percentage' && !this.splitCategoryWise) {
+          return v !== undefined && v !== null && v !== '';
+        }
+        return true; // Optional otherwise
+      },
+      message: 'Percentage is required when amount type is percentage and not using category-wise values'
     }
   },
   amount: {
     type: Number,
     min: [0, 'Amount cannot be negative'],
-    required: function() {
-      return this.amountType === 'amount' && !this.splitCategoryWise;
+    validate: {
+      validator: function(v) {
+        // Only required if amountType is amount AND not using category-wise
+        if (this.amountType === 'amount' && !this.splitCategoryWise) {
+          return v !== undefined && v !== null && v !== '';
+        }
+        return true; // Optional otherwise
+      },
+      message: 'Amount is required when amount type is amount and not using category-wise values'
     }
   },
   // Flag to indicate if values are maintained category-wise
@@ -74,15 +88,27 @@ const doctorAssignmentSchema = new mongoose.Schema({
       type: Number,
       min: [0, 'Percentage cannot be negative'],
       max: [100, 'Percentage cannot exceed 100'],
-      required: function() {
-        return this.amountType === 'percentage';
+      validate: {
+        validator: function(v) {
+          if (this.amountType === 'percentage') {
+            return v !== undefined && v !== null && v !== '';
+          }
+          return true;
+        },
+        message: 'Percentage is required when item amount type is percentage'
       }
     },
     amount: {
       type: Number,
       min: [0, 'Amount cannot be negative'],
-      required: function() {
-        return this.amountType === 'amount';
+      validate: {
+        validator: function(v) {
+          if (this.amountType === 'amount') {
+            return v !== undefined && v !== null && v !== '';
+          }
+          return true;
+        },
+        message: 'Amount is required when item amount type is amount'
       }
     }
   }],

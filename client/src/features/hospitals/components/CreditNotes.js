@@ -426,17 +426,20 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
 
               {/* Amount Type and Split Category Wise Section */}
               <div className="unified-form-grid">
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Amount Type *</label>
-                  <select
-                    value={formData.amountType}
-                    onChange={(e) => handleAmountTypeChange(e.target.value)}
-                    className="unified-search-input"
-                  >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="amount">Fixed Amount (₹)</option>
-                  </select>
-                </div>
+                {/* Only show Amount Type when NOT using category-wise */}
+                {!formData.splitCategoryWise && (
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Amount Type *</label>
+                    <select
+                      value={formData.amountType}
+                      onChange={(e) => handleAmountTypeChange(e.target.value)}
+                      className="unified-search-input"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="amount">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="unified-form-field" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
                   <input

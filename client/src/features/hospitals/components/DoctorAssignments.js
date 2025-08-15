@@ -156,10 +156,10 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
       const hasInvalidItems = formData.items.some(item => {
         if (item.amountType === 'percentage') {
           const percentage = parseFloat(item.percentage);
-          return !item.percentage || percentage < 0 || percentage > 100;
+          return !item.percentage || item.percentage === '' || percentage < 0 || percentage > 100;
         } else if (item.amountType === 'amount') {
           const amount = parseFloat(item.amount);
-          return !item.amount || amount < 0;
+          return !item.amount || item.amount === '' || amount < 0;
         }
         return true;
       });
@@ -169,16 +169,16 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
         return;
       }
     } else {
-      // Validate header-level values
+      // Validate header-level values (only when not using category-wise)
       if (formData.amountType === 'percentage') {
         const percentage = parseFloat(formData.percentage);
-        if (!formData.percentage || percentage < 0 || percentage > 100) {
+        if (!formData.percentage || formData.percentage === '' || percentage < 0 || percentage > 100) {
           setError('Please provide a valid percentage between 0 and 100');
           return;
         }
       } else if (formData.amountType === 'amount') {
         const amount = parseFloat(formData.amount);
-        if (!formData.amount || amount < 0) {
+        if (!formData.amount || formData.amount === '' || amount < 0) {
           setError('Please provide a valid amount');
           return;
         }
@@ -552,21 +552,21 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                 </div>
               </div>
 
-              {/* Amount Type and Value Section */}
-              <div className="unified-form-grid">
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Amount Type *</label>
-                  <select
-                    value={formData.amountType}
-                    onChange={(e) => handleAmountTypeChange(e.target.value)}
-                    className="unified-search-input"
-                  >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="amount">Fixed Amount (₹)</option>
-                  </select>
-                </div>
+              {/* Amount Type and Value Section - Hidden when splitCategoryWise is true */}
+              {!formData.splitCategoryWise && (
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Amount Type *</label>
+                    <select
+                      value={formData.amountType}
+                      onChange={(e) => handleAmountTypeChange(e.target.value)}
+                      className="unified-search-input"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="amount">Fixed Amount (₹)</option>
+                    </select>
+                  </div>
 
-                {!formData.splitCategoryWise && (
                   <div className="unified-form-field">
                     <label className="unified-form-label">
                       {formData.amountType === 'percentage' ? 'Percentage *' : 'Amount *'}
@@ -594,8 +594,8 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                       />
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Maintain Values Category Wise Checkbox */}
               <div className="unified-form-grid">
