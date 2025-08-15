@@ -315,11 +315,11 @@ router.get('/procedures/:hospitalId', async (req, res) => {
     
     // Filter by selected category (if specified)
     if (category && category !== '') {
-      procedureFilter.categoryId = category;
+      procedureFilter['items.surgicalCategoryId'] = category;
     } else {
-      // If no specific category, filter by hospital's categories
+      // If no specific category, filter by hospital's categories using new structure
       if (hospitalCategoryIds.length > 0) {
-        procedureFilter.categoryId = { $in: hospitalCategoryIds };
+        procedureFilter['items.surgicalCategoryId'] = { $in: hospitalCategoryIds };
       }
     }
     
@@ -332,9 +332,9 @@ router.get('/procedures/:hospitalId', async (req, res) => {
     
     // Fetch procedures with population
     const procedures = await Procedure.find(procedureFilter)
-      .populate('categoryId', 'code description')
+      .populate('items.surgicalCategoryId', 'code description')
       .populate('paymentTypeId', 'code description')
-      .select('_id code name amount currency')
+      .select('_id code name items paymentTypeId totalLimit')
       .sort({ name: 1 });
     
     console.log('Found procedures:', procedures.length);

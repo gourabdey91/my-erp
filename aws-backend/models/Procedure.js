@@ -70,7 +70,7 @@ procedureSchema.index({ code: 1 }, { unique: true });
 
 // Index for efficient queries
 procedureSchema.index({ businessUnitId: 1, isActive: 1 });
-procedureSchema.index({ categoryId: 1, isActive: 1 });
+procedureSchema.index({ 'items.surgicalCategoryId': 1, isActive: 1 }); // Updated index for surgical categories
 procedureSchema.index({ paymentTypeId: 1, isActive: 1 });
 procedureSchema.index({ code: 1, isActive: 1 });
 

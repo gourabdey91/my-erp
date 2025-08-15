@@ -350,7 +350,10 @@ router.get('/meta/dropdown-data', async (req, res) => {
         .select('shortName legalName stateCode discountAllowed customerIsHospital surgicalCategories'),
       Doctor.find({ isActive: true }).select('name specialization'),
       Category.find({ isActive: true }).select('code description'),
-      Procedure.find({ isActive: true }).populate('paymentTypeId', 'code description').select('name categoryId paymentTypeId'),
+      Procedure.find({ isActive: true })
+        .populate('items.surgicalCategoryId', 'code description')
+        .populate('paymentTypeId', 'code description')
+        .select('name items paymentTypeId totalLimit'),
       MaterialMaster.find({ isActive: true }).select('materialNumber description hsnCode unit institutionalPrice gstPercentage'),
       PaymentType.find({ isActive: true }).select('code description')
     ]);

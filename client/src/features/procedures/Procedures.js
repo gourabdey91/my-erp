@@ -77,7 +77,11 @@ const Procedures = () => {
     let filtered = procedures;
 
     if (filters.category) {
-      filtered = filtered.filter(procedure => procedure.categoryId?._id === filters.category);
+      filtered = filtered.filter(procedure => 
+        procedure.items && procedure.items.some(item => 
+          item.surgicalCategoryId?._id === filters.category
+        )
+      );
     }
 
     if (filters.paymentType) {

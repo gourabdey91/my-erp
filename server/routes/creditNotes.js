@@ -46,9 +46,9 @@ router.get('/options/:hospitalId', async (req, res) => {
     // Build procedure filter based on selected payment type and/or category
     const procedureFilter = { isActive: true };
     
-    // Always filter procedures by hospital's categories
+    // Always filter procedures by hospital's categories using the new items structure
     if (hospitalCategoryIds.length > 0) {
-      procedureFilter.categoryId = { $in: hospitalCategoryIds };
+      procedureFilter['items.surgicalCategoryId'] = { $in: hospitalCategoryIds };
     }
     
     // Apply additional filters if selected
@@ -56,7 +56,8 @@ router.get('/options/:hospitalId', async (req, res) => {
       procedureFilter.paymentTypeId = paymentType;
     }
     if (surgicalCategory && surgicalCategory !== '') {
-      procedureFilter.categoryId = surgicalCategory;
+      // Filter procedures that have this specific category in their items
+      procedureFilter['items.surgicalCategoryId'] = surgicalCategory;
     }
     
     const [paymentTypes, categories, procedures] = await Promise.all([
@@ -72,7 +73,11 @@ router.get('/options/:hospitalId', async (req, res) => {
       }).select('_id code description').sort({ description: 1 }),
 
       // Procedures filtered by payment type and/or category if selected
-      Procedure.find(procedureFilter).select('_id code name').sort({ name: 1 })
+      Procedure.find(procedureFilter)
+        .populate('items.surgicalCategoryId', 'code description')
+        .populate('paymentTypeId', 'code description')
+        .select('_id code name items paymentTypeId totalLimit')
+        .sort({ name: 1 })
     ]);
 
     console.log('Fetching options for hospital:', hospitalId);
