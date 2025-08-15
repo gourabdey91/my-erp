@@ -102,10 +102,10 @@ router.post('/', async (req, res) => {
     }
 
     // Validate procedure code format
-    if (!/^[A-Z]{3}\d{3}$/.test(code)) {
+    if (!/^P\d{5}$/.test(code)) {
       return res.status(400).json({
         success: false,
-        message: 'Procedure code must be in format: ABC123 (3 letters + 3 digits)'
+        message: 'Procedure code must be in format: P##### (P followed by 5 digits)'
       });
     }
 

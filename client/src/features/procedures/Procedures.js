@@ -447,39 +447,23 @@ const Procedures = () => {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
                   Procedure Code * {!editingProcedure && '(Auto-generated)'}
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    required
-                    maxLength="6"
-                    placeholder="P00001"
-                    readOnly={!editingProcedure}
-                    className="unified-search-input"
-                    style={{ 
-                      textTransform: 'uppercase',
-                      backgroundColor: !editingProcedure ? '#f8f9fa' : 'white',
-                      cursor: !editingProcedure ? 'default' : 'text'
-                    }}
-                  />
-                  {!editingProcedure && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextCode = generateNextCode();
-                        setFormData(prev => ({ ...prev, code: nextCode }));
-                      }}
-                      className="unified-btn unified-btn-secondary"
-                      style={{ padding: '0.5rem', fontSize: '0.875rem', whiteSpace: 'nowrap' }}
-                      title="Generate new code"
-                    >
-                      🔄
-                    </button>
-                  )}
-                </div>
+                <input
+                  type="text"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  required
+                  maxLength="6"
+                  placeholder="P00001"
+                  readOnly={!editingProcedure}
+                  className="unified-search-input"
+                  style={{ 
+                    textTransform: 'uppercase',
+                    backgroundColor: !editingProcedure ? '#f8f9fa' : 'white',
+                    cursor: !editingProcedure ? 'default' : 'text'
+                  }}
+                />
                 <small style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                  {editingProcedure ? 'Format: 3 letters + 3 digits (e.g., CRA001)' : 'Auto-generated format: P##### (e.g., P00001)'}
+                  {editingProcedure ? 'Format: P##### (e.g., P00001)' : 'Auto-generated format: P##### (e.g., P00001)'}
                 </small>
               </div>
 
