@@ -296,6 +296,14 @@ inquirySchema.pre('save', function(next) {
   next();
 });
 
+// Pre-save middleware to validate total amount doesn't exceed limit
+inquirySchema.pre('save', function(next) {
+  if (this.limit && this.limit.amount && this.totalInquiryAmount > this.limit.amount) {
+    return next(new Error(`Total inquiry amount (${this.totalInquiryAmount} ${this.limit.currency}) exceeds the limit (${this.limit.amount} ${this.limit.currency})`));
+  }
+  next();
+});
+
 // Pre-save hook to generate inquiry number
 inquirySchema.pre('save', async function(next) {
   if (this.isNew && !this.inquiryNumber) {

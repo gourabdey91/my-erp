@@ -158,6 +158,15 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Handle limit validation errors
+    if (error.message && error.message.includes('exceeds the limit')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        error: 'Limit validation error'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: error.message || 'Error creating inquiry',
@@ -215,6 +224,15 @@ router.put('/:id', async (req, res) => {
         success: false,
         message: error.message,
         error: 'Material validation error'
+      });
+    }
+
+    // Handle limit validation errors
+    if (error.message && error.message.includes('exceeds the limit')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        error: 'Limit validation error'
       });
     }
 

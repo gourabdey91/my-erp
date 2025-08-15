@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Limit Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #218838; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .message-box { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .message-box.success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724;
+        }
+        .message-box.error { 
+            background-color: #f8d7da; 
+            border-color: #dc3545; 
+            color: #721c24;
+        }
+        .message-display {
+            background: #fff; 
+            padding: 15px; 
+            border: 2px solid #ccc; 
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #d73502;
+            font-weight: bold;
+        }
+        .calculation-box {
+            background: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Limit Validation</h1>
+    <p>This page tests that the total inquiry amount does not exceed the specified limit.</p>
+    
+    <div class="section">
+        <h3>Step 1: Get Test Data</h3>
+        <button onclick="getTestData()">Load Test Data</button>
+        <div id="testDataResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Valid Inquiry (Within Limit)</h3>
+        <p>Create an inquiry with total amount within the limit to ensure it passes validation.</p>
+        <button onclick="testValidInquiry()" class="success" id="validTestBtn" disabled>Test Valid Inquiry (Within Limit)</button>
+        <div id="validTestResult"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 3: Test Invalid Inquiry (Exceeds Limit)</h3>
+        <p>Create an inquiry with total amount exceeding the limit to test limit validation.</p>
+        <button onclick="testInvalidInquiry()" class="danger" id="invalidTestBtn" disabled>Test Invalid Inquiry (Exceeds Limit)</button>
+        <div id="invalidTestResult"></div>
+    </div>
+
+    <script>
+        let testData = {};
+        const baseURL = 'http://localhost:5000/api';
+
+        async function getTestData() {
+            const resultDiv = document.getElementById('testDataResult');
+            resultDiv.innerHTML = '<p>Loading test data...</p>';
+            
+            try {
+                // Get hospitals
+                const hospitalsResponse = await fetch(`${baseURL}/hospital`);
+                const hospitalsData = await hospitalsResponse.json();
+                
+                // Get procedures  
+                const proceduresResponse = await fetch(`${baseURL}/procedures`);
+                const proceduresData = await proceduresResponse.json();
+                
+                // Get payment methods
+                const paymentMethodsResponse = await fetch(`${baseURL}/payment-method`);
+                const paymentMethodsData = await paymentMethodsResponse.json();
+                
+                // Get materials
+                const materialsResponse = await fetch(`${baseURL}/material`);
+                const materialsData = await materialsResponse.json();
+                
+                if (hospitalsData.success && proceduresData.success && paymentMethodsData.success && materialsData.success) {
+                    const hospitals = hospitalsData.data;
+                    const procedures = proceduresData.data;
+                    const paymentMethods = paymentMethodsData.data;
+                    const materials = materialsData.data;
+                    
+                    if (hospitals.length > 0 && procedures.length > 0 && paymentMethods.length > 0 && materials.length > 0) {
+                        // Find a procedure with surgical categories
+                        const procedureWithCategories = procedures.find(p => p.items && p.items.length > 0);
+                        
+                        if (procedureWithCategories) {
+                            // Get materials that belong to this procedure's categories
+                            const procedureCategoryIds = procedureWithCategories.items.map(item => 
+                                item.surgicalCategoryId._id || item.surgicalCategoryId
+                            );
+                            
+                            const validMaterials = materials.filter(m => 
+                                procedureCategoryIds.includes(m.surgicalCategory._id || m.surgicalCategory)
+                            );
+                            
+                            if (validMaterials.length > 0) {
+                                testData = {
+                                    hospital: hospitals[0],
+                                    procedure: procedureWithCategories,
+                                    paymentMethod: paymentMethods[0],
+                                    material: validMaterials[0]
+                                };
+                                
+                                let html = `
+                                    <div class="success">
+                                        <h4>✅ Test Data Loaded Successfully</h4>
+                                        <p><strong>Hospital:</strong> ${testData.hospital.shortName} (${testData.hospital._id})</p>
+                                        <p><strong>Procedure:</strong> ${testData.procedure.name} (${testData.procedure.code})</p>
+                                        <p><strong>Payment Method:</strong> ${testData.paymentMethod.description} (${testData.paymentMethod._id})</p>
+                                        <p><strong>Material:</strong> ${testData.material.description} (${testData.material.materialNumber})</p>
+                                        <p><strong>Material Price:</strong> ${testData.material.institutionalPrice} ${testData.material.currency}</p>
+                                        <p><strong>GST:</strong> ${testData.material.gstPercentage}%</p>
+                                        
+                                        <div class="calculation-box">
+                                            <strong>Test Scenarios Will Use:</strong>
+                                            <ul>
+                                                <li><strong>Low Limit Test:</strong> Limit = 100 INR, Items total ≈ 50 INR (should pass)</li>
+                                                <li><strong>Exceed Limit Test:</strong> Limit = 100 INR, Items total ≈ 200 INR (should fail)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                resultDiv.innerHTML = html;
+                                document.getElementById('validTestBtn').disabled = false;
+                                document.getElementById('invalidTestBtn').disabled = false;
+                                
+                            } else {
+                                resultDiv.innerHTML = '<div class="error">❌ No valid materials found for the selected procedure</div>';
+                            }
+                        } else {
+                            resultDiv.innerHTML = '<div class="error">❌ No procedures with surgical categories found</div>';
+                        }
+                    } else {
+                        resultDiv.innerHTML = '<div class="error">❌ Insufficient test data in database</div>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Failed to load test data</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testValidInquiry() {
+            const resultDiv = document.getElementById('validTestResult');
+            resultDiv.innerHTML = '<p>Testing valid inquiry within limit...</p>';
+            
+            const validInquiry = {
+                hospital: testData.hospital._id,
+                surgicalProcedure: testData.procedure._id,
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient Valid",
+                patientUHID: "VALID" + Date.now(),
+                patientAge: 45,
+                patientGender: "Male",
+                paymentMethod: testData.paymentMethod._id,
+                limit: {
+                    amount: 200, // Set limit higher than expected total
+                    currency: "INR"
+                },
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: testData.material.materialNumber,
+                        hsnCode: testData.material.hsnCode,
+                        unitRate: 50, // Low price to stay within limit
+                        gstPercentage: testData.material.gstPercentage,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test inquiry within limit validation"
+            };
+            
+            // Calculate expected total
+            const baseAmount = validInquiry.items[0].unitRate * validInquiry.items[0].quantity;
+            const gstAmount = (baseAmount * validInquiry.items[0].gstPercentage) / 100;
+            const expectedTotal = baseAmount + gstAmount;
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(validInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="calculation-box">
+                        <h4>📊 Calculation Details:</h4>
+                        <p><strong>Item Cost:</strong> ${validInquiry.items[0].unitRate} × ${validInquiry.items[0].quantity} = ${baseAmount} INR</p>
+                        <p><strong>GST (${validInquiry.items[0].gstPercentage}%):</strong> ${gstAmount.toFixed(2)} INR</p>
+                        <p><strong>Expected Total:</strong> ${expectedTotal.toFixed(2)} INR</p>
+                        <p><strong>Set Limit:</strong> ${validInquiry.limit.amount} INR</p>
+                        <p><strong>Within Limit:</strong> ${expectedTotal <= validInquiry.limit.amount ? '✅ YES' : '❌ NO'}</p>
+                    </div>
+                    
+                    <div class="message-box ${response.ok ? 'success' : 'error'}">
+                        <h4>${response.ok ? '✅ SUCCESS: Valid inquiry created' : '❌ UNEXPECTED: Valid inquiry failed'}</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        ${response.ok ? 
+                            `<p><strong>Inquiry ID:</strong> ${responseData.data._id}</p>
+                             <p><strong>Total Amount:</strong> ${responseData.data.totalInquiryAmount} INR</p>
+                             <p>✅ Limit validation passed - total is within the specified limit</p>` :
+                            `<p><strong>Error Message:</strong></p>
+                             <div class="message-display">"${responseData.message}"</div>`
+                        }
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testInvalidInquiry() {
+            const resultDiv = document.getElementById('invalidTestResult');
+            resultDiv.innerHTML = '<p>Testing invalid inquiry exceeding limit...</p>';
+            
+            const invalidInquiry = {
+                hospital: testData.hospital._id,
+                surgicalProcedure: testData.procedure._id,
+                inquiryDate: new Date().toISOString(),
+                patientName: "Test Patient Invalid",
+                patientUHID: "INVALID" + Date.now(),
+                patientAge: 45,
+                patientGender: "Female",
+                paymentMethod: testData.paymentMethod._id,
+                limit: {
+                    amount: 100, // Set low limit
+                    currency: "INR"
+                },
+                items: [
+                    {
+                        serialNumber: 1,
+                        materialNumber: testData.material.materialNumber,
+                        hsnCode: testData.material.hsnCode,
+                        unitRate: 150, // High price to exceed limit
+                        gstPercentage: testData.material.gstPercentage,
+                        quantity: 1,
+                        unit: "PCS",
+                        discountPercentage: 0
+                    }
+                ],
+                remarks: "Test inquiry exceeding limit validation"
+            };
+            
+            // Calculate expected total
+            const baseAmount = invalidInquiry.items[0].unitRate * invalidInquiry.items[0].quantity;
+            const gstAmount = (baseAmount * invalidInquiry.items[0].gstPercentage) / 100;
+            const expectedTotal = baseAmount + gstAmount;
+            
+            try {
+                const response = await fetch(`${baseURL}/inquiry`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(invalidInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                let html = `
+                    <div class="calculation-box">
+                        <h4>📊 Calculation Details:</h4>
+                        <p><strong>Item Cost:</strong> ${invalidInquiry.items[0].unitRate} × ${invalidInquiry.items[0].quantity} = ${baseAmount} INR</p>
+                        <p><strong>GST (${invalidInquiry.items[0].gstPercentage}%):</strong> ${gstAmount.toFixed(2)} INR</p>
+                        <p><strong>Expected Total:</strong> ${expectedTotal.toFixed(2)} INR</p>
+                        <p><strong>Set Limit:</strong> ${invalidInquiry.limit.amount} INR</p>
+                        <p><strong>Exceeds Limit:</strong> ${expectedTotal > invalidInquiry.limit.amount ? '✅ YES (should be rejected)' : '❌ NO'}</p>
+                    </div>
+                    
+                    <div class="message-box ${!response.ok && responseData.message.includes('exceeds the limit') ? 'success' : 'error'}">
+                        <h4>${!response.ok && responseData.message.includes('exceeds the limit') ? '✅ SUCCESS: Invalid inquiry correctly rejected' : '❌ VALIDATION FAILURE'}</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        
+                        ${!response.ok ? 
+                            `<p><strong>Error Message:</strong></p>
+                             <div class="message-display">"${responseData.message}"</div>
+                             <p><strong>Analysis:</strong></p>
+                             <p style="color: ${responseData.message.includes('exceeds the limit') ? 'green' : 'red'};">
+                                 ${responseData.message.includes('exceeds the limit') ? 
+                                     '✅ CORRECT - Limit validation working properly' : 
+                                     '❌ WRONG ERROR - Should show limit exceeded message'}
+                             </p>` :
+                            `<p><strong>PROBLEM:</strong> This inquiry should have been rejected for exceeding the limit!</p>
+                             <p><strong>Actual Total:</strong> ${responseData.data.totalInquiryAmount} INR</p>`
+                        }
+                    </div>
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="message-box error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
