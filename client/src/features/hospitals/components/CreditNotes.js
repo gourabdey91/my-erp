@@ -369,7 +369,6 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   <select
                     value={formData.paymentType}
                     onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                    disabled={editingCreditNote} // Can't change payment type when editing
                     className="unified-search-input"
                   >
                     <option value="">All Payment Types</option>
@@ -386,7 +385,6 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   <select
                     value={formData.procedure}
                     onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
-                    disabled={editingCreditNote} // Can't change procedure when editing
                     className="unified-search-input"
                   >
                     <option value="">All Procedures</option>

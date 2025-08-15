@@ -73,15 +73,54 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
     }
   }, [hospital, fetchDoctorAssignments, fetchOptions]);
 
-  // Fetch filtered procedures when payment type or category changes
-  const handlePaymentTypeChange = (paymentTypeId) => {
-    setFormData({ ...formData, paymentType: paymentTypeId, procedure: '' }); // Clear procedure when payment type changes
-    fetchOptions(paymentTypeId, formData.surgicalCategory);
+  // Handle procedure selection and auto-populate surgical categories
+  const handleProcedureChange = (procedureId) => {
+    setFormData({ ...formData, procedure: procedureId });
+    
+    if (procedureId) {
+      // Find the selected procedure
+      const selectedProcedure = procedures.find(proc => proc._id === procedureId);
+      if (selectedProcedure && selectedProcedure.items && selectedProcedure.items.length > 0) {
+        // Auto-populate category-wise items if procedure has multiple categories
+        if (selectedProcedure.items.length > 1 && !formData.splitCategoryWise) {
+          // Auto-enable category-wise mode for procedures with multiple categories
+          const categoryItems = selectedProcedure.items.map(item => ({
+            surgicalCategory: item.surgicalCategoryId._id || item.surgicalCategoryId,
+            amountType: formData.amountType,
+            percentage: '',
+            amount: ''
+          }));
+          
+          setFormData(prev => ({
+            ...prev,
+            procedure: procedureId,
+            splitCategoryWise: true,
+            items: categoryItems
+          }));
+        } else {
+          // Single category - just set for filtering purposes
+          const firstCategoryId = selectedProcedure.items[0].surgicalCategoryId._id || selectedProcedure.items[0].surgicalCategoryId;
+          setFormData(prev => ({
+            ...prev,
+            procedure: procedureId,
+            surgicalCategory: firstCategoryId
+          }));
+        }
+      }
+    } else {
+      // Clear surgical category when procedure is cleared
+      setFormData(prev => ({
+        ...prev,
+        procedure: '',
+        surgicalCategory: ''
+      }));
+    }
   };
 
-  const handleCategoryChange = (categoryId) => {
-    setFormData({ ...formData, surgicalCategory: categoryId, procedure: '' }); // Clear procedure when category changes
-    fetchOptions(formData.paymentType, categoryId);
+  // Handle payment type change
+  const handlePaymentTypeChange = (paymentTypeId) => {
+    setFormData({ ...formData, paymentType: paymentTypeId, procedure: '', surgicalCategory: '' }); // Clear procedure and category when payment type changes
+    fetchOptions(paymentTypeId, '');
   };
 
   // Handle amount type change
@@ -456,7 +495,6 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   <select
                     value={formData.doctor}
                     onChange={(e) => setFormData({ ...formData, doctor: e.target.value })}
-                    disabled={editingAssignment} // Can't change doctor when editing
                     required
                     className="unified-search-input"
                   >
@@ -474,7 +512,6 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   <select
                     value={formData.expenseType}
                     onChange={(e) => setFormData({ ...formData, expenseType: e.target.value })}
-                    disabled={true} // Hardcoded to Clinical Charges
                     required
                     className="unified-search-input"
                   >
@@ -497,7 +534,6 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   <select
                     value={formData.paymentType}
                     onChange={(e) => handlePaymentTypeChange(e.target.value)}
-                    disabled={editingAssignment} // Can't change payment type when editing
                     className="unified-search-input"
                   >
                     <option value="">All Payment Types</option>
@@ -513,8 +549,7 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                   <label className="unified-form-label">Procedure (Optional)</label>
                   <select
                     value={formData.procedure}
-                    onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
-                    disabled={editingAssignment} // Can't change procedure when editing
+                    onChange={(e) => handleProcedureChange(e.target.value)}
                     className="unified-search-input"
                   >
                     <option value="">All Procedures</option>
