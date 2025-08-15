@@ -49,12 +49,23 @@ router.get('/options/:hospitalId', async (req, res) => {
     const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id ? cat._id : cat);
     const procedureFilter = { isActive: true };
     let categoryQuery = { isActive: true };
+    
+    // Filter categories to show only those assigned to the hospital
     if (hospitalCategoryIds.length > 0) {
       categoryQuery._id = { $in: hospitalCategoryIds };
-      procedureFilter.categoryId = { $in: hospitalCategoryIds };
+      // For procedures, filter by items.surgicalCategoryId instead of the deprecated categoryId
+      procedureFilter['items.surgicalCategoryId'] = { $in: hospitalCategoryIds };
     }
-    if (paymentType && paymentType !== '') procedureFilter.paymentTypeId = paymentType;
-    if (category && category !== '') procedureFilter.categoryId = category;
+    
+    // Additional filters based on user selection
+    if (paymentType && paymentType !== '') {
+      procedureFilter.paymentTypeId = paymentType;
+    }
+    
+    if (category && category !== '') {
+      // If a specific category is selected, filter procedures that have that category in their items
+      procedureFilter['items.surgicalCategoryId'] = category;
+    }
     
     console.log(`[ExpenseTypeAssignment Options] Executing queries...`);
     
@@ -66,7 +77,11 @@ router.get('/options/:hospitalId', async (req, res) => {
       }).select('_id code name').sort({ name: 1 }),
       PaymentType.find({ isActive: true }).select('_id code description').sort({ description: 1 }),
       Category.find(categoryQuery).select('_id code description').sort({ description: 1 }),
-      Procedure.find(procedureFilter).select('_id code name').sort({ name: 1 })
+      Procedure.find(procedureFilter)
+        .populate('items.surgicalCategoryId', 'code description')
+        .populate('paymentTypeId', 'code description')
+        .select('_id code name items paymentTypeId totalLimit')
+        .sort({ name: 1 })
     ]);
     
     console.log(`[ExpenseTypeAssignment Options] Results - ExpenseTypes: ${expenseTypes.length}, PaymentTypes: ${paymentTypes.length}, Categories: ${categories.length}, Procedures: ${procedures.length}`);
