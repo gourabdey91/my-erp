@@ -180,7 +180,7 @@ const MaterialSelector = ({
       // Load lengths for selected implant type
       try {
         const lengthResponse = await materialAPI.getLengthsByCriteria(hospitalId, { 
-          surgicalCategory: surgicalCategoryId, 
+          surgicalCategory: selectedSurgicalCategory, 
           implantType: value 
         });
         if (lengthResponse.success) {
