@@ -375,8 +375,8 @@
 
 .unified-input:disabled {
   background-color: var(--white) !important;
-  color: var(--gray-700);
-  cursor: default;
+  color: var(--gray-900);
+  cursor: pointer;
   border-color: var(--gray-300);
 }
 
@@ -388,17 +388,27 @@ select.unified-input {
 
 select.unified-input:disabled {
   background-color: var(--white) !important;
-  cursor: default;
+  cursor: pointer;
 }
 
-/* Updated: Ensure disabled select elements have better visual feedback but look more normal */
+/* Updated: Ensure normal appearance for all form fields */
 .unified-input:disabled,
 select.unified-input:disabled {
   background-color: var(--white) !important;
-  color: var(--gray-700) !important;
-  cursor: default;
+  color: var(--gray-900) !important;
+  cursor: pointer;
   border-color: var(--gray-300);
-  opacity: 0.8;
+  opacity: 1;
+}
+
+/* Ensure all form fields look enabled and interactive */
+.unified-input,
+select.unified-input {
+  background-color: var(--white) !important;
+  color: var(--gray-900) !important;
+  cursor: pointer;
+  border-color: var(--gray-300);
+  opacity: 1;
 }
 
 .unified-input.text-center {
