@@ -33,6 +33,8 @@ const Procedures = () => {
     name: '',
     paymentTypeId: '',
     description: '',
+    // Flag for individual category limit application
+    limitAppliedByIndividualCategory: false,
     // Items array for multiple surgical categories with limits
     items: [
       {
@@ -111,18 +113,30 @@ const Procedures = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Process items to ensure proper data types
-      const processedItems = formData.items.map(item => ({
-        surgicalCategoryId: item.surgicalCategoryId,
-        limit: parseFloat(item.limit) || 0,
-        currency: item.currency
-      })).filter(item => item.surgicalCategoryId && item.limit > 0); // Filter out empty items
+      // Process items to ensure proper data types (limit is now optional)
+      const processedItems = formData.items.map(item => {
+        const processedItem = {
+          surgicalCategoryId: item.surgicalCategoryId,
+          currency: item.currency
+        };
+        
+        // Only include limit if it's provided and valid
+        if (item.limit && item.limit.trim() !== '') {
+          const limitValue = parseFloat(item.limit);
+          if (!isNaN(limitValue) && limitValue >= 0) {
+            processedItem.limit = limitValue;
+          }
+        }
+        
+        return processedItem;
+      }).filter(item => item.surgicalCategoryId); // Filter out items without surgical category
 
       const procedureData = {
         code: formData.code,
         name: formData.name,
         description: formData.description,
         paymentTypeId: formData.paymentTypeId,
+        limitAppliedByIndividualCategory: formData.limitAppliedByIndividualCategory,
         items: processedItems,
         createdBy: currentUser.id,
         updatedBy: currentUser.id
@@ -142,6 +156,7 @@ const Procedures = () => {
         name: '',
         paymentTypeId: '',
         description: '',
+        limitAppliedByIndividualCategory: false,
         items: [
           {
             surgicalCategoryId: '',
@@ -166,11 +181,12 @@ const Procedures = () => {
       name: procedure.name,
       description: procedure.description || '',
       paymentTypeId: procedure.paymentTypeId._id,
+      limitAppliedByIndividualCategory: procedure.limitAppliedByIndividualCategory || false,
       // Convert procedure items to form items, or create default item if none exist
       items: procedure.items && procedure.items.length > 0 
         ? procedure.items.map(item => ({
             surgicalCategoryId: item.surgicalCategoryId._id || item.surgicalCategoryId,
-            limit: item.limit.toString(),
+            limit: item.limit ? item.limit.toString() : '',
             currency: item.currency
           }))
         : [{
@@ -207,6 +223,7 @@ const Procedures = () => {
       name: '',
       paymentTypeId: '',
       description: '',
+      limitAppliedByIndividualCategory: false,
       items: [
         {
           surgicalCategoryId: '',
@@ -443,6 +460,41 @@ const Procedures = () => {
               </div>
             </div>
 
+            {/* Limit Configuration */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem',
+                padding: '1rem',
+                backgroundColor: 'var(--gray-50)',
+                borderRadius: '0.5rem',
+                border: '1px solid var(--gray-200)'
+              }}>
+                <input
+                  type="checkbox"
+                  id="limitAppliedByIndividualCategory"
+                  checked={formData.limitAppliedByIndividualCategory}
+                  onChange={(e) => setFormData({ ...formData, limitAppliedByIndividualCategory: e.target.checked })}
+                  style={{ width: '16px', height: '16px' }}
+                />
+                <label 
+                  htmlFor="limitAppliedByIndividualCategory"
+                  style={{ 
+                    fontWeight: '500', 
+                    color: 'var(--gray-700)',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  Apply limits at individual category level
+                </label>
+              </div>
+              <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--gray-600)' }}>
+                When enabled, limits will be applied separately for each surgical category instead of a combined total.
+              </div>
+            </div>
+
             {/* Surgical Categories Line Items */}
             <div style={{ marginBottom: '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -503,16 +555,15 @@ const Procedures = () => {
 
                     <div>
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--gray-700)' }}>
-                        Limit *
+                        Limit (Optional)
                       </label>
                       <input
                         type="number"
                         value={item.limit}
                         onChange={(e) => updateItem(index, 'limit', e.target.value)}
-                        required
                         min="0"
                         step="0.01"
-                        placeholder="Enter limit"
+                        placeholder="Enter limit (optional)"
                         className="unified-search-input"
                       />
                     </div>
@@ -614,13 +665,25 @@ const Procedures = () => {
                                   color: 'var(--gray-600)'
                                 }}>
                                   {item.surgicalCategoryId?.code} - {item.surgicalCategoryId?.description}
-                                  <span style={{ color: 'var(--primary-600)', fontWeight: '500', marginLeft: '0.5rem' }}>
-                                    ({formatCurrency(item.limit, item.currency)})
-                                  </span>
+                                  {item.limit && (
+                                    <span style={{ color: 'var(--primary-600)', fontWeight: '500', marginLeft: '0.5rem' }}>
+                                      ({formatCurrency(item.limit, item.currency)})
+                                    </span>
+                                  )}
                                 </div>
                               ))
                             ) : (
                               <span style={{ color: 'var(--gray-400)', fontStyle: 'italic' }}>No categories</span>
+                            )}
+                            {procedure.limitAppliedByIndividualCategory && (
+                              <div style={{ 
+                                fontSize: '0.75rem', 
+                                color: 'var(--info-600)', 
+                                fontStyle: 'italic',
+                                marginTop: '0.25rem'
+                              }}>
+                                Individual category limits
+                              </div>
                             )}
                           </div>
                         </td>
@@ -685,7 +748,7 @@ const Procedures = () => {
                         items: procedure.items && procedure.items.length > 0 ? 
                           procedure.items.map((item, index) => ({
                             label: `Category ${index + 1}`,
-                            value: `${item.surgicalCategoryId?.code} - ${item.surgicalCategoryId?.description} (${formatCurrency(item.limit, item.currency)})`
+                            value: `${item.surgicalCategoryId?.code} - ${item.surgicalCategoryId?.description}${item.limit ? ` (${formatCurrency(item.limit, item.currency)})` : ''}`
                           })) : 
                           [{ label: 'Categories', value: 'No categories assigned' }]
                       },
@@ -695,7 +758,11 @@ const Procedures = () => {
                           {
                             label: 'Payment Type',
                             value: `${procedure.paymentTypeId?.code} - ${procedure.paymentTypeId?.description}`
-                          }
+                          },
+                          ...(procedure.limitAppliedByIndividualCategory ? [{
+                            label: 'Limit Application',
+                            value: 'Individual category limits'
+                          }] : [])
                         ]
                       }
                     ]}

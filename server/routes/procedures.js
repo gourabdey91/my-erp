@@ -63,7 +63,8 @@ router.post('/', async (req, res) => {
       code,
       name,
       items,
-      paymentTypeId, 
+      paymentTypeId,
+      limitAppliedByIndividualCategory,
       createdBy 
     } = req.body;
     
@@ -85,13 +86,14 @@ router.post('/', async (req, res) => {
     // Validate each item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (!item.surgicalCategoryId || !item.limit || !item.currency) {
+      if (!item.surgicalCategoryId || !item.currency) {
         return res.status(400).json({
           success: false,
-          message: `Item ${i + 1}: Surgical category, limit, and currency are required`
+          message: `Item ${i + 1}: Surgical category and currency are required`
         });
       }
-      if (item.limit < 0) {
+      // Limit is now optional, but if provided, must not be negative
+      if (item.limit !== undefined && item.limit !== null && item.limit < 0) {
         return res.status(400).json({
           success: false,
           message: `Item ${i + 1}: Limit cannot be negative`
@@ -125,6 +127,7 @@ router.post('/', async (req, res) => {
       name,
       items,
       paymentTypeId,
+      limitAppliedByIndividualCategory: limitAppliedByIndividualCategory || false,
       createdBy,
       updatedBy: createdBy
     });
@@ -167,7 +170,8 @@ router.put('/:id', async (req, res) => {
     const { 
       name,
       items,
-      paymentTypeId, 
+      paymentTypeId,
+      limitAppliedByIndividualCategory,
       updatedBy 
     } = req.body;
     
@@ -190,13 +194,14 @@ router.put('/:id', async (req, res) => {
       // Validate each item
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (!item.surgicalCategoryId || !item.limit || !item.currency) {
+        if (!item.surgicalCategoryId || !item.currency) {
           return res.status(400).json({
             success: false,
-            message: `Item ${i + 1}: Surgical category, limit, and currency are required`
+            message: `Item ${i + 1}: Surgical category and currency are required`
           });
         }
-        if (item.limit < 0) {
+        // Limit is now optional, but if provided, must not be negative
+        if (item.limit !== undefined && item.limit !== null && item.limit < 0) {
           return res.status(400).json({
             success: false,
             message: `Item ${i + 1}: Limit cannot be negative`
@@ -218,6 +223,9 @@ router.put('/:id', async (req, res) => {
     if (name) procedure.name = name;
     if (items) procedure.items = items;
     if (paymentTypeId) procedure.paymentTypeId = paymentTypeId;
+    if (limitAppliedByIndividualCategory !== undefined) {
+      procedure.limitAppliedByIndividualCategory = limitAppliedByIndividualCategory;
+    }
     procedure.updatedBy = updatedBy;
 
     await procedure.save();

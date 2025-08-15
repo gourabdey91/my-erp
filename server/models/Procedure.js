@@ -9,7 +9,7 @@ const procedureItemSchema = new mongoose.Schema({
   },
   limit: {
     type: Number,
-    required: true,
+    required: false, // Made optional - some categories may not have limits
     min: 0
   },
   currency: {
@@ -49,6 +49,11 @@ const procedureSchema = new mongoose.Schema({
   },
   // Procedure items - multiple surgical categories with individual limits
   items: [procedureItemSchema],
+  // Flag to indicate if limits are applied at individual category level
+  limitAppliedByIndividualCategory: {
+    type: Boolean,
+    default: false
+  },
   // Calculated total limit (sum of all line item limits)
   totalLimit: {
     type: Number,
