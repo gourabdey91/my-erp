@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Credit Note - Category-wise Split Testing</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f6fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            border: 1px solid #e1e8ed;
+        }
+        .form-section {
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .form-section.active {
+            border-color: #3498db;
+            background-color: #f8fbff;
+        }
+        .form-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-left: 10px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #3498db;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .items-container {
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .result-section {
+            margin: 20px 0;
+        }
+        .result {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid;
+        }
+        .result.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        .scenario-tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e8ed;
+            margin-bottom: 20px;
+        }
+        .scenario-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #7f8c8d;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .scenario-tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        .scenario-content {
+            display: none;
+        }
+        .scenario-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Enhanced Credit Note Testing</h1>
+        <p>Testing the new category-wise split functionality with percentage or amount support</p>
+    </div>
+
+    <div class="container">
+        <div class="scenario-tabs">
+            <button class="scenario-tab active" data-tab="simple">Simple Credit Note</button>
+            <button class="scenario-tab" data-tab="category-split">Category-wise Split</button>
+            <button class="scenario-tab" data-tab="automated">Automated Tests</button>
+        </div>
+
+        <!-- Simple Credit Note Tab -->
+        <div class="scenario-content active" data-tab="simple">
+            <div class="form-section active">
+                <h3>📄 Simple Credit Note (Header Level Only)</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="simple_hospital">Hospital:</label>
+                        <select id="simple_hospital">
+                            <option value="">Select Hospital...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="simple_paymentType">Payment Type:</label>
+                        <select id="simple_paymentType">
+                            <option value="">All Payment Types</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="simple_procedure">Procedure:</label>
+                        <select id="simple_procedure">
+                            <option value="">All Procedures</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount Type:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="simple_amount_type" value="percentage" checked> Percentage (%)</label>
+                        <label><input type="radio" name="simple_amount_type" value="amount"> Fixed Amount (₹)</label>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group" id="simple_percentage_group">
+                        <label for="simple_percentage">Percentage:</label>
+                        <input type="number" id="simple_percentage" step="0.01" min="0" max="100" placeholder="e.g., 15.50">
+                    </div>
+                    <div class="form-group" id="simple_amount_group" style="display: none;">
+                        <label for="simple_amount">Amount:</label>
+                        <input type="number" id="simple_amount" step="0.01" min="0" placeholder="e.g., 5000.00">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="simple_validityFrom">Validity From:</label>
+                        <input type="date" id="simple_validityFrom">
+                    </div>
+                    <div class="form-group">
+                        <label for="simple_validityTo">Validity To:</label>
+                        <input type="date" id="simple_validityTo">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="simple_description">Description:</label>
+                    <textarea id="simple_description" rows="3" placeholder="Optional description"></textarea>
+                </div>
+
+                <button class="btn btn-success" onclick="createSimpleCreditNote()">Create Simple Credit Note</button>
+            </div>
+        </div>
+
+        <!-- Category-wise Split Tab -->
+        <div class="scenario-content" data-tab="category-split">
+            <div class="form-section active">
+                <h3>📊 Category-wise Split Credit Note</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="split_hospital">Hospital:</label>
+                        <select id="split_hospital">
+                            <option value="">Select Hospital...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="split_paymentType">Payment Type:</label>
+                        <select id="split_paymentType">
+                            <option value="">All Payment Types</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="split_procedure">Procedure:</label>
+                        <select id="split_procedure">
+                            <option value="">All Procedures</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="split_validityFrom">Validity From:</label>
+                        <input type="date" id="split_validityFrom">
+                    </div>
+                    <div class="form-group">
+                        <label for="split_validityTo">Validity To:</label>
+                        <input type="date" id="split_validityTo">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="split_description">Description:</label>
+                    <textarea id="split_description" rows="2" placeholder="Optional description"></textarea>
+                </div>
+
+                <h4>Category-wise Items:</h4>
+                <div class="items-container" id="items-container">
+                    <p>Click "Add Category Item" to add categories with individual percentages/amounts</p>
+                </div>
+
+                <button class="btn btn-secondary" onclick="addCategoryItem()">Add Category Item</button>
+                <button class="btn btn-success" onclick="createCategorySplitCreditNote()">Create Category-wise Credit Note</button>
+            </div>
+        </div>
+
+        <!-- Automated Tests Tab -->
+        <div class="scenario-content" data-tab="automated">
+            <div class="form-section">
+                <h3>🤖 Automated Test Scenarios</h3>
+                <p>Run comprehensive tests to validate the new credit note structure</p>
+                
+                <div class="form-grid">
+                    <button class="btn btn-primary" onclick="runBasicTests()">Run Basic Tests</button>
+                    <button class="btn btn-primary" onclick="runCategorySplitTests()">Run Category Split Tests</button>
+                    <button class="btn btn-primary" onclick="runValidationTests()">Run Validation Tests</button>
+                    <button class="btn btn-danger" onclick="clearResults()">Clear Results</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Test Results</h2>
+        <div class="result-section" id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let options = { hospitals: [], paymentTypes: [], categories: [], procedures: [] };
+        let itemCounter = 0;
+
+        // Tab functionality
+        document.querySelectorAll('.scenario-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.scenario-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.scenario-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            });
+        });
+
+        // Radio button functionality for amount type
+        document.querySelectorAll('input[name="simple_amount_type"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const percentageGroup = document.getElementById('simple_percentage_group');
+                const amountGroup = document.getElementById('simple_amount_group');
+                
+                if (radio.value === 'percentage') {
+                    percentageGroup.style.display = 'block';
+                    amountGroup.style.display = 'none';
+                    document.getElementById('simple_amount').value = '';
+                } else {
+                    percentageGroup.style.display = 'none';
+                    amountGroup.style.display = 'block';
+                    document.getElementById('simple_percentage').value = '';
+                }
+            });
+        });
+
+        // Load dropdown options
+        async function loadOptions() {
+            try {
+                const [hospitalsRes, paymentTypesRes] = await Promise.all([
+                    fetch(`${API_BASE}/hospitals`),
+                    fetch(`${API_BASE}/paymentTypes`)
+                ]);
+
+                options.hospitals = await hospitalsRes.json();
+                options.paymentTypes = await paymentTypesRes.json();
+
+                // Populate hospital dropdowns
+                ['simple_hospital', 'split_hospital'].forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '<option value="">Select Hospital...</option>';
+                    options.hospitals.forEach(hospital => {
+                        const option = document.createElement('option');
+                        option.value = hospital._id;
+                        option.textContent = hospital.name;
+                        select.appendChild(option);
+                    });
+                });
+
+                // Populate payment type dropdowns
+                ['simple_paymentType', 'split_paymentType'].forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = '<option value="">All Payment Types</option>';
+                    options.paymentTypes.forEach(pt => {
+                        const option = document.createElement('option');
+                        option.value = pt._id;
+                        option.textContent = pt.description;
+                        select.appendChild(option);
+                    });
+                });
+
+                addResult('info', 'Options Loaded', 'Hospital and payment type options loaded successfully');
+            } catch (error) {
+                addResult('error', 'Loading Error', error.message);
+            }
+        }
+
+        // Load procedures and categories for a hospital
+        async function loadHospitalOptions(hospitalId, prefix) {
+            if (!hospitalId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes/options/${hospitalId}`);
+                const data = await response.json();
+
+                // Load procedures
+                const procedureSelect = document.getElementById(`${prefix}_procedure`);
+                procedureSelect.innerHTML = '<option value="">All Procedures</option>';
+                if (data.procedures) {
+                    data.procedures.forEach(proc => {
+                        const option = document.createElement('option');
+                        option.value = proc._id;
+                        option.textContent = proc.name;
+                        procedureSelect.appendChild(option);
+                    });
+                }
+
+                // Store categories for item creation
+                options.categories = data.categories || [];
+                
+            } catch (error) {
+                addResult('error', 'Hospital Options Error', error.message);
+            }
+        }
+
+        // Event listeners for hospital changes
+        document.getElementById('simple_hospital').addEventListener('change', (e) => {
+            loadHospitalOptions(e.target.value, 'simple');
+        });
+
+        document.getElementById('split_hospital').addEventListener('change', (e) => {
+            loadHospitalOptions(e.target.value, 'split');
+        });
+
+        // Add category item for split credit note
+        function addCategoryItem() {
+            if (options.categories.length === 0) {
+                addResult('error', 'No Categories', 'Please select a hospital first to load categories');
+                return;
+            }
+
+            const container = document.getElementById('items-container');
+            const itemRow = document.createElement('div');
+            itemRow.className = 'item-row';
+            itemRow.id = `item-${itemCounter}`;
+
+            itemRow.innerHTML = `
+                <div class="form-group">
+                    <label>Surgical Category:</label>
+                    <select class="item-category">
+                        <option value="">Select Category...</option>
+                        ${options.categories.map(cat => `<option value="${cat._id}">${cat.description}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Type:</label>
+                    <select class="item-type" onchange="toggleItemAmountType(${itemCounter})">
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="amount">Amount (₹)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Value:</label>
+                    <input type="number" class="item-percentage" step="0.01" min="0" max="100" placeholder="e.g., 15.50">
+                    <input type="number" class="item-amount" step="0.01" min="0" placeholder="e.g., 5000.00" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-danger" onclick="removeItem(${itemCounter})">Remove</button>
+                </div>
+            `;
+
+            container.appendChild(itemRow);
+            itemCounter++;
+
+            // Remove the placeholder text
+            const placeholder = container.querySelector('p');
+            if (placeholder) placeholder.style.display = 'none';
+        }
+
+        // Toggle between percentage and amount for item
+        function toggleItemAmountType(itemId) {
+            const row = document.getElementById(`item-${itemId}`);
+            const typeSelect = row.querySelector('.item-type');
+            const percentageInput = row.querySelector('.item-percentage');
+            const amountInput = row.querySelector('.item-amount');
+
+            if (typeSelect.value === 'percentage') {
+                percentageInput.style.display = 'block';
+                amountInput.style.display = 'none';
+                amountInput.value = '';
+            } else {
+                percentageInput.style.display = 'none';
+                amountInput.style.display = 'block';
+                percentageInput.value = '';
+            }
+        }
+
+        // Remove item
+        function removeItem(itemId) {
+            const item = document.getElementById(`item-${itemId}`);
+            item.remove();
+
+            // Show placeholder if no items left
+            const container = document.getElementById('items-container');
+            const items = container.querySelectorAll('.item-row');
+            if (items.length === 0) {
+                const placeholder = container.querySelector('p');
+                if (placeholder) placeholder.style.display = 'block';
+            }
+        }
+
+        // Create simple credit note
+        async function createSimpleCreditNote() {
+            const hospital = document.getElementById('simple_hospital').value;
+            const paymentType = document.getElementById('simple_paymentType').value;
+            const procedure = document.getElementById('simple_procedure').value;
+            const amountType = document.querySelector('input[name="simple_amount_type"]:checked').value;
+            const percentage = document.getElementById('simple_percentage').value;
+            const amount = document.getElementById('simple_amount').value;
+            const validityFrom = document.getElementById('simple_validityFrom').value;
+            const validityTo = document.getElementById('simple_validityTo').value;
+            const description = document.getElementById('simple_description').value;
+
+            if (!hospital || !validityFrom || !validityTo) {
+                addResult('error', 'Validation Error', 'Hospital and validity dates are required');
+                return;
+            }
+
+            if (amountType === 'percentage' && !percentage) {
+                addResult('error', 'Validation Error', 'Percentage is required');
+                return;
+            }
+
+            if (amountType === 'amount' && !amount) {
+                addResult('error', 'Validation Error', 'Amount is required');
+                return;
+            }
+
+            const data = {
+                hospital,
+                paymentType: paymentType || undefined,
+                procedure: procedure || undefined,
+                validityFrom,
+                validityTo,
+                description,
+                splitCategoryWise: false,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1' // Default business unit
+            };
+
+            if (amountType === 'percentage') {
+                data.percentage = parseFloat(percentage);
+            } else {
+                data.amount = parseFloat(amount);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addResult('success', 'Simple Credit Note Created', 
+                        `ID: ${result._id}\nPriority: ${result.priority}\n${amountType}: ${amountType === 'percentage' ? percentage + '%' : '₹' + amount}`);
+                } else {
+                    addResult('error', 'Creation Failed', result.message);
+                }
+            } catch (error) {
+                addResult('error', 'Network Error', error.message);
+            }
+        }
+
+        // Create category-wise split credit note
+        async function createCategorySplitCreditNote() {
+            const hospital = document.getElementById('split_hospital').value;
+            const paymentType = document.getElementById('split_paymentType').value;
+            const procedure = document.getElementById('split_procedure').value;
+            const validityFrom = document.getElementById('split_validityFrom').value;
+            const validityTo = document.getElementById('split_validityTo').value;
+            const description = document.getElementById('split_description').value;
+
+            if (!hospital || !validityFrom || !validityTo) {
+                addResult('error', 'Validation Error', 'Hospital and validity dates are required');
+                return;
+            }
+
+            // Collect items
+            const items = [];
+            const itemRows = document.querySelectorAll('.item-row');
+            
+            if (itemRows.length === 0) {
+                addResult('error', 'Validation Error', 'At least one category item is required');
+                return;
+            }
+
+            for (const row of itemRows) {
+                const category = row.querySelector('.item-category').value;
+                const type = row.querySelector('.item-type').value;
+                const percentageValue = row.querySelector('.item-percentage').value;
+                const amountValue = row.querySelector('.item-amount').value;
+
+                if (!category) {
+                    addResult('error', 'Validation Error', 'All items must have a surgical category selected');
+                    return;
+                }
+
+                const item = { surgicalCategory: category };
+
+                if (type === 'percentage') {
+                    if (!percentageValue) {
+                        addResult('error', 'Validation Error', 'All percentage items must have a value');
+                        return;
+                    }
+                    item.percentage = parseFloat(percentageValue);
+                } else {
+                    if (!amountValue) {
+                        addResult('error', 'Validation Error', 'All amount items must have a value');
+                        return;
+                    }
+                    item.amount = parseFloat(amountValue);
+                }
+
+                items.push(item);
+            }
+
+            const data = {
+                hospital,
+                paymentType: paymentType || undefined,
+                procedure: procedure || undefined,
+                validityFrom,
+                validityTo,
+                description,
+                splitCategoryWise: true,
+                items,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const itemsSummary = items.map(item => 
+                        `Category: ${options.categories.find(c => c._id === item.surgicalCategory)?.description || 'Unknown'}, ${item.percentage ? item.percentage + '%' : '₹' + item.amount}`
+                    ).join('\n');
+                    
+                    addResult('success', 'Category-wise Credit Note Created', 
+                        `ID: ${result._id}\nPriority: ${result.priority}\nItems:\n${itemsSummary}`);
+                } else {
+                    addResult('error', 'Creation Failed', result.message);
+                }
+            } catch (error) {
+                addResult('error', 'Network Error', error.message);
+            }
+        }
+
+        // Automated tests
+        async function runBasicTests() {
+            addResult('info', 'Running Basic Tests', 'Testing simple credit note creation with percentage and amount');
+
+            if (!options.hospitals.length || !options.paymentTypes.length) {
+                addResult('error', 'Test Setup Error', 'Please wait for options to load');
+                return;
+            }
+
+            const hospital = options.hospitals[0]._id;
+            const paymentType = options.paymentTypes[0]._id;
+            const today = new Date().toISOString().split('T')[0];
+            const nextYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            // Test 1: Simple percentage credit note
+            await testCreateCreditNote({
+                hospital,
+                paymentType,
+                percentage: 15.5,
+                validityFrom: today,
+                validityTo: nextYear,
+                description: 'Test percentage credit note',
+                splitCategoryWise: false,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1'
+            }, 'Basic Test 1: Percentage Credit Note');
+
+            // Test 2: Simple amount credit note
+            await testCreateCreditNote({
+                hospital,
+                paymentType,
+                amount: 5000.00,
+                validityFrom: today,
+                validityTo: nextYear,
+                description: 'Test amount credit note',
+                splitCategoryWise: false,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1'
+            }, 'Basic Test 2: Amount Credit Note');
+        }
+
+        async function runCategorySplitTests() {
+            addResult('info', 'Running Category Split Tests', 'Testing category-wise split functionality');
+            // Implementation would depend on having categories loaded
+            addResult('info', 'Category Split Tests', 'Please manually test using the Category-wise Split tab');
+        }
+
+        async function runValidationTests() {
+            addResult('info', 'Running Validation Tests', 'Testing various validation scenarios');
+
+            // Test invalid percentage
+            await testCreateCreditNote({
+                hospital: options.hospitals[0]._id,
+                percentage: 150, // Invalid
+                validityFrom: new Date().toISOString().split('T')[0],
+                validityTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                splitCategoryWise: false,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1'
+            }, 'Validation Test 1: Invalid Percentage (should fail)', true);
+
+            // Test missing required fields
+            await testCreateCreditNote({
+                percentage: 15.5,
+                // Missing hospital, dates, businessUnit
+                splitCategoryWise: false
+            }, 'Validation Test 2: Missing Required Fields (should fail)', true);
+        }
+
+        // Helper function for testing
+        async function testCreateCreditNote(data, testName, expectFailure = false) {
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && !expectFailure) {
+                    addResult('success', testName + ': PASSED', `Created credit note with ID: ${result._id}`);
+                } else if (!response.ok && expectFailure) {
+                    addResult('success', testName + ': PASSED', `Expected failure occurred: ${result.message}`);
+                } else if (response.ok && expectFailure) {
+                    addResult('error', testName + ': FAILED', 'Expected validation error but creation succeeded');
+                } else {
+                    addResult('error', testName + ': FAILED', result.message);
+                }
+            } catch (error) {
+                if (expectFailure) {
+                    addResult('success', testName + ': PASSED', `Expected error: ${error.message}`);
+                } else {
+                    addResult('error', testName + ': ERROR', error.message);
+                }
+            }
+        }
+
+        // Add result to display
+        function addResult(type, title, message) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <h4>${title}</h4>
+                <pre>${message}</pre>
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Set default dates
+        function setDefaultDates() {
+            const today = new Date();
+            const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+            
+            const todayStr = today.toISOString().split('T')[0];
+            const nextYearStr = nextYear.toISOString().split('T')[0];
+
+            ['simple_validityFrom', 'split_validityFrom'].forEach(id => {
+                document.getElementById(id).value = todayStr;
+            });
+
+            ['simple_validityTo', 'split_validityTo'].forEach(id => {
+                document.getElementById(id).value = nextYearStr;
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadOptions();
+            setDefaultDates();
+            addResult('info', 'Test Page Loaded', 'Ready to test enhanced credit note functionality');
+        });
+    </script>
+</body>
+</html>

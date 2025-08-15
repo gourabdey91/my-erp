@@ -17,11 +17,14 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
   const [editingCreditNote, setEditingCreditNote] = useState(null);
   const [formData, setFormData] = useState({
     paymentType: '',
-    surgicalCategory: '',
     procedure: '',
+    amountType: 'percentage', // 'percentage' or 'amount'
     percentage: '',
-    validityFrom: '',
-    validityTo: '',
+    amount: '',
+    splitCategoryWise: false,
+    items: [], // For category-wise items
+    validityFrom: '2025-01-01', // Default to first day of current year
+    validityTo: '9999-12-31', // Default to "31-Dec-9999" (never expires)
     description: ''
   });
 
@@ -60,15 +63,70 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
     }
   }, [hospital, fetchCreditNotes, fetchOptions]);
 
-  // Fetch filtered procedures when payment type or category changes
+  // Fetch filtered procedures when payment type changes
   const handlePaymentTypeChange = (paymentTypeId) => {
     setFormData({ ...formData, paymentType: paymentTypeId, procedure: '' }); // Clear procedure when payment type changes
-    fetchOptions(paymentTypeId, formData.surgicalCategory);
+    fetchOptions(paymentTypeId, '');
   };
 
-  const handleCategoryChange = (categoryId) => {
-    setFormData({ ...formData, surgicalCategory: categoryId, procedure: '' }); // Clear procedure when category changes
-    fetchOptions(formData.paymentType, categoryId);
+  // Handle amount type change (percentage vs amount)
+  const handleAmountTypeChange = (newAmountType) => {
+    setFormData({
+      ...formData,
+      amountType: newAmountType,
+      percentage: newAmountType === 'percentage' ? formData.percentage : '',
+      amount: newAmountType === 'amount' ? formData.amount : ''
+    });
+  };
+
+  // Handle split category wise toggle
+  const handleSplitCategoryWiseChange = (checked) => {
+    if (checked) {
+      // Initialize items with available categories
+      const initialItems = categories.map(category => ({
+        surgicalCategory: category._id,
+        categoryName: category.description,
+        amountType: formData.amountType,
+        percentage: formData.amountType === 'percentage' ? '' : undefined,
+        amount: formData.amountType === 'amount' ? '' : undefined
+      }));
+
+      setFormData({
+        ...formData,
+        splitCategoryWise: true,
+        items: initialItems,
+        percentage: '',
+        amount: ''
+      });
+    } else {
+      setFormData({
+        ...formData,
+        splitCategoryWise: false,
+        items: []
+      });
+    }
+  };
+
+  // Handle item value change
+  const handleItemValueChange = (index, field, value) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: value
+    };
+    setFormData({ ...formData, items: updatedItems });
+  };
+
+  // Handle item amount type change
+  const handleItemAmountTypeChange = (index, newAmountType) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      amountType: newAmountType,
+      percentage: newAmountType === 'percentage' ? updatedItems[index].percentage || '' : undefined,
+      amount: newAmountType === 'amount' ? updatedItems[index].amount || '' : undefined
+    };
+    setFormData({ ...formData, items: updatedItems });
   };
 
   const handleSubmit = async (e) => {
@@ -90,9 +148,8 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
       const creditNoteData = {
         hospital: hospital._id,
         paymentType: formData.paymentType || undefined,
-        surgicalCategory: formData.surgicalCategory || undefined,
         procedure: formData.procedure || undefined,
-        percentage: parseFloat(formData.percentage),
+        splitCategoryWise: formData.splitCategoryWise,
         validityFrom: formData.validityFrom,
         validityTo: formData.validityTo,
         description: formData.description,
@@ -100,14 +157,48 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
         createdBy: currentUser._id
       };
 
+      // Add percentage or amount based on split mode
+      if (formData.splitCategoryWise) {
+        // Category-wise items
+        creditNoteData.items = formData.items.map(item => ({
+          surgicalCategory: item.surgicalCategory,
+          percentage: item.amountType === 'percentage' ? parseFloat(item.percentage) : undefined,
+          amount: item.amountType === 'amount' ? parseFloat(item.amount) : undefined
+        })).filter(item => 
+          (item.percentage !== undefined && item.percentage !== '') || 
+          (item.amount !== undefined && item.amount !== '')
+        );
+      } else {
+        // Header level percentage or amount
+        if (formData.amountType === 'percentage') {
+          creditNoteData.percentage = parseFloat(formData.percentage);
+        } else {
+          creditNoteData.amount = parseFloat(formData.amount);
+        }
+      }
+
       if (editingCreditNote) {
-        await creditNoteAPI.updateCreditNote(editingCreditNote._id, {
-          percentage: creditNoteData.percentage,
+        const updateData = {
           validityFrom: creditNoteData.validityFrom,
           validityTo: creditNoteData.validityTo,
           description: creditNoteData.description,
+          splitCategoryWise: creditNoteData.splitCategoryWise,
           updatedBy: currentUser._id
-        });
+        };
+
+        // Add percentage/amount or items based on split mode
+        if (creditNoteData.splitCategoryWise) {
+          updateData.items = creditNoteData.items;
+        } else {
+          if (creditNoteData.percentage !== undefined) {
+            updateData.percentage = creditNoteData.percentage;
+          }
+          if (creditNoteData.amount !== undefined) {
+            updateData.amount = creditNoteData.amount;
+          }
+        }
+
+        await creditNoteAPI.updateCreditNote(editingCreditNote._id, updateData);
         setSuccess('Credit note updated successfully');
       } else {
         await creditNoteAPI.createCreditNote(creditNoteData);
@@ -125,20 +216,33 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
   const handleEdit = (creditNote) => {
     setEditingCreditNote(creditNote);
     const paymentTypeId = creditNote.paymentType?._id || '';
-    const categoryId = creditNote.surgicalCategory?._id || '';
+    
+    // Determine amount type and values
+    const hasHeaderPercentage = creditNote.percentage !== undefined && creditNote.percentage !== null;
+    const hasHeaderAmount = creditNote.amount !== undefined && creditNote.amount !== null;
+    const amountType = hasHeaderPercentage ? 'percentage' : 'amount';
     
     setFormData({
       paymentType: paymentTypeId,
-      surgicalCategory: categoryId,
       procedure: creditNote.procedure?._id || '',
-      percentage: creditNote.percentage.toString(),
+      amountType: amountType,
+      percentage: hasHeaderPercentage ? creditNote.percentage.toString() : '',
+      amount: hasHeaderAmount ? creditNote.amount.toString() : '',
+      splitCategoryWise: creditNote.splitCategoryWise || false,
+      items: creditNote.items ? creditNote.items.map(item => ({
+        surgicalCategory: item.surgicalCategory._id || item.surgicalCategory,
+        categoryName: item.surgicalCategory.description || 'Unknown Category',
+        amountType: item.percentage !== undefined ? 'percentage' : 'amount',
+        percentage: item.percentage !== undefined ? item.percentage.toString() : '',
+        amount: item.amount !== undefined ? item.amount.toString() : ''
+      })) : [],
       validityFrom: creditNote.validityFrom ? new Date(creditNote.validityFrom).toISOString().split('T')[0] : '',
       validityTo: creditNote.validityTo ? new Date(creditNote.validityTo).toISOString().split('T')[0] : '',
       description: creditNote.description || ''
     });
     
     // Fetch options with the current filters to populate procedures correctly
-    fetchOptions(paymentTypeId, categoryId);
+    fetchOptions(paymentTypeId, '');
     setShowForm(true);
   };
 
@@ -159,11 +263,14 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
   const resetForm = () => {
     setFormData({
       paymentType: '',
-      surgicalCategory: '',
       procedure: '',
+      amountType: 'percentage',
       percentage: '',
-      validityFrom: '',
-      validityTo: '',
+      amount: '',
+      splitCategoryWise: false,
+      items: [],
+      validityFrom: '2025-01-01', // Default to first day of current year
+      validityTo: '9999-12-31', // Default to "31-Dec-9999" (never expires)
       description: ''
     });
     setEditingCreditNote(null);
@@ -174,10 +281,6 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
 
   const getPaymentTypeName = (paymentType) => {
     return `${paymentType.code} - ${paymentType.description}`;
-  };
-
-  const getCategoryName = (category) => {
-    return `${category.code} - ${category.description}`;
   };
 
   const getProcedureName = (procedure) => {
@@ -191,8 +294,14 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
   const getApplicabilityText = (creditNote) => {
     const parts = [];
     if (creditNote.paymentType) parts.push(`Payment: ${creditNote.paymentType.code}`);
-    if (creditNote.surgicalCategory) parts.push(`Category: ${creditNote.surgicalCategory.code}`);
     if (creditNote.procedure) parts.push(`Procedure: ${creditNote.procedure.code}`);
+    
+    if (creditNote.splitCategoryWise && creditNote.items?.length > 0) {
+      const categoryNames = creditNote.items.map(item => 
+        item.surgicalCategory?.code || item.surgicalCategory
+      ).join(', ');
+      parts.push(`Categories: ${categoryNames}`);
+    }
     
     if (parts.length === 0) return 'All procedures (Default)';
     return parts.join(', ');
@@ -273,25 +382,6 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Category (Optional)</label>
-                  <select
-                    value={formData.surgicalCategory}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    disabled={editingCreditNote} // Can't change category when editing
-                    className="unified-search-input"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category._id} value={category._id}>
-                        {getCategoryName(category)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="unified-form-grid">
-                <div className="unified-form-field">
                   <label className="unified-form-label">Procedure (Optional)</label>
                   <select
                     value={formData.procedure}
@@ -307,21 +397,183 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Validity Dates Row */}
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Valid From *</label>
+                  <input
+                    type="date"
+                    value={formData.validityFrom}
+                    onChange={(e) => setFormData({ ...formData, validityFrom: e.target.value })}
+                    required
+                    className="unified-search-input"
+                  />
+                </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Percentage (%) *</label>
+                  <label className="unified-form-label">Valid To *</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.percentage}
-                    onChange={(e) => setFormData({ ...formData, percentage: e.target.value })}
+                    type="date"
+                    value={formData.validityTo}
+                    onChange={(e) => setFormData({ ...formData, validityTo: e.target.value })}
                     required
                     className="unified-search-input"
                   />
                 </div>
               </div>
+
+              {/* Amount Type and Split Category Wise Section */}
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Amount Type *</label>
+                  <select
+                    value={formData.amountType}
+                    onChange={(e) => handleAmountTypeChange(e.target.value)}
+                    className="unified-search-input"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="amount">Fixed Amount (₹)</option>
+                  </select>
+                </div>
+
+                <div className="unified-form-field" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+                  <input
+                    type="checkbox"
+                    id="splitCategoryWise"
+                    checked={formData.splitCategoryWise}
+                    onChange={(e) => handleSplitCategoryWiseChange(e.target.checked)}
+                    style={{ width: 'auto' }}
+                  />
+                  <label htmlFor="splitCategoryWise" className="unified-form-label" style={{ margin: 0 }}>
+                    Maintain values category wise
+                  </label>
+                </div>
+              </div>
+
+              {/* Header Level Amount Input (when not split category wise) */}
+              {!formData.splitCategoryWise && (
+                <div className="unified-form-grid">
+                  {formData.amountType === 'percentage' ? (
+                    <div className="unified-form-field">
+                      <label className="unified-form-label">Percentage (%) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.percentage}
+                        onChange={(e) => setFormData({ ...formData, percentage: e.target.value })}
+                        required
+                        className="unified-search-input"
+                        placeholder="e.g., 15.50"
+                      />
+                    </div>
+                  ) : (
+                    <div className="unified-form-field">
+                      <label className="unified-form-label">Amount (₹) *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        className="unified-search-input"
+                        placeholder="e.g., 5000.00"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Category-wise Items (when split category wise is enabled) */}
+              {formData.splitCategoryWise && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label className="unified-form-label" style={{ display: 'block', marginBottom: '1rem' }}>
+                    Category-wise Values *
+                  </label>
+                  
+                  {formData.items.length === 0 ? (
+                    <div style={{ 
+                      padding: '2rem', 
+                      textAlign: 'center', 
+                      border: '2px dashed var(--gray-300)', 
+                      borderRadius: 'var(--border-radius)',
+                      color: 'var(--gray-600)'
+                    }}>
+                      <p>Please select a hospital first to load categories, or no categories are available for this hospital.</p>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      border: '1px solid var(--gray-300)', 
+                      borderRadius: 'var(--border-radius)', 
+                      overflow: 'hidden' 
+                    }}>
+                      {formData.items.map((item, index) => (
+                        <div 
+                          key={index} 
+                          style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '2fr 1fr 2fr', 
+                            gap: '1rem', 
+                            padding: '1rem', 
+                            borderBottom: index < formData.items.length - 1 ? '1px solid var(--gray-200)' : 'none',
+                            alignItems: 'center',
+                            backgroundColor: index % 2 === 0 ? 'var(--gray-50)' : 'white'
+                          }}
+                        >
+                          <div>
+                            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--gray-700)' }}>
+                              {item.categoryName}
+                            </label>
+                          </div>
+                          
+                          <div>
+                            <select
+                              value={item.amountType}
+                              onChange={(e) => handleItemAmountTypeChange(index, e.target.value)}
+                              className="unified-search-input"
+                              style={{ fontSize: '0.875rem' }}
+                            >
+                              <option value="percentage">% </option>
+                              <option value="amount">₹</option>
+                            </select>
+                          </div>
+                          
+                          <div>
+                            {item.amountType === 'percentage' ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                value={item.percentage || ''}
+                                onChange={(e) => handleItemValueChange(index, 'percentage', e.target.value)}
+                                className="unified-search-input"
+                                placeholder="e.g., 15.50"
+                                style={{ fontSize: '0.875rem' }}
+                              />
+                            ) : (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.amount || ''}
+                                onChange={(e) => handleItemValueChange(index, 'amount', e.target.value)}
+                                className="unified-search-input"
+                                placeholder="e.g., 5000.00"
+                                style={{ fontSize: '0.875rem' }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="unified-form-grid">
                 <div className="unified-form-field">
@@ -387,7 +639,8 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                   <thead>
                     <tr>
                       <th>Applicability</th>
-                      <th>Percentage</th>
+                      <th>Value</th>
+                      <th>Type</th>
                       <th>Valid From</th>
                       <th>Valid To</th>
                       <th>Description</th>
@@ -398,7 +651,27 @@ const CreditNotes = ({ hospital, currentUser, onClose }) => {
                     {creditNotes.map(creditNote => (
                       <tr key={creditNote._id}>
                         <td data-label="Applicability">{getApplicabilityText(creditNote)}</td>
-                        <td data-label="Percentage">{creditNote.percentage}%</td>
+                        <td data-label="Value">
+                          {creditNote.splitCategoryWise ? (
+                            <div>
+                              {creditNote.items?.map((item, index) => (
+                                <div key={index} style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                                  <strong>{item.surgicalCategory?.description || 'Unknown'}:</strong>{' '}
+                                  {item.percentage !== undefined ? `${item.percentage}%` : `₹${item.amount || 0}`}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span>
+                              {creditNote.percentage !== undefined 
+                                ? `${creditNote.percentage}%` 
+                                : `₹${creditNote.amount || 0}`}
+                            </span>
+                          )}
+                        </td>
+                        <td data-label="Type">
+                          {creditNote.splitCategoryWise ? 'Category-wise' : 'Header Level'}
+                        </td>
                         <td data-label="Valid From">{formatDate(creditNote.validityFrom)}</td>
                         <td data-label="Valid To">{formatDate(creditNote.validityTo)}</td>
                         <td data-label="Description">{creditNote.description || '-'}</td>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Credit Note Creation - Multiple Records</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            background: #2196F3;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success { 
+            background-color: #d4edda; 
+            border-color: #c3e6cb; 
+            color: #155724; 
+        }
+        .error { 
+            background-color: #f8d7da; 
+            border-color: #f5c6cb; 
+            color: #721c24; 
+        }
+        .info { 
+            background-color: #d1ecf1; 
+            border-color: #bee5eb; 
+            color: #0c5460; 
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .test-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 Credit Note Creation Test - Multiple Records Fix</h1>
+        <p>Testing the ability to create multiple credit note records for the same hospital + payment type combination</p>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Scenario</h2>
+        <div class="test-section info">
+            <h3>📋 Test Objective</h3>
+            <p>Verify that we can now create multiple credit note records with:</p>
+            <ul>
+                <li>Same hospital + payment type</li>
+                <li>Different procedures or descriptions</li>
+                <li>Different validity periods</li>
+                <li>Different percentages</li>
+            </ul>
+            <p><strong>Expected Result:</strong> No duplicate key errors should occur</p>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Quick Test Form</h2>
+        <div class="form-group">
+            <label for="hospital">Hospital:</label>
+            <select id="hospital">
+                <option value="">Select Hospital...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="paymentType">Payment Type:</label>
+            <select id="paymentType">
+                <option value="">Select Payment Type...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="procedure">Procedure (Optional):</label>
+            <select id="procedure">
+                <option value="">All Procedures</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="percentage">Percentage:</label>
+            <input type="number" id="percentage" step="0.01" min="0" max="100" placeholder="e.g., 15.50">
+        </div>
+        <div class="form-group">
+            <label for="validityFrom">Validity From:</label>
+            <input type="date" id="validityFrom">
+        </div>
+        <div class="form-group">
+            <label for="validityTo">Validity To:</label>
+            <input type="date" id="validityTo">
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" placeholder="Optional description">
+        </div>
+        
+        <button onclick="createCreditNote()">Create Credit Note</button>
+        <button onclick="runAutomatedTests()">Run Automated Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let options = {};
+
+        // Load dropdown options
+        async function loadOptions() {
+            try {
+                // Load hospitals
+                const hospitalsResponse = await fetch(`${API_BASE}/hospitals`);
+                const hospitals = await hospitalsResponse.json();
+                const hospitalSelect = document.getElementById('hospital');
+                hospitals.forEach(hospital => {
+                    const option = document.createElement('option');
+                    option.value = hospital._id;
+                    option.textContent = hospital.name;
+                    hospitalSelect.appendChild(option);
+                });
+
+                // Load payment types
+                const paymentTypesResponse = await fetch(`${API_BASE}/paymentTypes`);
+                const paymentTypes = await paymentTypesResponse.json();
+                const paymentTypeSelect = document.getElementById('paymentType');
+                paymentTypes.forEach(pt => {
+                    const option = document.createElement('option');
+                    option.value = pt._id;
+                    option.textContent = pt.name;
+                    paymentTypeSelect.appendChild(option);
+                });
+
+                options.hospitals = hospitals;
+                options.paymentTypes = paymentTypes;
+
+            } catch (error) {
+                addResult('error', 'Failed to load dropdown options', error.message);
+            }
+        }
+
+        // Load procedures based on hospital selection
+        async function loadProcedures(hospitalId) {
+            if (!hospitalId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/expense-type-assignments/options/${hospitalId}`);
+                const data = await response.json();
+                
+                const procedureSelect = document.getElementById('procedure');
+                procedureSelect.innerHTML = '<option value="">All Procedures</option>';
+                
+                if (data.procedures) {
+                    data.procedures.forEach(proc => {
+                        const option = document.createElement('option');
+                        option.value = proc._id;
+                        option.textContent = proc.name;
+                        procedureSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                addResult('error', 'Failed to load procedures', error.message);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('hospital').addEventListener('change', (e) => {
+            loadProcedures(e.target.value);
+        });
+
+        // Set default dates
+        const today = new Date();
+        const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+        
+        document.getElementById('validityFrom').value = today.toISOString().split('T')[0];
+        document.getElementById('validityTo').value = oneYearFromNow.toISOString().split('T')[0];
+
+        // Create credit note
+        async function createCreditNote() {
+            const hospital = document.getElementById('hospital').value;
+            const paymentType = document.getElementById('paymentType').value;
+            const procedure = document.getElementById('procedure').value;
+            const percentage = parseFloat(document.getElementById('percentage').value);
+            const validityFrom = document.getElementById('validityFrom').value;
+            const validityTo = document.getElementById('validityTo').value;
+            const description = document.getElementById('description').value;
+
+            if (!hospital || !paymentType || !percentage || !validityFrom || !validityTo) {
+                addResult('error', 'Validation Error', 'Please fill in all required fields');
+                return;
+            }
+
+            const data = {
+                hospital,
+                paymentType,
+                percentage,
+                validityFrom,
+                validityTo,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1' // Default business unit
+            };
+
+            if (procedure) data.procedure = procedure;
+            if (description) data.description = description;
+
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addResult('success', 'Credit Note Created Successfully', `ID: ${result._id}, Priority: ${result.priority}`);
+                } else {
+                    addResult('error', 'Credit Note Creation Failed', result.message || JSON.stringify(result));
+                }
+            } catch (error) {
+                addResult('error', 'Network Error', error.message);
+            }
+        }
+
+        // Run automated tests
+        async function runAutomatedTests() {
+            if (!options.hospitals || !options.paymentTypes || 
+                options.hospitals.length === 0 || options.paymentTypes.length === 0) {
+                addResult('error', 'Setup Error', 'Please wait for options to load first');
+                return;
+            }
+
+            const hospital = options.hospitals[0]._id;
+            const paymentType = options.paymentTypes[0]._id;
+            const today = new Date();
+            const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+
+            addResult('info', 'Starting Automated Tests', 
+                `Hospital: ${options.hospitals[0].name}, Payment Type: ${options.paymentTypes[0].name}`);
+
+            // Test 1: Create first credit note
+            await testCreateCreditNote(hospital, paymentType, 15.0, 'First credit note - All procedures', 1);
+
+            // Test 2: Create second credit note (same hospital + payment type, different percentage)
+            await testCreateCreditNote(hospital, paymentType, 20.0, 'Second credit note - Higher percentage', 2);
+
+            // Test 3: Create third credit note (same hospital + payment type, different validity period)
+            const futureDate = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+            const twoYearsFromNow = new Date(today.getFullYear() + 2, today.getMonth(), today.getDate());
+            
+            await testCreateCreditNote(hospital, paymentType, 25.0, 'Third credit note - Future validity', 3, {
+                validityFrom: futureDate,
+                validityTo: twoYearsFromNow
+            });
+
+            addResult('success', 'Automated Tests Completed', 
+                'If all three credit notes were created successfully, the fix is working!');
+        }
+
+        // Helper function for automated tests
+        async function testCreateCreditNote(hospital, paymentType, percentage, description, testNumber, customDates = null) {
+            const today = new Date();
+            const oneYearFromNow = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+
+            const data = {
+                hospital,
+                paymentType,
+                percentage,
+                validityFrom: customDates?.validityFrom || today,
+                validityTo: customDates?.validityTo || oneYearFromNow,
+                description,
+                businessUnit: '669c6fe8c12c9c0f20a1b7e1'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/credit-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addResult('success', `Test ${testNumber}: PASSED`, 
+                        `Created credit note with ID: ${result._id}, Priority: ${result.priority}`);
+                } else {
+                    addResult('error', `Test ${testNumber}: FAILED`, 
+                        result.message || JSON.stringify(result));
+                }
+            } catch (error) {
+                addResult('error', `Test ${testNumber}: ERROR`, error.message);
+            }
+        }
+
+        // Add result to the display
+        function addResult(type, title, message) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-section ${type}`;
+            resultDiv.innerHTML = `
+                <h4>${title}</h4>
+                <pre>${message}</pre>
+                <small>Time: ${new Date().toLocaleTimeString()}</small>
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadOptions();
+            addResult('info', 'Test Page Loaded', 'Ready to test credit note creation with multiple records');
+        });
+    </script>
+</body>
+</html>

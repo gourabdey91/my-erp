@@ -16,8 +16,8 @@ router.get('/hospital/:hospitalId', async (req, res) => {
       isActive: true
     })
     .populate('paymentType', 'code description')
-    .populate('surgicalCategory', 'code description')
     .populate('procedure', 'code name')
+    .populate('items.surgicalCategory', 'code description')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ priority: -1, validityFrom: -1 }); // Sort by priority first, then by date
@@ -101,19 +101,95 @@ router.get('/options/:hospitalId', async (req, res) => {
 // Create new credit note
 router.post('/', async (req, res) => {
   try {
-    const { hospital, paymentType, surgicalCategory, procedure, percentage, validityFrom, validityTo, description, businessUnit, createdBy } = req.body;
+    const { 
+      hospital, 
+      paymentType, 
+      procedure, 
+      percentage, 
+      amount, 
+      splitCategoryWise, 
+      items, 
+      validityFrom, 
+      validityTo, 
+      description, 
+      businessUnit, 
+      createdBy 
+    } = req.body;
 
-    // Validation
-    if (!hospital || percentage === undefined || percentage === null || !validityFrom || !validityTo || !businessUnit || !createdBy) {
+    // Basic validation
+    if (!hospital || !validityFrom || !validityTo || !businessUnit || !createdBy) {
       return res.status(400).json({ 
-        message: 'Hospital, percentage, validity dates, business unit, and created by are required' 
+        message: 'Hospital, validity dates, business unit, and created by are required' 
       });
     }
 
-    if (percentage < 0 || percentage > 100) {
-      return res.status(400).json({ 
-        message: 'Percentage must be between 0 and 100' 
-      });
+    // Validate either percentage or amount at header level (if not split category wise)
+    if (!splitCategoryWise) {
+      if (percentage !== undefined && amount !== undefined) {
+        return res.status(400).json({ 
+          message: 'Cannot specify both percentage and amount at header level' 
+        });
+      }
+      if (percentage === undefined && amount === undefined) {
+        return res.status(400).json({ 
+          message: 'Either percentage or amount is required when not splitting category wise' 
+        });
+      }
+      
+      // Validate percentage range
+      if (percentage !== undefined && (percentage < 0 || percentage > 100)) {
+        return res.status(400).json({ 
+          message: 'Percentage must be between 0 and 100' 
+        });
+      }
+      
+      // Validate amount
+      if (amount !== undefined && amount < 0) {
+        return res.status(400).json({ 
+          message: 'Amount cannot be negative' 
+        });
+      }
+    }
+
+    // Validate items if split category wise
+    if (splitCategoryWise) {
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ 
+          message: 'Items are required when splitting category wise' 
+        });
+      }
+      
+      for (const item of items) {
+        if (!item.surgicalCategory) {
+          return res.status(400).json({ 
+            message: 'Surgical category is required for each item' 
+          });
+        }
+        
+        if (item.percentage !== undefined && item.amount !== undefined) {
+          return res.status(400).json({ 
+            message: 'Cannot specify both percentage and amount at item level' 
+          });
+        }
+        
+        if (item.percentage === undefined && item.amount === undefined) {
+          return res.status(400).json({ 
+            message: 'Either percentage or amount is required for each item' 
+          });
+        }
+        
+        if (item.percentage !== undefined && (item.percentage < 0 || item.percentage > 100)) {
+          return res.status(400).json({ 
+            message: 'Item percentage must be between 0 and 100' 
+          });
+        }
+        
+        if (item.amount !== undefined && item.amount < 0) {
+          return res.status(400).json({ 
+            message: 'Item amount cannot be negative' 
+          });
+        }
+      }
     }
 
     // Validate dates
@@ -137,47 +213,79 @@ router.post('/', async (req, res) => {
     if (paymentType) {
       verifications.push(PaymentType.findById(paymentType));
     }
-    if (surgicalCategory) {
-      verifications.push(Category.findById(surgicalCategory));
-    }
     if (procedure) {
       verifications.push(Procedure.findById(procedure));
+    }
+
+    // Verify categories in items if split category wise
+    if (splitCategoryWise && items) {
+      const categoryIds = items.map(item => item.surgicalCategory);
+      const uniqueCategoryIds = [...new Set(categoryIds)];
+      verifications.push(Category.find({ _id: { $in: uniqueCategoryIds } }));
     }
 
     if (verifications.length > 0) {
       const results = await Promise.all(verifications);
       let index = 0;
+      
       if (paymentType && !results[index++]) {
         return res.status(404).json({ message: 'Payment type not found' });
-      }
-      if (surgicalCategory && !results[index++]) {
-        return res.status(404).json({ message: 'Surgical category not found' });
       }
       if (procedure && !results[index++]) {
         return res.status(404).json({ message: 'Procedure not found' });
       }
+      if (splitCategoryWise && items) {
+        const categories = results[index++];
+        const foundCategoryIds = categories.map(cat => cat._id.toString());
+        const requestedCategoryIds = items.map(item => item.surgicalCategory);
+        
+        for (const categoryId of requestedCategoryIds) {
+          if (!foundCategoryIds.includes(categoryId)) {
+            return res.status(404).json({ message: `Surgical category ${categoryId} not found` });
+          }
+        }
+      }
     }
 
-    const creditNote = new CreditNote({
+    const creditNoteData = {
       hospital,
       paymentType: paymentType || undefined,
-      surgicalCategory: surgicalCategory || undefined,
       procedure: procedure || undefined,
-      percentage: parseFloat(percentage),
       validityFrom: fromDate,
       validityTo: toDate,
       description: description ? description.trim() : '',
+      splitCategoryWise: splitCategoryWise || false,
       businessUnit,
       createdBy,
       updatedBy: createdBy
-    });
+    };
 
+    // Add header level percentage or amount (if not split category wise)
+    if (!splitCategoryWise) {
+      if (percentage !== undefined) {
+        creditNoteData.percentage = parseFloat(percentage);
+      }
+      if (amount !== undefined) {
+        creditNoteData.amount = parseFloat(amount);
+      }
+    }
+
+    // Add items (if split category wise)
+    if (splitCategoryWise && items) {
+      creditNoteData.items = items.map(item => ({
+        surgicalCategory: item.surgicalCategory,
+        percentage: item.percentage !== undefined ? parseFloat(item.percentage) : undefined,
+        amount: item.amount !== undefined ? parseFloat(item.amount) : undefined
+      }));
+    }
+
+    const creditNote = new CreditNote(creditNoteData);
     await creditNote.save();
     
     const populatedCreditNote = await CreditNote.findById(creditNote._id)
       .populate('paymentType', 'code description')
-      .populate('surgicalCategory', 'code description')
       .populate('procedure', 'code name')
+      .populate('items.surgicalCategory', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -196,18 +304,88 @@ router.post('/', async (req, res) => {
 // Update credit note
 router.put('/:id', async (req, res) => {
   try {
-    const { percentage, validityFrom, validityTo, description, updatedBy } = req.body;
+    const { 
+      percentage, 
+      amount, 
+      splitCategoryWise, 
+      items, 
+      validityFrom, 
+      validityTo, 
+      description, 
+      updatedBy 
+    } = req.body;
 
-    if (percentage === undefined || percentage === null || !validityFrom || !validityTo || !updatedBy) {
+    if (!validityFrom || !validityTo || !updatedBy) {
       return res.status(400).json({ 
-        message: 'Percentage, validity dates, and updated by are required' 
+        message: 'Validity dates and updated by are required' 
       });
     }
 
-    if (percentage < 0 || percentage > 100) {
-      return res.status(400).json({ 
-        message: 'Percentage must be between 0 and 100' 
-      });
+    // Validate either percentage or amount at header level (if not split category wise)
+    if (!splitCategoryWise) {
+      if (percentage !== undefined && amount !== undefined) {
+        return res.status(400).json({ 
+          message: 'Cannot specify both percentage and amount at header level' 
+        });
+      }
+      if (percentage === undefined && amount === undefined) {
+        return res.status(400).json({ 
+          message: 'Either percentage or amount is required when not splitting category wise' 
+        });
+      }
+      
+      if (percentage !== undefined && (percentage < 0 || percentage > 100)) {
+        return res.status(400).json({ 
+          message: 'Percentage must be between 0 and 100' 
+        });
+      }
+      
+      if (amount !== undefined && amount < 0) {
+        return res.status(400).json({ 
+          message: 'Amount cannot be negative' 
+        });
+      }
+    }
+
+    // Validate items if split category wise
+    if (splitCategoryWise) {
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ 
+          message: 'Items are required when splitting category wise' 
+        });
+      }
+      
+      for (const item of items) {
+        if (!item.surgicalCategory) {
+          return res.status(400).json({ 
+            message: 'Surgical category is required for each item' 
+          });
+        }
+        
+        if (item.percentage !== undefined && item.amount !== undefined) {
+          return res.status(400).json({ 
+            message: 'Cannot specify both percentage and amount at item level' 
+          });
+        }
+        
+        if (item.percentage === undefined && item.amount === undefined) {
+          return res.status(400).json({ 
+            message: 'Either percentage or amount is required for each item' 
+          });
+        }
+        
+        if (item.percentage !== undefined && (item.percentage < 0 || item.percentage > 100)) {
+          return res.status(400).json({ 
+            message: 'Item percentage must be between 0 and 100' 
+          });
+        }
+        
+        if (item.amount !== undefined && item.amount < 0) {
+          return res.status(400).json({ 
+            message: 'Item amount cannot be negative' 
+          });
+        }
+      }
     }
 
     // Validate dates
@@ -225,18 +403,36 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Credit note not found' });
     }
 
-    creditNote.percentage = parseFloat(percentage);
+    // Update basic fields
     creditNote.validityFrom = fromDate;
     creditNote.validityTo = toDate;
     creditNote.description = description ? description.trim() : '';
     creditNote.updatedBy = updatedBy;
+    creditNote.splitCategoryWise = splitCategoryWise || false;
+
+    // Update percentage/amount based on split category wise flag
+    if (!splitCategoryWise) {
+      // Clear items and set header level values
+      creditNote.items = [];
+      creditNote.percentage = percentage !== undefined ? parseFloat(percentage) : undefined;
+      creditNote.amount = amount !== undefined ? parseFloat(amount) : undefined;
+    } else {
+      // Clear header level values and set items
+      creditNote.percentage = undefined;
+      creditNote.amount = undefined;
+      creditNote.items = items.map(item => ({
+        surgicalCategory: item.surgicalCategory,
+        percentage: item.percentage !== undefined ? parseFloat(item.percentage) : undefined,
+        amount: item.amount !== undefined ? parseFloat(item.amount) : undefined
+      }));
+    }
 
     await creditNote.save();
 
     const populatedCreditNote = await CreditNote.findById(creditNote._id)
       .populate('paymentType', 'code description')
-      .populate('surgicalCategory', 'code description')
       .populate('procedure', 'code name')
+      .populate('items.surgicalCategory', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
