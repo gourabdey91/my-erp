@@ -32,6 +32,61 @@ const doctorAssignmentSchema = new mongoose.Schema({
     required: false // Optional for specific procedures
   },
   // Clinical charges can be percentage or fixed amount
+  amountType: {
+    type: String,
+    enum: ['percentage', 'amount'],
+    default: 'percentage'
+  },
+  // Header-level values (when splitCategoryWise is false)
+  percentage: {
+    type: Number,
+    min: [0, 'Percentage cannot be negative'],
+    max: [100, 'Percentage cannot exceed 100'],
+    required: function() {
+      return this.amountType === 'percentage' && !this.splitCategoryWise;
+    }
+  },
+  amount: {
+    type: Number,
+    min: [0, 'Amount cannot be negative'],
+    required: function() {
+      return this.amountType === 'amount' && !this.splitCategoryWise;
+    }
+  },
+  // Flag to indicate if values are maintained category-wise
+  splitCategoryWise: {
+    type: Boolean,
+    default: false
+  },
+  // Category-wise items (when splitCategoryWise is true)
+  items: [{
+    surgicalCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true
+    },
+    amountType: {
+      type: String,
+      enum: ['percentage', 'amount'],
+      required: true
+    },
+    percentage: {
+      type: Number,
+      min: [0, 'Percentage cannot be negative'],
+      max: [100, 'Percentage cannot exceed 100'],
+      required: function() {
+        return this.amountType === 'percentage';
+      }
+    },
+    amount: {
+      type: Number,
+      min: [0, 'Amount cannot be negative'],
+      required: function() {
+        return this.amountType === 'amount';
+      }
+    }
+  }],
+  // Legacy fields (for backward compatibility)
   chargeType: {
     type: String,
     enum: ['percentage', 'fixed'],
@@ -119,6 +174,33 @@ doctorAssignmentSchema.index({
   surgicalCategory: 1, 
   procedure: 1, 
   isActive: 1 
+});
+
+// Add validation for category-wise vs header-level values
+doctorAssignmentSchema.pre('save', function(next) {
+  if (this.splitCategoryWise) {
+    // When category-wise, items array should not be empty
+    if (!this.items || this.items.length === 0) {
+      return next(new Error('Items are required when maintaining values category-wise'));
+    }
+    
+    // Clear header-level values when using category-wise
+    this.percentage = undefined;
+    this.amount = undefined;
+  } else {
+    // When not category-wise, header values should be present
+    if (this.amountType === 'percentage' && (this.percentage === undefined || this.percentage === null)) {
+      return next(new Error('Percentage is required when amount type is percentage'));
+    }
+    if (this.amountType === 'amount' && (this.amount === undefined || this.amount === null)) {
+      return next(new Error('Amount is required when amount type is amount'));
+    }
+    
+    // Clear items when not using category-wise
+    this.items = [];
+  }
+  
+  next();
 });
 
 module.exports = mongoose.model('DoctorAssignment', doctorAssignmentSchema);

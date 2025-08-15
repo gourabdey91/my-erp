@@ -23,10 +23,16 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
     paymentType: '',
     surgicalCategory: '',
     procedure: '',
+    amountType: 'percentage', // 'percentage' or 'amount'
+    percentage: '',
+    amount: '',
+    splitCategoryWise: false,
+    items: [], // For category-wise items
+    // Legacy fields (for backward compatibility)
     chargeType: '',
     chargeValue: '',
-    validityFrom: '',
-    validityTo: '',
+    validityFrom: '2025-01-01', // Default to first day of current year
+    validityTo: '9999-12-31', // Default to "31-Dec-9999" (never expires)
     description: ''
   });
 
@@ -78,6 +84,57 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
     fetchOptions(formData.paymentType, categoryId);
   };
 
+  // Handle amount type change
+  const handleAmountTypeChange = (newAmountType) => {
+    setFormData({
+      ...formData,
+      amountType: newAmountType,
+      percentage: '',
+      amount: '',
+      items: formData.splitCategoryWise ? formData.items.map(item => ({
+        ...item,
+        amountType: newAmountType,
+        percentage: '',
+        amount: ''
+      })) : []
+    });
+  };
+
+  // Handle split category-wise checkbox
+  const handleSplitCategoryWiseChange = (checked) => {
+    const newFormData = {
+      ...formData,
+      splitCategoryWise: checked,
+      percentage: '',
+      amount: '',
+      items: []
+    };
+
+    if (checked) {
+      // Initialize items with available categories
+      const categoryItems = categories.map(category => ({
+        surgicalCategory: category._id,
+        amountType: formData.amountType,
+        percentage: '',
+        amount: ''
+      }));
+      newFormData.items = categoryItems;
+    }
+
+    setFormData(newFormData);
+  };
+
+  // Handle category-wise item changes
+  const handleItemChange = (categoryId, field, value) => {
+    const updatedItems = formData.items.map(item => {
+      if (item.surgicalCategory === categoryId) {
+        return { ...item, [field]: value };
+      }
+      return item;
+    });
+    setFormData({ ...formData, items: updatedItems });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -93,7 +150,42 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
       }
     }
 
-    // Validate charge value if charge type is provided
+    // Validate amount/percentage values
+    if (formData.splitCategoryWise) {
+      // Validate category-wise items
+      const hasInvalidItems = formData.items.some(item => {
+        if (item.amountType === 'percentage') {
+          const percentage = parseFloat(item.percentage);
+          return !item.percentage || percentage < 0 || percentage > 100;
+        } else if (item.amountType === 'amount') {
+          const amount = parseFloat(item.amount);
+          return !item.amount || amount < 0;
+        }
+        return true;
+      });
+
+      if (hasInvalidItems) {
+        setError('Please provide valid values for all categories');
+        return;
+      }
+    } else {
+      // Validate header-level values
+      if (formData.amountType === 'percentage') {
+        const percentage = parseFloat(formData.percentage);
+        if (!formData.percentage || percentage < 0 || percentage > 100) {
+          setError('Please provide a valid percentage between 0 and 100');
+          return;
+        }
+      } else if (formData.amountType === 'amount') {
+        const amount = parseFloat(formData.amount);
+        if (!formData.amount || amount < 0) {
+          setError('Please provide a valid amount');
+          return;
+        }
+      }
+    }
+
+    // Validate legacy charge value if charge type is provided (for backward compatibility)
     if (formData.chargeType && formData.chargeValue) {
       const chargeValue = parseFloat(formData.chargeValue);
       if (formData.chargeType === 'percentage' && (chargeValue < 0 || chargeValue > 100)) {
@@ -114,8 +206,23 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
         paymentType: formData.paymentType || undefined,
         surgicalCategory: formData.surgicalCategory || undefined,
         procedure: formData.procedure || undefined,
+        
+        // New fields
+        amountType: formData.amountType,
+        percentage: formData.splitCategoryWise ? undefined : (formData.amountType === 'percentage' ? parseFloat(formData.percentage) : undefined),
+        amount: formData.splitCategoryWise ? undefined : (formData.amountType === 'amount' ? parseFloat(formData.amount) : undefined),
+        splitCategoryWise: formData.splitCategoryWise,
+        items: formData.splitCategoryWise ? formData.items.map(item => ({
+          surgicalCategory: item.surgicalCategory,
+          amountType: item.amountType,
+          percentage: item.amountType === 'percentage' ? parseFloat(item.percentage) : undefined,
+          amount: item.amountType === 'amount' ? parseFloat(item.amount) : undefined
+        })) : [],
+        
+        // Legacy fields (for backward compatibility)
         chargeType: formData.chargeType || undefined,
         chargeValue: formData.chargeValue ? parseFloat(formData.chargeValue) : undefined,
+        
         validityFrom: formData.validityFrom,
         validityTo: formData.validityTo,
         description: formData.description,
@@ -125,6 +232,11 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
 
       if (editingAssignment) {
         await doctorAssignmentAPI.updateDoctorAssignment(editingAssignment._id, {
+          amountType: assignmentData.amountType,
+          percentage: assignmentData.percentage,
+          amount: assignmentData.amount,
+          splitCategoryWise: assignmentData.splitCategoryWise,
+          items: assignmentData.items,
           chargeType: assignmentData.chargeType,
           chargeValue: assignmentData.chargeValue,
           validityFrom: assignmentData.validityFrom,
@@ -157,8 +269,23 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
       paymentType: paymentTypeId,
       surgicalCategory: categoryId,
       procedure: assignment.procedure?._id || '',
+      
+      // New fields
+      amountType: assignment.amountType || 'percentage',
+      percentage: assignment.percentage ? assignment.percentage.toString() : '',
+      amount: assignment.amount ? assignment.amount.toString() : '',
+      splitCategoryWise: assignment.splitCategoryWise || false,
+      items: assignment.items ? assignment.items.map(item => ({
+        surgicalCategory: item.surgicalCategory._id || item.surgicalCategory,
+        amountType: item.amountType,
+        percentage: item.percentage ? item.percentage.toString() : '',
+        amount: item.amount ? item.amount.toString() : ''
+      })) : [],
+      
+      // Legacy fields (for backward compatibility)
       chargeType: assignment.chargeType || '',
       chargeValue: assignment.chargeValue ? assignment.chargeValue.toString() : '',
+      
       validityFrom: assignment.validityFrom ? new Date(assignment.validityFrom).toISOString().split('T')[0] : '',
       validityTo: assignment.validityTo ? new Date(assignment.validityTo).toISOString().split('T')[0] : '',
       description: assignment.description || ''
@@ -184,21 +311,22 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
   };
 
   const resetForm = () => {
-    // Set default dates: Jan 1 of current year to Dec 31, 2025
-    const currentYear = new Date().getFullYear();
-    const defaultFromDate = `${currentYear}-01-01`;
-    const defaultToDate = '2025-12-31';
-    
     setFormData({
       doctor: '',
       expenseType: expenseTypes.length > 0 ? expenseTypes[0]._id : '', // Auto-select Clinical Charges if available
       paymentType: '',
       surgicalCategory: '',
       procedure: '',
+      amountType: 'percentage',
+      percentage: '',
+      amount: '',
+      splitCategoryWise: false,
+      items: [],
+      // Legacy fields
       chargeType: '',
       chargeValue: '',
-      validityFrom: defaultFromDate,
-      validityTo: defaultToDate,
+      validityFrom: '2025-01-01', // Default to first day of current year
+      validityTo: '9999-12-31', // Default to "31-Dec-9999" (never expires)
       description: ''
     });
     setEditingAssignment(null);
@@ -242,6 +370,18 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
   };
 
   const getChargeDisplay = (assignment) => {
+    // Check new fields first
+    if (assignment.splitCategoryWise && assignment.items && assignment.items.length > 0) {
+      return 'Category-wise values';
+    } else if (assignment.amountType && (assignment.percentage || assignment.amount)) {
+      if (assignment.amountType === 'percentage') {
+        return `${assignment.percentage}%`;
+      } else {
+        return `₹${assignment.amount}`;
+      }
+    }
+    
+    // Fallback to legacy fields
     if (!assignment.chargeType || !assignment.chargeValue) return 'Not specified';
     
     if (assignment.chargeType === 'percentage') {
@@ -370,25 +510,6 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                 </div>
 
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Category (Optional)</label>
-                  <select
-                    value={formData.surgicalCategory}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    disabled={editingAssignment} // Can't change category when editing
-                    className="unified-search-input"
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map(category => (
-                      <option key={category._id} value={category._id}>
-                        {getCategoryName(category)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="unified-form-grid">
-                <div className="unified-form-field">
                   <label className="unified-form-label">Procedure (Optional)</label>
                   <select
                     value={formData.procedure}
@@ -404,36 +525,10 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                     ))}
                   </select>
                 </div>
-
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Charge Type (Optional)</label>
-                  <select
-                    value={formData.chargeType}
-                    onChange={(e) => setFormData({ ...formData, chargeType: e.target.value })}
-                    className="unified-search-input"
-                  >
-                    <option value="">Not specified</option>
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₹)</option>
-                  </select>
-                </div>
               </div>
 
+              {/* Validity Dates Row */}
               <div className="unified-form-grid">
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Charge Value (Optional)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={formData.chargeType === 'percentage' ? '100' : undefined}
-                    value={formData.chargeValue}
-                    onChange={(e) => setFormData({ ...formData, chargeValue: e.target.value })}
-                    placeholder={formData.chargeType === 'percentage' ? '0-100' : 'Amount in ₹'}
-                    className="unified-search-input"
-                  />
-                </div>
-
                 <div className="unified-form-field">
                   <label className="unified-form-label">Valid From *</label>
                   <input
@@ -444,9 +539,7 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                     className="unified-search-input"
                   />
                 </div>
-              </div>
 
-              <div className="unified-form-grid">
                 <div className="unified-form-field">
                   <label className="unified-form-label">Valid To *</label>
                   <input
@@ -457,8 +550,140 @@ const DoctorAssignments = ({ hospital, currentUser, onClose }) => {
                     className="unified-search-input"
                   />
                 </div>
+              </div>
 
+              {/* Amount Type and Value Section */}
+              <div className="unified-form-grid">
                 <div className="unified-form-field">
+                  <label className="unified-form-label">Amount Type *</label>
+                  <select
+                    value={formData.amountType}
+                    onChange={(e) => handleAmountTypeChange(e.target.value)}
+                    className="unified-search-input"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="amount">Fixed Amount (₹)</option>
+                  </select>
+                </div>
+
+                {!formData.splitCategoryWise && (
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">
+                      {formData.amountType === 'percentage' ? 'Percentage *' : 'Amount *'}
+                    </label>
+                    {formData.amountType === 'percentage' ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.percentage}
+                        onChange={(e) => setFormData({ ...formData, percentage: e.target.value })}
+                        placeholder="0.00"
+                        className="unified-search-input"
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        placeholder="0.00"
+                        className="unified-search-input"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Maintain Values Category Wise Checkbox */}
+              <div className="unified-form-grid">
+                <div className="unified-form-field" style={{gridColumn: 'span 2'}}>
+                  <label className="unified-form-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={formData.splitCategoryWise}
+                      onChange={(e) => handleSplitCategoryWiseChange(e.target.checked)}
+                    />
+                    <span className="checkmark"></span>
+                    Maintain values category wise
+                  </label>
+                </div>
+              </div>
+
+              {/* Category-wise Table */}
+              {formData.splitCategoryWise && formData.items.length > 0 && (
+                <div className="unified-form-grid" style={{gridColumn: 'span 2'}}>
+                  <div className="unified-form-field" style={{gridColumn: 'span 2'}}>
+                    <label className="unified-form-label">Category-wise Values</label>
+                    <div style={{overflowX: 'auto', marginTop: '0.5rem'}}>
+                      <table className="unified-table" style={{minWidth: '100%'}}>
+                        <thead>
+                          <tr>
+                            <th style={{minWidth: '200px'}}>Category</th>
+                            <th style={{minWidth: '120px'}}>Type</th>
+                            <th style={{minWidth: '120px'}}>Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.items.map((item, index) => {
+                            const category = categories.find(cat => cat._id === item.surgicalCategory);
+                            return (
+                              <tr key={item.surgicalCategory}>
+                                <td>
+                                  <strong>{category ? getCategoryName(category) : 'Unknown Category'}</strong>
+                                </td>
+                                <td>
+                                  <select
+                                    value={item.amountType}
+                                    onChange={(e) => handleItemChange(item.surgicalCategory, 'amountType', e.target.value)}
+                                    className="unified-search-input"
+                                    style={{minWidth: '100px', fontSize: '0.875rem'}}
+                                  >
+                                    <option value="percentage">%</option>
+                                    <option value="amount">₹</option>
+                                  </select>
+                                </td>
+                                <td>
+                                  {item.amountType === 'percentage' ? (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      max="100"
+                                      value={item.percentage}
+                                      onChange={(e) => handleItemChange(item.surgicalCategory, 'percentage', e.target.value)}
+                                      placeholder="0.00"
+                                      className="unified-search-input"
+                                      style={{minWidth: '100px', fontSize: '0.875rem'}}
+                                    />
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={item.amount}
+                                      onChange={(e) => handleItemChange(item.surgicalCategory, 'amount', e.target.value)}
+                                      placeholder="0.00"
+                                      className="unified-search-input"
+                                      style={{minWidth: '100px', fontSize: '0.875rem'}}
+                                    />
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="unified-form-grid">
+                <div className="unified-form-field" style={{gridColumn: 'span 2'}}>
                   <label className="unified-form-label">Description</label>
                   <input
                     type="text"
