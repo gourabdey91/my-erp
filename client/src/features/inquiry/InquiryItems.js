@@ -434,12 +434,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
     })} ${currency}`;
   };
 
-  // Calculate grand total
-  const calculateGrandTotal = () => {
-    const total = inquiryItems.reduce((sum, item) => sum + (parseFloat(item.totalAmount) || 0), 0);
-    return Math.round(total * 100) / 100;
-  };
-
   return (
     <div className="unified-card">
       <div className="unified-card-header">
@@ -981,16 +975,6 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Summary */}
-        <div className="inquiry-items-summary">
-          <div className="summary-row">
-            <span className="summary-label">Grand Total:</span>
-            <span className="summary-value">
-              {formatCurrency(calculateGrandTotal(), 'INR')}
-            </span>
-          </div>
         </div>
       </div>
 
