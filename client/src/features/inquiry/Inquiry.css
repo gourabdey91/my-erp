@@ -405,8 +405,15 @@
   }
 }
 
-/* Ensure all inquiry form fields look normal and interactive */
-.inquiry-form-container .unified-input,
+/* Ensure all inquiry form fields look normal and interactive with correct cursors */
+.inquiry-form-container input.unified-input {
+  background-color: white !important;
+  color: #374151 !important;
+  cursor: text !important;
+  border-color: #d1d5db !important;
+  opacity: 1 !important;
+}
+
 .inquiry-form-container select.unified-input {
   background-color: white !important;
   color: #374151 !important;
@@ -415,19 +422,31 @@
   opacity: 1 !important;
 }
 
-.inquiry-form-container .unified-input:hover,
-.inquiry-form-container select.unified-input:hover {
+.inquiry-form-container input.unified-input:hover {
   border-color: #6b7280 !important;
+  cursor: text !important;
 }
 
-.inquiry-form-container .unified-input:focus,
+.inquiry-form-container select.unified-input:hover {
+  border-color: #6b7280 !important;
+  cursor: pointer !important;
+}
+
+.inquiry-form-container input.unified-input:focus,
 .inquiry-form-container select.unified-input:focus {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
 }
 
 /* Override any disabled styling for inquiry form */
-.inquiry-form-container .unified-input:disabled,
+.inquiry-form-container input.unified-input:disabled {
+  background-color: white !important;
+  color: #374151 !important;
+  cursor: text !important;
+  border-color: #d1d5db !important;
+  opacity: 1 !important;
+}
+
 .inquiry-form-container select.unified-input:disabled {
   background-color: white !important;
   color: #374151 !important;
