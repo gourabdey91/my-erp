@@ -129,8 +129,10 @@
 
 .form-group input:disabled,
 .form-group select:disabled {
-  background-color: #e9ecef;
-  cursor: not-allowed;
+  background-color: #ffffff;
+  color: #495057;
+  cursor: default;
+  opacity: 0.8;
 }
 
 .form-buttons {

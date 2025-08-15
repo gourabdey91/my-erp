@@ -65,6 +65,33 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
     fetchOptions(form.paymentType, categoryId);
   };
 
+  // Handle procedure selection and auto-populate surgical categories
+  const handleProcedureChange = (e) => {
+    const procedureId = e.target.value;
+    setForm({ ...form, procedure: procedureId });
+    
+    if (procedureId) {
+      // Find the selected procedure
+      const selectedProcedure = options.procedures.find(proc => proc._id === procedureId);
+      if (selectedProcedure && selectedProcedure.items && selectedProcedure.items.length > 0) {
+        // Auto-populate the first surgical category for filtering purposes
+        const firstCategoryId = selectedProcedure.items[0].surgicalCategoryId._id || selectedProcedure.items[0].surgicalCategoryId;
+        setForm(prev => ({
+          ...prev,
+          procedure: procedureId,
+          category: firstCategoryId
+        }));
+      }
+    } else {
+      // Clear surgical category when procedure is cleared
+      setForm(prev => ({
+        ...prev,
+        procedure: '',
+        category: ''
+      }));
+    }
+  };
+
   const handleCancel = () => {
     setEditingId(null);
     setForm({ 
@@ -244,28 +271,13 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                 </div>
 
                 <div className="unified-form-grid">
-                  <div className="unified-form-field">
-                    <label className="unified-form-label">Surgical Category (Optional)</label>
-                    <select 
-                      className="unified-search-input"
-                      name="category" 
-                      value={form.category} 
-                      onChange={(e) => handleCategoryChange(e.target.value)}
-                    >
-                      <option value="">All Categories</option>
-                      {options.categories.map(cat => (
-                        <option key={cat._id} value={cat._id}>{cat.description}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="unified-form-field">
+                  <div className="unified-form-field" style={{gridColumn: 'span 2'}}>
                     <label className="unified-form-label">Procedure (Optional)</label>
                     <select 
                       className="unified-search-input"
                       name="procedure" 
                       value={form.procedure} 
-                      onChange={handleChange}
+                      onChange={handleProcedureChange}
                     >
                       <option value="">All Procedures</option>
                       {options.procedures.map(proc => (
