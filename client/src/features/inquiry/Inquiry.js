@@ -16,8 +16,6 @@ const Inquiry = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedInquiries, setSelectedInquiries] = useState([]);
-  const [showActionMenu, setShowActionMenu] = useState(false);
   const [filters, setFilters] = useState({
     hospital: '',
     surgicalCategory: '',
@@ -28,20 +26,6 @@ const Inquiry = () => {
     surgicalCategories: [],
     paymentMethods: []
   });
-
-  // Close action menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showActionMenu && !event.target.closest('.unified-action-menu')) {
-        setShowActionMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showActionMenu]);
 
   // Fetch dropdown data for filters
   const fetchDropdownData = useCallback(async () => {
@@ -154,62 +138,6 @@ const Inquiry = () => {
     }
   };
 
-  // Handle row selection
-  const handleRowSelect = (inquiryId) => {
-    setSelectedInquiries(prev => {
-      if (prev.includes(inquiryId)) {
-        return prev.filter(id => id !== inquiryId);
-      } else {
-        return [...prev, inquiryId];
-      }
-    });
-  };
-
-  // Handle select all
-  const handleSelectAll = () => {
-    if (selectedInquiries.length === inquiries.length) {
-      setSelectedInquiries([]);
-    } else {
-      setSelectedInquiries(inquiries.map(inquiry => inquiry._id));
-    }
-  };
-
-  // Handle bulk actions
-  const handleBulkEdit = () => {
-    if (selectedInquiries.length === 1) {
-      const inquiry = inquiries.find(i => i._id === selectedInquiries[0]);
-      handleEdit(inquiry);
-      setSelectedInquiries([]);
-      setShowActionMenu(false);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedInquiries.length === 0) return;
-    
-    const confirmMessage = selectedInquiries.length === 1 
-      ? 'Are you sure you want to delete this inquiry?' 
-      : `Are you sure you want to delete ${selectedInquiries.length} inquiries?`;
-    
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      // Delete selected inquiries
-      await Promise.all(selectedInquiries.map(id => inquiryAPI.deleteInquiry(id)));
-      setSelectedInquiries([]);
-      setShowActionMenu(false);
-      fetchInquiries();
-    } catch (error) {
-      console.error('Error deleting inquiries:', error);
-      alert('Error deleting inquiries. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Handle edit
   const handleEdit = (inquiry) => {
     setEditingInquiry(inquiry);
@@ -265,46 +193,13 @@ const Inquiry = () => {
             <h1>Inquiries</h1>
             <p>Manage patient inquiries with surgical categories filtered by hospital assignments. Track inquiry details, patient information, and payment methods.</p>
           </div>
-          <div className="unified-header-actions">
-            {selectedInquiries.length > 0 && (
-              <div className="unified-selected-info">
-                <span>{selectedInquiries.length} selected</span>
-                <div className="unified-action-menu" style={{ position: 'relative' }}>
-                  <button
-                    className="unified-btn unified-btn-secondary unified-action-menu-trigger"
-                    onClick={() => setShowActionMenu(!showActionMenu)}
-                  >
-                    ⋮
-                  </button>
-                  {showActionMenu && (
-                    <div className="unified-action-menu-dropdown">
-                      {selectedInquiries.length === 1 && (
-                        <button
-                          className="unified-action-menu-item"
-                          onClick={handleBulkEdit}
-                        >
-                          ✏️ Edit
-                        </button>
-                      )}
-                      <button
-                        className="unified-action-menu-item delete"
-                        onClick={handleBulkDelete}
-                      >
-                        🗑️ Delete {selectedInquiries.length > 1 ? `(${selectedInquiries.length})` : ''}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            <button
-              className="unified-btn unified-btn-primary"
-              onClick={() => setShowForm(true)}
-              disabled={loading}
-            >
-              Add New Inquiry
-            </button>
-          </div>
+          <button
+            className="unified-btn unified-btn-primary"
+            onClick={() => setShowForm(true)}
+            disabled={loading}
+          >
+            Add New Inquiry
+          </button>
         </div>
       </div>
 
@@ -408,30 +303,10 @@ const Inquiry = () => {
             </div>
           </div>
         ) : (
-          <>
-            {/* Selection Instruction - only show when no items selected */}
-            {selectedInquiries.length === 0 && (
-              <div className="unified-instruction-banner">
-                <div className="instruction-content">
-                  <span className="instruction-icon">💡</span>
-                  <span className="instruction-text">
-                    <strong>Two ways to take action:</strong> 1) Hover over any row to see edit/delete buttons, or 2) Select multiple inquiries using checkboxes to see bulk action menu (⋮) in the header.
-                  </span>
-                </div>
-              </div>
-            )}
-            <div className="unified-table-responsive">
+          <div className="unified-table-responsive">
             <table className="unified-table">
               <thead>
                 <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      checked={selectedInquiries.length === inquiries.length && inquiries.length > 0}
-                      onChange={handleSelectAll}
-                      className="unified-checkbox"
-                    />
-                  </th>
                   <th>Inquiry #</th>
                   <th>Hospital</th>
                   <th>Date</th>
@@ -439,28 +314,20 @@ const Inquiry = () => {
                   <th>Payment Method</th>
                   <th>Total Amount</th>
                   <th>Status</th>
-                  <th className="quick-actions-header">Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {inquiries.map(inquiry => (
-                  <tr key={inquiry._id} className={selectedInquiries.includes(inquiry._id) ? 'selected' : ''}>
-                    <td data-label="Select">
-                      <input
-                        type="checkbox"
-                        checked={selectedInquiries.includes(inquiry._id)}
-                        onChange={() => handleRowSelect(inquiry._id)}
-                        className="unified-checkbox"
-                      />
-                    </td>
-                    <td data-label="Inquiry #">
+                  <tr key={inquiry._id}>
+                    <td>
                       <span className="unified-code-badge">{inquiry.inquiryNumber}</span>
                     </td>
-                    <td data-label="Hospital">{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
-                    <td data-label="Date">{formatDate(inquiry.inquiryDate)}</td>
-                    <td data-label="Surgical Category">{inquiry.surgicalCategory?.description}</td>
-                    <td data-label="Payment Method">{inquiry.paymentMethod?.description}</td>
-                    <td data-label="Total Amount">
+                    <td>{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
+                    <td>{formatDate(inquiry.inquiryDate)}</td>
+                    <td>{inquiry.surgicalCategory?.description}</td>
+                    <td>{inquiry.paymentMethod?.description}</td>
+                    <td>
                       {inquiry.totalInquiryAmount ? (
                         <span className="unified-amount-text">
                           {parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}
@@ -469,24 +336,26 @@ const Inquiry = () => {
                         <span className="unified-text-muted">-</span>
                       )}
                     </td>
-                    <td data-label="Status">
+                    <td>
                       <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
                         {inquiry.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td data-label="Quick Actions" className="quick-actions-cell">
-                      <div className="quick-actions">
+                    <td>
+                      <div className="unified-table-actions">
                         <button
-                          className="quick-action-btn edit"
+                          className="unified-table-action edit"
                           onClick={() => handleEdit(inquiry)}
                           title="Edit"
+                          disabled={loading}
                         >
                           ✏️
                         </button>
                         <button
-                          className="quick-action-btn delete"
+                          className="unified-table-action delete"
                           onClick={() => handleDelete(inquiry._id)}
                           title="Delete"
+                          disabled={loading}
                         >
                           🗑️
                         </button>
@@ -538,7 +407,6 @@ const Inquiry = () => {
               </div>
             </div>
           </div>
-          </>
         )}
       </div>
     </div>
