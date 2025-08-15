@@ -284,7 +284,7 @@ inquirySchema.pre('save', async function(next) {
 });
 
 // Pre-save hook for items to calculate totals and validate limit
-inquirySchema.pre('save', function(next) {
+inquirySchema.pre('save', async function(next) {
   // Calculate total for each item
   this.items.forEach(item => {
     // Call calculateTotal with default state codes (same state)
@@ -294,13 +294,123 @@ inquirySchema.pre('save', function(next) {
   // Calculate total inquiry amount
   this.totalInquiryAmount = this.calculateInquiryTotal();
   
-  // Validate total amount doesn't exceed limit (must be done after calculation)
-  if (this.limit && this.limit.amount && this.totalInquiryAmount > this.limit.amount) {
-    return next(new Error(`Total inquiry amount (${this.totalInquiryAmount} ${this.limit.currency || 'INR'}) exceeds the limit (${this.limit.amount} ${this.limit.currency || 'INR'})`));
+  // Enhanced limit validation logic
+  try {
+    await validateInquiryLimits(this);
+  } catch (error) {
+    return next(error);
   }
   
   next();
 });
+
+// Enhanced limit validation function
+async function validateInquiryLimits(inquiry) {
+  // If no limit is set, skip validation
+  if (!inquiry.limit || !inquiry.limit.amount) {
+    return;
+  }
+  
+  // If no surgical procedure is selected, use simple total validation
+  if (!inquiry.surgicalProcedure) {
+    if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
+      throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
+    }
+    return;
+  }
+  
+  // Get the procedure details to check category-level limit flag
+  const Procedure = mongoose.model('Procedure');
+  const procedure = await Procedure.findById(inquiry.surgicalProcedure)
+    .populate('items.surgicalCategoryId');
+  
+  if (!procedure) {
+    // If procedure not found, fall back to total limit validation
+    if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
+      throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
+    }
+    return;
+  }
+  
+  // Check if category-level limit validation is enabled
+  if (procedure.limitAppliedByIndividualCategory) {
+    await validateCategoryLevelLimits(inquiry, procedure);
+  } else {
+    // Use total limit validation
+    if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
+      throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
+    }
+  }
+}
+
+// Category-level limit validation function
+async function validateCategoryLevelLimits(inquiry, procedure) {
+  const MaterialMaster = mongoose.model('MaterialMaster');
+  
+  // Get material details with surgical categories for all inquiry items
+  const materialNumbers = inquiry.items.map(item => item.materialNumber);
+  const materials = await MaterialMaster.find({ 
+    materialNumber: { $in: materialNumbers } 
+  }).populate('surgicalCategory');
+  
+  // Create mapping of material number to surgical category
+  const materialCategoryMap = {};
+  materials.forEach(material => {
+    materialCategoryMap[material.materialNumber] = material.surgicalCategory._id.toString();
+  });
+  
+  // Group inquiry amounts by surgical category
+  const categoryTotals = {};
+  inquiry.items.forEach(item => {
+    const categoryId = materialCategoryMap[item.materialNumber];
+    if (categoryId) {
+      if (!categoryTotals[categoryId]) {
+        categoryTotals[categoryId] = 0;
+      }
+      categoryTotals[categoryId] += item.totalAmount;
+    }
+  });
+  
+  // Create mapping of procedure categories to their limits
+  const procedureCategoryLimits = {};
+  procedure.items.forEach(item => {
+    const categoryId = item.surgicalCategoryId._id.toString();
+    procedureCategoryLimits[categoryId] = item.limit || 0;
+  });
+  
+  // Validate each category against its individual limit
+  const categoryViolations = [];
+  Object.keys(categoryTotals).forEach(categoryId => {
+    const categoryTotal = categoryTotals[categoryId];
+    const categoryLimit = procedureCategoryLimits[categoryId];
+    
+    if (categoryLimit && categoryTotal > categoryLimit) {
+      // Find category name for better error message
+      const categoryItem = procedure.items.find(item => 
+        item.surgicalCategoryId._id.toString() === categoryId
+      );
+      const categoryName = categoryItem?.surgicalCategoryId?.description || 
+                          categoryItem?.surgicalCategoryId?.code || 
+                          'Unknown Category';
+      
+      categoryViolations.push({
+        categoryName,
+        total: categoryTotal,
+        limit: categoryLimit,
+        excess: categoryTotal - categoryLimit
+      });
+    }
+  });
+  
+  // If any category violations found, throw detailed error
+  if (categoryViolations.length > 0) {
+    const violationMessages = categoryViolations.map(violation => 
+      `${violation.categoryName}: ${violation.total} exceeds limit of ${violation.limit} (excess: ${violation.excess})`
+    );
+    
+    throw new Error(`Category-level limit validation failed. ${violationMessages.join('; ')}`);
+  }
+}
 
 // Pre-save hook to generate inquiry number
 inquirySchema.pre('save', async function(next) {

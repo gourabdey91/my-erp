@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Category-Level Limit Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .error-box {
+            background: #f8d7da;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .selector { margin: 10px 0; }
+        select { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Category-Level Limit Validation</h1>
+    
+    <div class="warning-box">
+        <h4>📋 Enhanced Limit Validation Logic:</h4>
+        <p><strong>Scenario 1:</strong> Procedure has <code>limitAppliedByIndividualCategory = false</code> → Use total limit validation</p>
+        <p><strong>Scenario 2:</strong> Procedure has <code>limitAppliedByIndividualCategory = true</code> → Validate each surgical category separately</p>
+        <p><strong>Example:</strong> Cranial (20K limit) + Dura (20K limit) = 40K total, but each category validated individually</p>
+    </div>
+    
+    <div class="section">
+        <h3>Step 1: Load Test Data</h3>
+        <button onclick="loadTestData()">Load Procedures, Hospitals & Materials</button>
+        <div id="dataResult"></div>
+        
+        <div class="selector">
+            <label for="hospitalSelect">Select Hospital:</label>
+            <select id="hospitalSelect" disabled>
+                <option value="">Select hospital...</option>
+            </select>
+            
+            <label for="procedureSelect">Select Procedure:</label>
+            <select id="procedureSelect" disabled>
+                <option value="">Select procedure...</option>
+            </select>
+            
+            <label for="paymentSelect">Select Payment Method:</label>
+            <select id="paymentSelect" disabled>
+                <option value="">Select payment method...</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Test Category-Level Limits</h3>
+        <button onclick="testCategoryLimits()" id="testBtn" disabled class="danger">Test Category-Level Validation</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+        let hospitals = [];
+        let procedures = [];
+        let paymentMethods = [];
+        let materials = [];
+
+        async function loadTestData() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = '<p>Loading test data...</p>';
+            
+            try {
+                const [hospitalsRes, proceduresRes, paymentMethodsRes, materialsRes] = await Promise.all([
+                    fetch(`${baseURL}/hospital`),
+                    fetch(`${baseURL}/procedures`),
+                    fetch(`${baseURL}/payment-method`),
+                    fetch(`${baseURL}/material`)
+                ]);
+                
+                const hospitalsData = await hospitalsRes.json();
+                const proceduresData = await proceduresRes.json();
+                const paymentMethodsData = await paymentMethodsRes.json();
+                const materialsData = await materialsRes.json();
+                
+                if (hospitalsData.success && proceduresData.success && paymentMethodsData.success && materialsData.success) {
+                    hospitals = hospitalsData.data;
+                    procedures = proceduresData.data;
+                    paymentMethods = paymentMethodsData.data;
+                    materials = materialsData.data;
+                    
+                    // Populate dropdowns
+                    populateDropdown('hospitalSelect', hospitals, (h) => `${h.shortName} (${h.surgicalCategories?.length || 0} categories)`);
+                    populateDropdown('procedureSelect', procedures, (p) => `${p.code} - ${p.name} (${p.limitAppliedByIndividualCategory ? 'Category-Level' : 'Total'} Limits)`);
+                    populateDropdown('paymentSelect', paymentMethods, (pm) => `${pm.code} - ${pm.description}`);
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📊 Data Loaded Successfully</h4>
+                            <p><strong>Hospitals:</strong> ${hospitals.length}</p>
+                            <p><strong>Procedures:</strong> ${procedures.length}</p>
+                            <p><strong>Payment Methods:</strong> ${paymentMethods.length}</p>
+                            <p><strong>Materials:</strong> ${materials.length}</p>
+                        </div>
+                        
+                        <div class="debug-box">
+                            <h4>🔍 Category-Level Procedures Found:</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Category-Level Limits</th>
+                                        <th>Categories & Limits</th>
+                                        <th>Total Limit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    procedures.forEach(proc => {
+                        const isCategoryLevel = proc.limitAppliedByIndividualCategory;
+                        const categoryDetails = proc.items.map(item => 
+                            `${item.surgicalCategoryId.description}: ${item.limit} ${item.currency}`
+                        ).join('<br>');
+                        
+                        html += `
+                            <tr style="${isCategoryLevel ? 'background-color: #d4edda;' : ''}">
+                                <td>${proc.code}</td>
+                                <td>${proc.name}</td>
+                                <td>${isCategoryLevel ? '✅ YES' : '❌ NO'}</td>
+                                <td>${categoryDetails}</td>
+                                <td>${proc.totalLimit} INR</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Enable dropdowns and set up event handlers
+                    ['hospitalSelect', 'procedureSelect', 'paymentSelect'].forEach(id => {
+                        document.getElementById(id).disabled = false;
+                        document.getElementById(id).addEventListener('change', updateTestButton);
+                    });
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error-box">❌ Failed to load data</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-box">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function populateDropdown(selectId, data, textFunc) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = `<option value="">Select ${selectId.replace('Select', '').toLowerCase()}...</option>`;
+            
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item._id;
+                option.textContent = textFunc(item);
+                select.appendChild(option);
+            });
+        }
+
+        function updateTestButton() {
+            const hospitalId = document.getElementById('hospitalSelect').value;
+            const procedureId = document.getElementById('procedureSelect').value;
+            const paymentMethodId = document.getElementById('paymentSelect').value;
+            
+            document.getElementById('testBtn').disabled = !hospitalId || !procedureId || !paymentMethodId;
+        }
+
+        async function testCategoryLimits() {
+            const hospitalId = document.getElementById('hospitalSelect').value;
+            const procedureId = document.getElementById('procedureSelect').value;
+            const paymentMethodId = document.getElementById('paymentSelect').value;
+            const resultDiv = document.getElementById('testResult');
+            
+            resultDiv.innerHTML = '<p>Testing category-level limit validation...</p>';
+            
+            try {
+                const selectedHospital = hospitals.find(h => h._id === hospitalId);
+                const selectedProcedure = procedures.find(p => p._id === procedureId);
+                const selectedPayment = paymentMethods.find(pm => pm._id === paymentMethodId);
+                
+                // Find materials that belong to the procedure's categories
+                const procedureCategoryIds = selectedProcedure.items.map(item => item.surgicalCategoryId._id);
+                const validMaterials = materials.filter(m => 
+                    procedureCategoryIds.includes(m.surgicalCategory._id || m.surgicalCategory)
+                );
+                
+                if (validMaterials.length === 0) {
+                    resultDiv.innerHTML = `<div class="error-box">❌ No materials found for this procedure's categories</div>`;
+                    return;
+                }
+                
+                // Create test inquiry that should trigger category-level validation
+                let testItems = [];
+                let expectedCategoryTotals = {};
+                
+                // For each procedure category, add materials that might exceed individual limits
+                selectedProcedure.items.forEach((procItem, index) => {
+                    const categoryId = procItem.surgicalCategoryId._id;
+                    const categoryLimit = procItem.limit;
+                    const categoryMaterials = validMaterials.filter(m => 
+                        (m.surgicalCategory._id || m.surgicalCategory) === categoryId
+                    );
+                    
+                    if (categoryMaterials.length > 0 && categoryLimit > 0) {
+                        const material = categoryMaterials[0];
+                        // Calculate quantity that would exceed this category's limit
+                        const excessQuantity = Math.ceil((categoryLimit + 5000) / material.institutionalPrice);
+                        
+                        testItems.push({
+                            serialNumber: index + 1,
+                            materialNumber: material.materialNumber,
+                            hsnCode: material.hsnCode,
+                            unitRate: material.institutionalPrice,
+                            gstPercentage: material.gstPercentage,
+                            quantity: excessQuantity,
+                            unit: "PCS",
+                            discountPercentage: 0
+                        });
+                        
+                        const expectedTotal = (material.institutionalPrice * excessQuantity) * (1 + material.gstPercentage / 100);
+                        expectedCategoryTotals[procItem.surgicalCategoryId.description] = {
+                            total: expectedTotal,
+                            limit: categoryLimit,
+                            exceeds: expectedTotal > categoryLimit
+                        };
+                    }
+                });
+                
+                if (testItems.length === 0) {
+                    resultDiv.innerHTML = `<div class="error-box">❌ Could not create test items for this procedure</div>`;
+                    return;
+                }
+                
+                const testInquiry = {
+                    hospital: hospitalId,
+                    surgicalProcedure: procedureId,
+                    inquiryDate: new Date().toISOString(),
+                    patientName: "Category Limit Test Patient",
+                    patientUHID: "CATTEST" + Date.now(),
+                    patientAge: 45,
+                    patientGender: "Male",
+                    paymentMethod: paymentMethodId,
+                    limit: {
+                        amount: selectedProcedure.totalLimit, // Use procedure's total limit
+                        currency: "INR"
+                    },
+                    items: testItems,
+                    remarks: "Category-level limit validation test"
+                };
+                
+                let html = `
+                    <div class="debug-box">
+                        <h4>🧪 Test Setup</h4>
+                        <p><strong>Hospital:</strong> ${selectedHospital.shortName}</p>
+                        <p><strong>Procedure:</strong> ${selectedProcedure.code} - ${selectedProcedure.name}</p>
+                        <p><strong>Category-Level Limits:</strong> ${selectedProcedure.limitAppliedByIndividualCategory ? '✅ ENABLED' : '❌ DISABLED'}</p>
+                        <p><strong>Payment Method:</strong> ${selectedPayment.description}</p>
+                        <p><strong>Total Procedure Limit:</strong> ${selectedProcedure.totalLimit} INR</p>
+                    </div>
+                    
+                    <div class="debug-box">
+                        <h4>📊 Expected Category Totals</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Expected Total</th>
+                                    <th>Category Limit</th>
+                                    <th>Should Exceed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                Object.keys(expectedCategoryTotals).forEach(categoryName => {
+                    const data = expectedCategoryTotals[categoryName];
+                    html += `
+                        <tr style="${data.exceeds ? 'background-color: #f8d7da;' : 'background-color: #d4edda;'}">
+                            <td>${categoryName}</td>
+                            <td>${data.total.toFixed(2)} INR</td>
+                            <td>${data.limit} INR</td>
+                            <td>${data.exceeds ? '✅ YES' : '❌ NO'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                // Attempt to create the inquiry
+                const response = await fetch(`${baseURL}/inquiries`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testInquiry)
+                });
+                
+                const responseData = await response.json();
+                
+                html += `
+                    <div class="debug-box">
+                        <h4>🔍 API Response</h4>
+                        <p><strong>HTTP Status:</strong> ${response.status}</p>
+                        <p><strong>Success:</strong> ${responseData.success}</p>
+                        <p><strong>Message:</strong> "${responseData.message}"</p>
+                    </div>
+                `;
+                
+                if (response.ok && responseData.success) {
+                    html += `
+                        <div class="error-box">
+                            <h4>❌ VALIDATION FAILED!</h4>
+                            <p>The inquiry was created despite category limits being exceeded.</p>
+                            <p><strong>Created ID:</strong> ${responseData.data._id}</p>
+                            <p><strong>Total:</strong> ${responseData.data.totalInquiryAmount} INR</p>
+                        </div>
+                    `;
+                } else if (responseData.message && responseData.message.includes('Category-level limit validation failed')) {
+                    html += `
+                        <div class="success-box">
+                            <h4>✅ CATEGORY-LEVEL VALIDATION WORKING!</h4>
+                            <p>The inquiry was correctly rejected for exceeding category-level limits.</p>
+                            <p><strong>Validation Message:</strong> "${responseData.message}"</p>
+                        </div>
+                    `;
+                } else if (responseData.message && responseData.message.includes('exceeds the limit')) {
+                    html += `
+                        <div class="warning-box">
+                            <h4>⚠️ TOTAL LIMIT VALIDATION TRIGGERED</h4>
+                            <p>The inquiry was rejected for total limit, but we expected category-level validation.</p>
+                            <p><strong>Message:</strong> "${responseData.message}"</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="warning-box">
+                            <h4>❓ OTHER VALIDATION ERROR</h4>
+                            <p><strong>Error:</strong> "${responseData.message}"</p>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <details>
+                        <summary>View Full Response</summary>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    </details>
+                    
+                    <details>
+                        <summary>View Test Inquiry</summary>
+                        <pre>${JSON.stringify(testInquiry, null, 2)}</pre>
+                    </details>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-box">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
