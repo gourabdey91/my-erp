@@ -309,14 +309,25 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               }
             </p>
           </div>
-          <button
-            className="unified-btn unified-btn-secondary"
-            onClick={onCancel}
-            type="button"
-            disabled={loading}
-          >
-            ← Back to List
-          </button>
+          <div className="unified-header-actions">
+            <div className="header-total-amount">
+              <span className="header-total-label">Total Amount:</span>
+              <span className="header-total-value">
+                {parseFloat(formData.totalInquiryAmount || 0).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })} INR
+              </span>
+            </div>
+            <button
+              className="unified-btn unified-btn-secondary"
+              onClick={onCancel}
+              type="button"
+              disabled={loading}
+            >
+              ← Back to List
+            </button>
+          </div>
         </div>
       </div>
 
