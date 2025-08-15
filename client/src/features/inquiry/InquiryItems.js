@@ -514,8 +514,8 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
                             type="button"
                             className="material-selector-btn"
                             onClick={() => openMaterialSelector(index)}
-                            disabled={!hospital || !procedure}
-                            title={!hospital || !procedure ? 'Please select hospital and procedure first' : 'Select from material master'}
+                            disabled={!hospital}
+                            title={!hospital ? 'Please select hospital first' : 'Select from material master'}
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -807,7 +807,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
                       type="button"
                       className="material-selector-btn"
                       onClick={() => openMaterialSelector(index)}
-                      disabled={!hospital || !procedure}
+                      disabled={!hospital}
                       title="Select from material master"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

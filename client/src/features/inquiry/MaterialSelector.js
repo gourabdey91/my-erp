@@ -290,15 +290,21 @@ const MaterialSelector = ({
     }
   };
 
-  // Get available surgical categories from selected procedure
+  // Get available surgical categories from selected procedure or all categories
   const getAvailableSurgicalCategories = () => {
-    if (!procedure || !procedure.items) {
-      return [];
+    if (procedure && procedure.items) {
+      // If procedure is selected, show its surgical categories
+      return procedure.items.map(item => ({
+        _id: item.surgicalCategoryId._id || item.surgicalCategoryId,
+        description: item.surgicalCategoryId.description || 'Unknown Category'
+      }));
+    } else {
+      // If no procedure is selected, show all surgical categories
+      return dropdownData?.surgicalCategories?.map(category => ({
+        _id: category._id,
+        description: category.description
+      })) || [];
     }
-    return procedure.items.map(item => ({
-      _id: item.surgicalCategoryId._id || item.surgicalCategoryId,
-      description: item.surgicalCategoryId.description || 'Unknown Category'
-    }));
   };
 
   if (!isOpen) return null;
@@ -354,9 +360,9 @@ const MaterialSelector = ({
                     setSelectedLength('');
                   }}
                   className="filter-select"
-                  disabled={loading || !procedure}
+                  disabled={loading}
                 >
-                  <option value="">{procedure ? "Select Surgical Category" : "No Procedure Selected"}</option>
+                  <option value="">Select Surgical Category</option>
                   {getAvailableSurgicalCategories().map(category => (
                     <option key={category._id} value={category._id}>
                       {category.description}
