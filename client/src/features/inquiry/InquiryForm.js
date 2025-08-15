@@ -469,7 +469,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
               items={formData.items}
               onItemsChange={handleItemsChange}
               hospital={dropdownData.hospitals?.find(h => h._id === formData.hospital) || null}
-              procedure={dropdownData.surgicalProcedures?.find(p => p._id === formData.surgicalProcedure) || null}
+              procedure={filteredSurgicalProcedures?.find(p => p._id === formData.surgicalProcedure) || null}
               dropdownData={dropdownData}
             />
 
