@@ -215,6 +215,34 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                   </div>
                 </div>
 
+                {/* Validity Dates Row - Moved to top */}
+                <div className="unified-form-grid">
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Valid From *</label>
+                    <input 
+                      type="date"
+                      className="unified-search-input"
+                      name="validityFrom" 
+                      value={form.validityFrom} 
+                      onChange={handleChange} 
+                      required 
+                    />
+                  </div>
+
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Valid To *</label>
+                    <input 
+                      type="date"
+                      className="unified-search-input"
+                      name="validityTo" 
+                      value={form.validityTo} 
+                      onChange={handleChange} 
+                      min={form.validityFrom || `${new Date().getFullYear()}-01-01`}
+                      required 
+                    />
+                  </div>
+                </div>
+
                 <div className="unified-form-grid">
                   <div className="unified-form-field">
                     <label className="unified-form-label">Surgical Category (Optional)</label>
@@ -297,33 +325,6 @@ function ExpenseTypeAssignments({ hospital, currentUser, onClose }) {
                     </div>
                   </div>
                 )}
-
-                <div className="unified-form-grid">
-                  <div className="unified-form-field">
-                    <label className="unified-form-label">Valid From *</label>
-                    <input 
-                      type="date"
-                      className="unified-search-input"
-                      name="validityFrom" 
-                      value={form.validityFrom} 
-                      onChange={handleChange} 
-                      required 
-                    />
-                  </div>
-
-                  <div className="unified-form-field">
-                    <label className="unified-form-label">Valid To *</label>
-                    <input 
-                      type="date"
-                      className="unified-search-input"
-                      name="validityTo" 
-                      value={form.validityTo} 
-                      onChange={handleChange} 
-                      min={form.validityFrom || `${new Date().getFullYear()}-01-01`}
-                      required 
-                    />
-                  </div>
-                </div>
 
                 <div className="unified-form-actions">
                   <button 
