@@ -15,7 +15,6 @@ const MaterialSelector = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(''); // Add error state
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [selectedSurgicalCategory, setSelectedSurgicalCategory] = useState(''); // Add surgical category selection
   
   // Filter states
@@ -248,19 +247,7 @@ const MaterialSelector = ({
     }
   };
 
-  const handleMaterialSelect = (material) => {
-    setSelectedMaterial(material);
-  };
-
-  const handleConfirmSelection = () => {
-    if (selectedMaterial) {
-      onSelect(selectedMaterial);
-      handleClose();
-    }
-  };
-
   const handleClose = () => {
-    setSelectedMaterial(null);
     setSearchTerm('');
     setSelectedSurgicalCategory(''); // Reset surgical category selection
     setSelectedImplantType('');
@@ -313,7 +300,6 @@ const MaterialSelector = ({
     <div className="unified-modal-overlay">
       <div className="unified-modal-container material-selector-modal">
         <div className="unified-modal-header">
-          <h2>Select Material</h2>
           <button 
             className="unified-modal-close"
             onClick={handleClose}
@@ -324,14 +310,6 @@ const MaterialSelector = ({
         </div>
 
         <div className="unified-modal-body">
-          {/* Context Information */}
-          <div className="material-selector-context">
-            <div className="context-item">
-              <span className="context-label">Procedure:</span>
-              <span className="context-value">{procedure ? `${procedure.code} - ${procedure.name}` : 'No Procedure Selected'}</span>
-            </div>
-          </div>
-
           {/* Filter Controls */}
           <div className="filter-section">
             {/* Error Display */}
@@ -458,12 +436,15 @@ const MaterialSelector = ({
                 {filteredMaterials.map(material => (
                   <div
                     key={material._id}
-                    className={`material-item ${selectedMaterial?._id === material._id ? 'selected' : ''}`}
-                    onClick={() => handleMaterialSelect(material)}
+                    className={`material-item clickable`}
+                    onClick={() => {
+                      onSelect(material);
+                      handleClose();
+                    }}
                   >
                     <div className="material-main-row">
                       <div className="material-left">
-                        <span className="material-number clickable">{material.materialNumber}</span>
+                        <span className="material-number">{material.materialNumber}</span>
                         <span className="material-description">{material.description}</span>
                       </div>
                       <div className="material-right">
@@ -475,24 +456,6 @@ const MaterialSelector = ({
               </div>
             )}
           </div>
-        </div>
-
-        <div className="unified-modal-actions">
-          <button
-            type="button"
-            className="unified-btn unified-btn-secondary"
-            onClick={handleClose}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="unified-btn unified-btn-primary"
-            onClick={handleConfirmSelection}
-            disabled={!selectedMaterial}
-          >
-            Select Material
-          </button>
         </div>
       </div>
     </div>
