@@ -105,9 +105,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         return { 
           ...item, 
           totalAmount: calculations.totalAmount,
-          cgstAmount: calculations.cgstAmount,
-          sgstAmount: calculations.sgstAmount,
-          igstAmount: calculations.igstAmount
+          gstAmount: calculations.gstAmount,       // Total GST amount for database storage
+          cgstAmount: calculations.cgstAmount,     // Central GST component
+          sgstAmount: calculations.sgstAmount,     // State GST component  
+          igstAmount: calculations.igstAmount      // Integrated GST component
         };
       });
 
@@ -130,14 +131,19 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     unit: '',
     discountPercentage: 0,
     discountAmount: 0,
-    cgstAmount: 0,
-    sgstAmount: 0,
-    igstAmount: 0,
+    // GST breakdown fields - stored in database
+    gstAmount: 0,        // Total GST amount (CGST + SGST + IGST) - will be stored in DB
+    cgstAmount: 0,       // Central GST amount
+    sgstAmount: 0,       // State GST amount  
+    igstAmount: 0,       // Integrated GST amount
     totalAmount: 0,
     currency: 'INR'
   });
 
   // Calculate GST amounts based on state codes
+  // This function handles GST calculation as per Indian tax regulations:
+  // - Same State (Intrastate): CGST + SGST (50% each of total GST)
+  // - Different State (Interstate): IGST only (100% of total GST)
   const calculateGSTAmounts = (gstAmount, customerStateCode, companyStateCode) => {
     const isSameState = customerStateCode === companyStateCode;
     
@@ -173,7 +179,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     const baseAmount = unitRate * quantity;
     const gstAmount = (baseAmount * gstPercentage) / 100;
     
-    // Calculate GST breakdown
+    // Calculate GST breakdown based on state codes
     const gstBreakdown = calculateGSTAmounts(gstAmount, customerStateCode, companyStateCode);
     
     // Use discount amount if provided, otherwise calculate from percentage
@@ -183,10 +189,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
     
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,
-      gstAmount: Math.round(gstAmount * 100) / 100,
-      cgstAmount: gstBreakdown.cgstAmount,
-      sgstAmount: gstBreakdown.sgstAmount,
-      igstAmount: gstBreakdown.igstAmount,
+      gstAmount: Math.round(gstAmount * 100) / 100,        // Total GST amount - will be stored in DB
+      cgstAmount: gstBreakdown.cgstAmount,                 // Central GST component
+      sgstAmount: gstBreakdown.sgstAmount,                 // State GST component
+      igstAmount: gstBreakdown.igstAmount,                 // Integrated GST component
       discountAmount: Math.round(finalDiscountAmount * 100) / 100,
       totalAmount: Math.round(totalAmount * 100) / 100
     };
@@ -280,10 +286,12 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
         updatedItems[index].discountAmount = 0;
       }
       
+      // Update all calculated fields with proper comments
       updatedItems[index].totalAmount = calculations.totalAmount;
-      updatedItems[index].cgstAmount = calculations.cgstAmount;
-      updatedItems[index].sgstAmount = calculations.sgstAmount;
-      updatedItems[index].igstAmount = calculations.igstAmount;
+      updatedItems[index].gstAmount = calculations.gstAmount;     // Total GST for database storage
+      updatedItems[index].cgstAmount = calculations.cgstAmount;   // Central GST component
+      updatedItems[index].sgstAmount = calculations.sgstAmount;   // State GST component
+      updatedItems[index].igstAmount = calculations.igstAmount;   // Integrated GST component
     }
     
     // For serial number changes, just update without sorting (sort on save)
@@ -365,10 +373,12 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
       console.log('Material select - State codes:', { customerStateCode, companyStateCode });
       
       const calculations = calculateItemTotal(updatedItems[selectedItemIndex], customerStateCode, companyStateCode);
+      // Update all calculated fields when material is selected
       updatedItems[selectedItemIndex].totalAmount = calculations.totalAmount;
-      updatedItems[selectedItemIndex].cgstAmount = calculations.cgstAmount;
-      updatedItems[selectedItemIndex].sgstAmount = calculations.sgstAmount;
-      updatedItems[selectedItemIndex].igstAmount = calculations.igstAmount;
+      updatedItems[selectedItemIndex].gstAmount = calculations.gstAmount;     // Total GST for database
+      updatedItems[selectedItemIndex].cgstAmount = calculations.cgstAmount;   // Central GST component
+      updatedItems[selectedItemIndex].sgstAmount = calculations.sgstAmount;   // State GST component
+      updatedItems[selectedItemIndex].igstAmount = calculations.igstAmount;   // Integrated GST component
       
       setInquiryItems(updatedItems);
       onItemsChange(updatedItems);
@@ -386,6 +396,9 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
   };
 
   // Calculate if same state for GST display logic
+  // This function determines GST field visibility based on state comparison:
+  // - Same State: Show CGST + SGST columns, hide IGST column
+  // - Different State: Show CGST + IGST columns, hide SGST column
   const isSameState = () => {
     const customerStateCode = hospital?.stateCode || '';
     const companyStateCode = companyDetails?.compliance?.stateCode || '';
@@ -401,10 +414,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
   // Calculate dynamic colspan for secondary rows based on visible columns
   const getTableColspan = () => {
-    // Base columns: S.No, Material No., Unit Rate, Quantity, Unit, CGST Amt, (SGST/IGST), Total Amount, Actions = 9
-    let colspan = 9;
+    // Base columns: S.No, Material No., Unit Rate, Quantity, Unit, CGST Amt, (SGST/IGST), GST Amount, Total Amount, Actions = 10
+    let colspan = 10; // Updated to include new GST Amount column
     
-    // Add discount columns if allowed
+    // Add discount columns if allowed (Disc % and Disc Amt)
     if (hospital?.discountAllowed) {
       colspan += 2; // Disc % and Disc Amt
     }
@@ -454,12 +467,14 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                   <th>Unit</th>
                   {hospital?.discountAllowed && <th>Disc %</th>}
                   {hospital?.discountAllowed && <th>Disc Amt</th>}
+                  {/* GST column headers - visibility based on state codes */}
                   <th>CGST Amt</th>
                   {isSameState() ? (
                     <th>SGST Amt</th>
                   ) : (
                     <th>IGST Amt</th>
                   )}
+                  <th>GST Amount</th>
                   <th>Total Amount</th>
                   <th>Actions</th>
                 </tr>
@@ -588,6 +603,10 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                         </td>
                       )}
 
+                      {/* GST Amount columns - visibility based on state comparison
+                          Same State (Intrastate): CGST + SGST columns visible, IGST hidden
+                          Different State (Interstate): CGST + IGST columns visible, SGST hidden
+                          Total GST Amount: Always visible - sum of all GST components for database storage */}
                       <td data-label="CGST Amt">
                         <input
                           type="text"
@@ -622,6 +641,18 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                           />
                         </td>
                       )}
+
+                      {/* Total GST Amount column - sum of CGST + SGST + IGST for database storage */}
+                      <td data-label="GST Amount">
+                        <input
+                          type="text"
+                          className="unified-input gst-amount"
+                          value={formatCurrency(item.gstAmount || 0, item.currency)}
+                          readOnly
+                          style={{ textAlign: 'right', fontWeight: '600', color: '#17a2b8' }}
+                          title={`Total GST amount: ${formatCurrency(item.gstAmount || 0, item.currency)} (CGST + SGST + IGST)`}
+                        />
+                      </td>
 
                       <td data-label="Total Amount">
                         <input
@@ -923,6 +954,19 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
                       </>
                     )}
                   </div>
+                </div>
+
+                {/* Total GST Amount field for mobile view */}
+                <div className="mobile-field-group">
+                  <label className="mobile-field-label">GST Amount (Total)</label>
+                  <input
+                    type="text"
+                    className="unified-input mobile-field-input gst-amount"
+                    value={formatCurrency(item.gstAmount || 0, item.currency)}
+                    readOnly
+                    style={{ fontWeight: '600', color: '#17a2b8' }}
+                    title={`Total GST: ${formatCurrency(item.gstAmount || 0, item.currency)} (CGST + SGST + IGST)`}
+                  />
                 </div>
 
                 <div className="mobile-field-group">
