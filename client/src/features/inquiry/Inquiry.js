@@ -538,6 +538,7 @@ const Inquiry = () => {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>
