@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
   try {
     const procedures = await Procedure.find({ isActive: true })
     .populate('paymentTypeId', 'code description')
-    .populate('categoryId', 'code description')
+    .populate('items.surgicalCategoryId', 'code description')
     .populate('createdBy', 'firstName lastName')
     .populate('updatedBy', 'firstName lastName')
     .sort({ code: 1 });
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
   try {
     const procedure = await Procedure.findById(req.params.id)
       .populate('paymentTypeId', 'code description')
-      .populate('categoryId', 'code description')
+      .populate('items.surgicalCategoryId', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
     
@@ -62,26 +62,41 @@ router.post('/', async (req, res) => {
     const { 
       code,
       name,
-      categoryId,
+      items,
       paymentTypeId, 
-      amount, 
-      currency,
       createdBy 
     } = req.body;
     
     // Validation
-    if (!code || !name || !categoryId || !paymentTypeId || !amount || !createdBy) {
+    if (!code || !name || !items || !paymentTypeId || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: 'Code, name, category, payment type, amount, and created by are required'
+        message: 'Code, name, items, payment type, and created by are required'
       });
     }
 
-    if (amount < 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Amount cannot be negative'
+        message: 'At least one surgical category item is required'
       });
+    }
+
+    // Validate each item
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.surgicalCategoryId || !item.limit || !item.currency) {
+        return res.status(400).json({
+          success: false,
+          message: `Item ${i + 1}: Surgical category, limit, and currency are required`
+        });
+      }
+      if (item.limit < 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Item ${i + 1}: Limit cannot be negative`
+        });
+      }
     }
 
     // Validate procedure code format
@@ -108,10 +123,8 @@ router.post('/', async (req, res) => {
     const procedure = new Procedure({
       code: code.toUpperCase(),
       name,
-      categoryId,
+      items,
       paymentTypeId,
-      amount,
-      currency: currency || 'INR',
       createdBy,
       updatedBy: createdBy
     });
@@ -120,7 +133,7 @@ router.post('/', async (req, res) => {
     
     // Populate the created procedure before returning
     await procedure.populate('paymentTypeId', 'code description');
-    await procedure.populate('categoryId', 'code description');
+    await procedure.populate('items.surgicalCategoryId', 'code description');
     await procedure.populate('createdBy', 'firstName lastName');
     await procedure.populate('updatedBy', 'firstName lastName');
 
@@ -153,10 +166,8 @@ router.put('/:id', async (req, res) => {
   try {
     const { 
       name,
-      categoryId,
+      items,
       paymentTypeId, 
-      amount, 
-      currency,
       updatedBy 
     } = req.body;
     
@@ -167,11 +178,31 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    if (amount !== undefined && amount < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Amount cannot be negative'
-      });
+    // Validate items if provided
+    if (items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one surgical category item is required'
+        });
+      }
+
+      // Validate each item
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (!item.surgicalCategoryId || !item.limit || !item.currency) {
+          return res.status(400).json({
+            success: false,
+            message: `Item ${i + 1}: Surgical category, limit, and currency are required`
+          });
+        }
+        if (item.limit < 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Item ${i + 1}: Limit cannot be negative`
+          });
+        }
+      }
     }
 
     const procedure = await Procedure.findById(req.params.id);
@@ -185,17 +216,15 @@ router.put('/:id', async (req, res) => {
 
     // Update fields (Note: code cannot be updated for data integrity)
     if (name) procedure.name = name;
-    if (categoryId) procedure.categoryId = categoryId;
+    if (items) procedure.items = items;
     if (paymentTypeId) procedure.paymentTypeId = paymentTypeId;
-    if (amount !== undefined) procedure.amount = amount;
-    if (currency) procedure.currency = currency;
     procedure.updatedBy = updatedBy;
 
     await procedure.save();
     
     // Populate before returning
     await procedure.populate('paymentTypeId', 'code description');
-    await procedure.populate('categoryId', 'code description');
+    await procedure.populate('items.surgicalCategoryId', 'code description');
     await procedure.populate('createdBy', 'firstName lastName');
     await procedure.populate('updatedBy', 'firstName lastName');
 
