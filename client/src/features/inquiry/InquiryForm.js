@@ -164,8 +164,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         ...prev,
         surgicalProcedure: value,
         limit: selectedProcedure ? {
-          amount: selectedProcedure.amount,
-          currency: selectedProcedure.currency
+          amount: selectedProcedure.totalLimit,
+          currency: selectedProcedure.currency || 'INR'
         } : {
           amount: '',
           currency: 'INR'
@@ -419,7 +419,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                     <option value="">Select Procedure (Optional)</option>
                     {filteredSurgicalProcedures.map(procedure => (
                       <option key={procedure._id} value={procedure._id}>
-                        {procedure.code} - {procedure.name} ({procedure.amount} {procedure.currency})
+                        {procedure.code} - {procedure.name} {procedure.totalLimit ? `(${procedure.totalLimit} ${procedure.currency || 'INR'})` : ''}
                       </option>
                     ))}
                   </select>
