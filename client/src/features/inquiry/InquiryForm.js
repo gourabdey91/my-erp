@@ -172,8 +172,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         }
       }));
     } else if (field === 'limit.amount') {
-      // Only allow manual edit of limit if no procedure is selected
-      if (!formData.surgicalProcedure) {
+      // Allow manual edit of limit if no procedure is selected OR if procedure has zero/no limit
+      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+      const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+      
+      if (!formData.surgicalProcedure || procedureHasNoLimit) {
         setFormData(prev => ({
           ...prev,
           limit: {
@@ -183,8 +186,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         }));
       }
     } else if (field === 'limit.currency') {
-      // Only allow manual edit of limit currency if no procedure is selected
-      if (!formData.surgicalProcedure) {
+      // Allow manual edit of limit currency if no procedure is selected OR if procedure has zero/no limit
+      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+      const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+      
+      if (!formData.surgicalProcedure || procedureHasNoLimit) {
         setFormData(prev => ({
           ...prev,
           limit: {
@@ -447,13 +453,47 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       onChange={(e) => handleChange('limit.amount', e.target.value)}
                       min="0"
                       step="0.01"
-                      style={{ flex: '2' }}
+                      style={{ 
+                        flex: '2',
+                        backgroundColor: (() => {
+                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'white' : '#f8f9fa';
+                        })(),
+                        cursor: (() => {
+                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'text' : 'not-allowed';
+                        })()
+                      }}
+                      readOnly={(() => {
+                        const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                        const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
+                        return formData.surgicalProcedure && procedureHasLimit;
+                      })()}
                     />
                     <select
                       className="unified-input"
                       value={formData.limit.currency}
                       onChange={(e) => handleChange('limit.currency', e.target.value)}
-                      style={{ flex: '1' }}
+                      style={{ 
+                        flex: '1',
+                        backgroundColor: (() => {
+                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'white' : '#f8f9fa';
+                        })(),
+                        cursor: (() => {
+                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
+                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'pointer' : 'not-allowed';
+                        })()
+                      }}
+                      disabled={(() => {
+                        const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                        const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
+                        return formData.surgicalProcedure && procedureHasLimit;
+                      })()}
                     >
                       <option value="INR">INR</option>
                       <option value="USD">USD</option>
@@ -463,9 +503,27 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       <option value="CAD">CAD</option>
                     </select>
                   </div>
-                  {formData.surgicalProcedure && (
-                    <small style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
-                      Limit is automatically set from selected procedure
+                  {formData.surgicalProcedure && (() => {
+                    const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
+                    const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
+                    
+                    if (procedureHasLimit) {
+                      return (
+                        <small style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                          Limit is automatically set from selected procedure ({selectedProcedure.totalLimit} {selectedProcedure.currency || 'INR'})
+                        </small>
+                      );
+                    } else {
+                      return (
+                        <small style={{ color: 'var(--blue-600)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                          Procedure has no limit set - you can enter a custom limit amount
+                        </small>
+                      );
+                    }
+                  })()}
+                  {!formData.surgicalProcedure && (
+                    <small style={{ color: 'var(--blue-600)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                      Enter limit amount (no procedure selected)
                     </small>
                   )}
                   {errors.limit && (
