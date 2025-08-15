@@ -139,13 +139,21 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, surgicalCategory, d
 
   // Calculate GST amounts based on state codes
   const calculateGSTAmounts = (gstAmount, customerStateCode, companyStateCode) => {
-    const cgstAmount = gstAmount * 0.5; // Always 50%
-    
-    // If same state: SGST = 50%, IGST = 0
-    // If different state: SGST = 0, IGST = 50%
     const isSameState = customerStateCode === companyStateCode;
-    const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
-    const igstAmount = isSameState ? 0 : gstAmount * 0.5;
+    
+    let cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
+    
+    if (isSameState) {
+      // Same state: CGST + SGST (each is 50% of total GST)
+      cgstAmount = gstAmount * 0.5;
+      sgstAmount = gstAmount * 0.5;
+      igstAmount = 0;
+    } else {
+      // Different state: IGST only (100% of total GST)
+      cgstAmount = 0;
+      sgstAmount = 0;
+      igstAmount = gstAmount;
+    }
     
     return {
       cgstAmount: Math.round(cgstAmount * 100) / 100,
