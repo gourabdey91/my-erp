@@ -40,7 +40,8 @@ const Hospitals = () => {
     defaultPricing: false,
     discountAllowed: false,
     customerIsHospital: true,
-    businessUnit: ''
+    businessUnit: '',
+    useAllMaterial: false
   });
 
   const paymentTermsOptions = [
@@ -113,7 +114,8 @@ const Hospitals = () => {
       defaultPricing: false,
       discountAllowed: false,
       customerIsHospital: true,
-      businessUnit: ''
+      businessUnit: '',
+      useAllMaterial: false
     });
     setEditingHospital(null);
     setShowForm(false);
@@ -241,7 +243,8 @@ const Hospitals = () => {
       defaultPricing: hospital.defaultPricing || false,
       discountAllowed: hospital.discountAllowed || false,
       customerIsHospital: hospital.customerIsHospital !== false,
-      businessUnit: hospital.businessUnit._id || hospital.businessUnit
+      businessUnit: hospital.businessUnit._id || hospital.businessUnit,
+      useAllMaterial: hospital.useAllMaterial || false
     });
     setEditingHospital(hospital);
     setShowForm(true);
@@ -541,6 +544,22 @@ const Hospitals = () => {
               </label>
               <div className="unified-help-text">
                 Indicates that this customer is a hospital entity
+              </div>
+            </div>
+
+            <div className="unified-checkbox-container">
+              <label className="unified-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="useAllMaterial"
+                  checked={formData.useAllMaterial}
+                  onChange={handleInputChange}
+                  className="unified-checkbox"
+                />
+                Use All Material
+              </label>
+              <div className="unified-help-text">
+                Allow access to all materials regardless of surgical categories
               </div>
             </div>
 

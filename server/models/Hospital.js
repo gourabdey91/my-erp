@@ -63,6 +63,11 @@ const hospitalSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  useAllMaterial: {
+    type: Boolean,
+    default: false,
+    description: 'Flag to indicate if hospital can use all materials without specific assignments'
+  },
   customerIsHospital: {
     type: Boolean,
     default: true
