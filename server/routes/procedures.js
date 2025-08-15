@@ -58,9 +58,11 @@ router.get('/:id', async (req, res) => {
 
 // Get procedures available for a specific hospital
 // Only return procedures where ALL surgical categories are assigned to the hospital
+// and payment method matches (if specified)
 router.get('/hospital/:hospitalId', async (req, res) => {
   try {
     const { hospitalId } = req.params;
+    const { paymentMethod } = req.query;
     
     // First get the hospital with its surgical categories
     const Hospital = require('../models/Hospital');
@@ -76,8 +78,16 @@ router.get('/hospital/:hospitalId', async (req, res) => {
     // Get hospital's surgical category IDs
     const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id.toString());
     
+    // Build query for procedures
+    let procedureQuery = { isActive: true };
+    
+    // Add payment method filter if provided
+    if (paymentMethod && paymentMethod.trim() !== '') {
+      procedureQuery.paymentTypeId = paymentMethod;
+    }
+    
     // Get all active procedures with populated surgical categories
-    const allProcedures = await Procedure.find({ isActive: true })
+    const allProcedures = await Procedure.find(procedureQuery)
       .populate('paymentTypeId', 'code description')
       .populate('items.surgicalCategoryId', 'code description')
       .populate('createdBy', 'firstName lastName')
@@ -107,7 +117,8 @@ router.get('/hospital/:hospitalId', async (req, res) => {
         name: hospital.shortName,
         availableCategories: hospital.surgicalCategories.length,
         totalProcedures: allProcedures.length,
-        availableProcedures: availableProcedures.length
+        availableProcedures: availableProcedures.length,
+        paymentMethodFilter: paymentMethod || 'none'
       }
     });
     

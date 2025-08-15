@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Payment Method Filtering</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .debug-box { 
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .selector { margin: 10px 0; }
+        select { padding: 8px; margin: 5px; }
+        .comparison { display: flex; gap: 20px; }
+        .comparison > div { flex: 1; }
+        .info-box {
+            background: #d1ecf1;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Payment Method + Hospital Filtering</h1>
+    
+    <div class="info-box">
+        <h4>📋 What This Tests:</h4>
+        <p><strong>Enhanced Requirement:</strong> Procedures should only appear if:</p>
+        <ol>
+            <li><strong>ALL surgical categories</strong> assigned to that procedure are also assigned to the hospital</li>
+            <li><strong>Payment method</strong> of the procedure matches the selected payment method (if selected)</li>
+        </ol>
+        <p><strong>Logic:</strong> Double filtering by hospital capabilities AND payment method compatibility.</p>
+    </div>
+    
+    <div class="section">
+        <h3>Step 1: Load Data</h3>
+        <button onclick="loadDropdownData()">Load Hospitals & Payment Methods</button>
+        <div id="dataResult"></div>
+        
+        <div class="selector">
+            <label for="hospitalSelect">Select Hospital:</label>
+            <select id="hospitalSelect" disabled>
+                <option value="">Select a hospital...</option>
+            </select>
+            
+            <label for="paymentSelect">Select Payment Method:</label>
+            <select id="paymentSelect" disabled>
+                <option value="">All Payment Methods</option>
+            </select>
+            
+            <button onclick="testCombinedFiltering()" id="testBtn" disabled>Test Combined Filtering</button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Step 2: Compare Results</h3>
+        <div id="comparisonResult"></div>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:5000/api';
+        let hospitals = [];
+        let paymentMethods = [];
+
+        async function loadDropdownData() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = '<p>Loading data...</p>';
+            
+            try {
+                const [hospitalsRes, paymentMethodsRes] = await Promise.all([
+                    fetch(`${baseURL}/hospital`),
+                    fetch(`${baseURL}/payment-method`)
+                ]);
+                
+                const hospitalsData = await hospitalsRes.json();
+                const paymentMethodsData = await paymentMethodsRes.json();
+                
+                if (hospitalsData.success && paymentMethodsData.success) {
+                    hospitals = hospitalsData.data;
+                    paymentMethods = paymentMethodsData.data;
+                    
+                    // Populate hospital dropdown
+                    const hospitalSelect = document.getElementById('hospitalSelect');
+                    hospitalSelect.innerHTML = '<option value="">Select a hospital...</option>';
+                    
+                    hospitals.forEach(hospital => {
+                        const categoryCount = hospital.surgicalCategories ? hospital.surgicalCategories.length : 0;
+                        const option = document.createElement('option');
+                        option.value = hospital._id;
+                        option.textContent = `${hospital.shortName} (${categoryCount} categories)`;
+                        hospitalSelect.appendChild(option);
+                    });
+                    
+                    // Populate payment method dropdown
+                    const paymentSelect = document.getElementById('paymentSelect');
+                    paymentSelect.innerHTML = '<option value="">All Payment Methods</option>';
+                    
+                    paymentMethods.forEach(payment => {
+                        const option = document.createElement('option');
+                        option.value = payment._id;
+                        option.textContent = `${payment.code} - ${payment.description}`;
+                        paymentSelect.appendChild(option);
+                    });
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>📊 Data Loaded Successfully</h4>
+                            <p><strong>Hospitals:</strong> ${hospitals.length}</p>
+                            <p><strong>Payment Methods:</strong> ${paymentMethods.length}</p>
+                        </div>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    
+                    // Enable dropdowns
+                    document.getElementById('hospitalSelect').disabled = false;
+                    document.getElementById('paymentSelect').disabled = false;
+                    
+                    // Enable test button when hospital is selected
+                    document.getElementById('hospitalSelect').addEventListener('change', updateTestButton);
+                    document.getElementById('paymentSelect').addEventListener('change', updateTestButton);
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load data</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function updateTestButton() {
+            const hospitalId = document.getElementById('hospitalSelect').value;
+            document.getElementById('testBtn').disabled = !hospitalId;
+        }
+
+        async function testCombinedFiltering() {
+            const hospitalId = document.getElementById('hospitalSelect').value;
+            const paymentMethodId = document.getElementById('paymentSelect').value;
+            const resultDiv = document.getElementById('comparisonResult');
+            
+            if (!hospitalId) {
+                alert('Please select a hospital first');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Testing combined filtering...</p>';
+            
+            try {
+                // Get all procedures (unfiltered)
+                const allProceduresResponse = await fetch(`${baseURL}/procedures`);
+                const allProceduresData = await allProceduresResponse.json();
+                
+                // Get filtered procedures (hospital only)
+                const hospitalFilteredResponse = await fetch(`${baseURL}/procedures/hospital/${hospitalId}`);
+                const hospitalFilteredData = await hospitalFilteredResponse.json();
+                
+                // Get filtered procedures (hospital + payment method)
+                let combinedUrl = `${baseURL}/procedures/hospital/${hospitalId}`;
+                if (paymentMethodId) {
+                    combinedUrl += `?paymentMethod=${paymentMethodId}`;
+                }
+                const combinedFilteredResponse = await fetch(combinedUrl);
+                const combinedFilteredData = await combinedFilteredResponse.json();
+                
+                if (allProceduresData.success && hospitalFilteredData.success && combinedFilteredData.success) {
+                    const allProcedures = allProceduresData.data;
+                    const hospitalFiltered = hospitalFilteredData.data;
+                    const combinedFiltered = combinedFilteredData.data;
+                    
+                    const selectedHospital = hospitals.find(h => h._id === hospitalId);
+                    const selectedPayment = paymentMethods.find(p => p._id === paymentMethodId);
+                    
+                    let html = `
+                        <div class="debug-box">
+                            <h4>🏥 Hospital: ${selectedHospital.shortName}</h4>
+                            <h4>💳 Payment Method: ${selectedPayment ? selectedPayment.description : 'All Methods'}</h4>
+                            <p><strong>Total Procedures in System:</strong> ${allProcedures.length}</p>
+                            <p><strong>After Hospital Filtering:</strong> ${hospitalFiltered.length} (${((hospitalFiltered.length / allProcedures.length) * 100).toFixed(1)}%)</p>
+                            <p><strong>After Combined Filtering:</strong> ${combinedFiltered.length} (${((combinedFiltered.length / allProcedures.length) * 100).toFixed(1)}%)</p>
+                            ${paymentMethodId ? `<p><strong>Payment Method Impact:</strong> Removed ${hospitalFiltered.length - combinedFiltered.length} procedures</p>` : ''}
+                        </div>
+                        
+                        <div class="comparison">
+                            <div>
+                                <h4>🔍 All Procedures (${allProcedures.length})</h4>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Name</th>
+                                            <th>Payment Type</th>
+                                            <th>Categories</th>
+                                            <th>Available?</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    // Create maps for quick lookup
+                    const combinedProcedureIds = new Set(combinedFiltered.map(p => p._id));
+                    const hospitalProcedureIds = new Set(hospitalFiltered.map(p => p._id));
+                    
+                    allProcedures.forEach(procedure => {
+                        const isCombinedAvailable = combinedProcedureIds.has(procedure._id);
+                        const isHospitalAvailable = hospitalProcedureIds.has(procedure._id);
+                        
+                        let status = '❌ No';
+                        let bgColor = '#f8d7da';
+                        
+                        if (isCombinedAvailable) {
+                            status = '✅ Yes';
+                            bgColor = '#d4edda';
+                        } else if (isHospitalAvailable) {
+                            status = '⚠️ Hospital OK, Payment Method Mismatch';
+                            bgColor = '#fff3cd';
+                        }
+                        
+                        const categories = procedure.items?.map(item => 
+                            item.surgicalCategoryId?.description || item.surgicalCategoryId?.code || 'Unknown'
+                        ).join(', ') || 'No categories';
+                        
+                        const paymentType = procedure.paymentTypeId?.description || 'Unknown';
+                        
+                        html += `
+                            <tr style="background-color: ${bgColor};">
+                                <td>${procedure.code}</td>
+                                <td>${procedure.name}</td>
+                                <td>${paymentType}</td>
+                                <td>${categories}</td>
+                                <td>${status}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="debug-box">
+                            <h4>📊 Filtering Summary</h4>
+                            <p><strong>✅ Available:</strong> ${combinedFiltered.length} procedures (pass both hospital and payment method filters)</p>
+                            <p><strong>⚠️ Hospital OK, Payment Mismatch:</strong> ${hospitalFiltered.length - combinedFiltered.length} procedures</p>
+                            <p><strong>❌ Hospital Incompatible:</strong> ${allProcedures.length - hospitalFiltered.length} procedures</p>
+                        </div>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Failed to load procedures</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
