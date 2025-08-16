@@ -33,15 +33,18 @@ const Template = () => {
     try {
       const [categoriesRes, proceduresRes, paymentMethodsRes] = await Promise.all([
         categoryAPI.getAll({ page: 1, limit: 1000 }),
-        procedureAPI.getAll({ page: 1, limit: 1000 }),
+        procedureAPI.getAll(),
         paymentTypeAPI.getAll({ page: 1, limit: 1000 })
       ]);
 
       console.log('Dropdown data fetched successfully');
+      console.log('Procedures response:', proceduresRes);
+
+      const proceduresData = proceduresRes?.success ? proceduresRes.data : (proceduresRes?.data || proceduresRes || []);
 
       setDropdownData({
         surgicalCategories: categoriesRes.success ? categoriesRes.data : [],
-        surgicalProcedures: proceduresRes.success ? proceduresRes.data : [],
+        surgicalProcedures: Array.isArray(proceduresData) ? proceduresData : [],
         paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : []
       });
     } catch (error) {

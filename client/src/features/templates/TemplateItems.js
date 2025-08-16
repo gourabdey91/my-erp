@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import MaterialSelector from '../inquiry/MaterialSelector';
+import SimpleMaterialSelector from './SimpleMaterialSelector';
 import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
 
@@ -12,7 +12,6 @@ const TemplateItems = ({
   disabled = false 
 }) => {
   const [templateItems, setTemplateItems] = useState(items);
-  const [itemErrors, setItemErrors] = useState({});
   const [materialSelectorOpen, setMaterialSelectorOpen] = useState(false);
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [companyDetails, setCompanyDetails] = useState(null);
@@ -218,237 +217,261 @@ const TemplateItems = ({
   };
 
   return (
-    <div className="unified-form-section">
-      <div className="template-items-header">
-        <h3 className="template-items-title">Template Items</h3>
-        <div className={`template-discount-indicator ${discountApplicable ? 'enabled' : 'disabled'}`}>
-          {discountApplicable ? '✓ Discount columns enabled' : '✗ Discount columns disabled'}
+    <div className="unified-card">
+      <div className="unified-card-content">
+        <div className="inquiry-items-container">
+          <div className="form-section-title">Template Items</div>
+
+          {errors && <div className="unified-error-text">{errors}</div>}
+
+          {/* Items Table - Matching inquiry design */}
+          <div className="unified-table-responsive">
+            <table className="unified-table inquiry-items-table">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Material No.</th>
+                  <th>Unit Rate</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  {discountApplicable && <th>Disc %</th>}
+                  {discountApplicable && <th>Disc Amt</th>}
+                  <th>Total Amount</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templateItems.map((item, index) => (
+                  <React.Fragment key={index}>
+                    {/* Main row */}
+                    <tr className="inquiry-main-row">
+                      <td data-label="S.No" className="text-center">
+                        <input
+                          type="text"
+                          className="unified-input text-center"
+                          style={{ width: '50px' }}
+                          value={item.serialNumber.toString().padStart(2, '0')}
+                          onChange={(e) => {
+                            const numericValue = e.target.value.replace(/\D/g, '');
+                            handleInputChange(index, 'serialNumber', numericValue || '1');
+                          }}
+                          placeholder="01"
+                          disabled={disabled}
+                        />
+                      </td>
+                      
+                      <td data-label="Material No.">
+                        <div className="material-number-container">
+                          <input
+                            type="text"
+                            className="unified-input"
+                            value={item.materialNumber || ''}
+                            onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
+                            placeholder="Enter material number"
+                            disabled={disabled}
+                          />
+                          <button
+                            type="button"
+                            className="material-selector-btn"
+                            onClick={() => handleMaterialSelector(index)}
+                            disabled={disabled}
+                            title="Select from material master"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M21 21L16.514 16.506M19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      
+                      <td data-label="Unit Rate">
+                        <input
+                          type="number"
+                          className="unified-input"
+                          value={item.unitRate || ''}
+                          onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          disabled={disabled}
+                        />
+                      </td>
+                      
+                      <td data-label="Quantity">
+                        <input
+                          type="number"
+                          className="unified-input text-center"
+                          value={item.quantity || ''}
+                          onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
+                          placeholder="0"
+                          step="0.01"
+                          min="0.01"
+                          disabled={disabled}
+                        />
+                      </td>
+                      
+                      <td data-label="Unit">
+                        <input
+                          type="text"
+                          className="unified-input text-center"
+                          value={item.unit || ''}
+                          onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
+                          placeholder="Unit"
+                          disabled={disabled}
+                        />
+                      </td>
+                      
+                      {discountApplicable && (
+                        <td data-label="Disc %">
+                          <input
+                            type="number"
+                            className="unified-input text-center"
+                            value={item.discountPercentage || ''}
+                            onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            disabled={disabled}
+                          />
+                        </td>
+                      )}
+                      
+                      {discountApplicable && (
+                        <td data-label="Disc Amt">
+                          <input
+                            type="number"
+                            className="unified-input"
+                            value={item.discountAmount || ''}
+                            onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            disabled={disabled}
+                          />
+                        </td>
+                      )}
+                      
+                      <td data-label="Total Amount">
+                        <input
+                          type="text"
+                          className="unified-input total-amount"
+                          value={`₹${parseFloat(item.totalAmount || 0).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}`}
+                          readOnly
+                          disabled
+                        />
+                      </td>
+                      
+                      <td data-label="Actions">
+                        <div className="item-actions">
+                          <button
+                            type="button"
+                            className="action-btn delete-btn"
+                            onClick={() => handleRemoveItem(index)}
+                            disabled={disabled || templateItems.length <= 1}
+                            title="Remove Item"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M3 6H5H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M10 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Description row */}
+                    <tr className="inquiry-description-row">
+                      <td className="description-spacer"></td>
+                      <td colSpan={discountApplicable ? 6 : 4} className="material-description-cell">
+                        <div className="material-description-container">
+                          <span className="description-label">Desc:</span>
+                          <div className="description-content">
+                            <span className="description-text">
+                              {item.materialDescription ? (
+                                item.materialDescription
+                              ) : (
+                                <span className="description-placeholder">Material description will appear here</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="description-spacer"></td>
+                      <td className="description-spacer"></td>
+                    </tr>
+
+                    {/* HSN and GST row */}
+                    <tr className="inquiry-gst-row">
+                      <td className="description-spacer"></td>
+                      <td colSpan={2} className="hsn-code-cell">
+                        <div className="hsn-code-container">
+                          <span className="hsn-label">HSN:</span>
+                          <div className="hsn-content">
+                            <span className="hsn-text">
+                              {item.hsnCode ? (
+                                item.hsnCode
+                              ) : (
+                                <span className="hsn-placeholder">-</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td colSpan={discountApplicable ? 3 : 1} className="hsn-code-cell">
+                        <div className="gst-code-container">
+                          <span className="gst-label">GST%:</span>
+                          <div className="gst-content">
+                            <span className="gst-text">
+                              {item.gstPercentage ? (
+                                `${item.gstPercentage}%`
+                              ) : (
+                                <span className="gst-placeholder">-</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="description-spacer"></td>
+                      <td className="description-spacer"></td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Add Item Button */}
+          <div className="unified-form-actions" style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              className="unified-btn unified-btn-primary"
+              onClick={handleAddItem}
+              disabled={disabled}
+            >
+              Add Item
+            </button>
+          </div>
+
+          {/* Material Selector Modal */}
+          {materialSelectorOpen && (
+            <SimpleMaterialSelector
+              isOpen={materialSelectorOpen}
+              onClose={() => {
+                setMaterialSelectorOpen(false);
+                setSelectedItemIndex(null);
+              }}
+              onSelect={handleMaterialSelect}
+              surgicalCategories={surgicalCategories}
+            />
+          )}
         </div>
       </div>
-
-      {errors && <div className="unified-form-error">{errors}</div>}
-
-      <div className="unified-table-responsive">
-        <table className="unified-table">
-          <thead>
-            <tr>
-              <th>S.No</th>
-              <th>Material Number</th>
-              <th>Material Description</th>
-              <th>HSN Code</th>
-              <th>Unit Rate</th>
-              <th>GST %</th>
-              <th>Quantity</th>
-              <th>Unit</th>
-              {discountApplicable && <th>Discount %</th>}
-              {discountApplicable && <th>Discount Amount</th>}
-              <th>Total Amount</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {templateItems.map((item, index) => (
-              <React.Fragment key={index}>
-                {/* Main row */}
-                <tr>
-                  <td>{item.serialNumber}</td>
-                  <td>
-                    <div className="unified-form-input-group">
-                      <input
-                        type="text"
-                        className="unified-form-input"
-                        value={item.materialNumber || ''}
-                        onChange={(e) => handleInputChange(index, 'materialNumber', e.target.value)}
-                        placeholder="Material Number"
-                        disabled={disabled}
-                      />
-                      <button
-                        type="button"
-                        className="unified-btn unified-btn-secondary unified-btn-sm"
-                        onClick={() => handleMaterialSelector(index)}
-                        disabled={disabled}
-                      >
-                        📋
-                      </button>
-                    </div>
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      className="unified-form-input"
-                      value={item.materialDescription || ''}
-                      onChange={(e) => handleInputChange(index, 'materialDescription', e.target.value)}
-                      placeholder="Material Description"
-                      disabled={disabled}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      className="unified-form-input"
-                      value={item.hsnCode || ''}
-                      onChange={(e) => handleInputChange(index, 'hsnCode', e.target.value)}
-                      placeholder="HSN Code"
-                      disabled={disabled}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className="unified-form-input"
-                      value={item.unitRate || ''}
-                      onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      disabled={disabled}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className="unified-form-input"
-                      value={item.gstPercentage || ''}
-                      onChange={(e) => handleInputChange(index, 'gstPercentage', e.target.value)}
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      disabled={disabled}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className="unified-form-input"
-                      value={item.quantity || ''}
-                      onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
-                      placeholder="0"
-                      step="0.01"
-                      min="0.01"
-                      disabled={disabled}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      className="unified-form-input"
-                      value={item.unit || ''}
-                      onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
-                      placeholder="Unit"
-                      disabled={disabled}
-                    />
-                  </td>
-                  {discountApplicable && (
-                    <td>
-                      <input
-                        type="number"
-                        className="unified-form-input"
-                        value={item.discountPercentage || ''}
-                        onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        disabled={disabled}
-                      />
-                    </td>
-                  )}
-                  {discountApplicable && (
-                    <td>
-                      <input
-                        type="number"
-                        className="unified-form-input"
-                        value={item.discountAmount || ''}
-                        onChange={(e) => handleInputChange(index, 'discountAmount', e.target.value)}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        disabled={disabled}
-                      />
-                    </td>
-                  )}
-                  <td>
-                    <span className="unified-amount-text">
-                      ₹{parseFloat(item.totalAmount || 0).toLocaleString('en-IN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="unified-table-actions">
-                      <button
-                        type="button"
-                        className="unified-table-action delete"
-                        onClick={() => handleRemoveItem(index)}
-                        disabled={disabled || templateItems.length <= 1}
-                        title="Remove Item"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-
-                {/* Secondary row for additional info */}
-                <tr className="unified-table-secondary-row">
-                  <td colSpan={discountApplicable ? 12 : 10}>
-                    <div className="unified-secondary-row-content">
-                      <div className="unified-secondary-field">
-                        <strong>Material Description:</strong> {item.materialDescription || '-'}
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>HSN Code:</strong> {item.hsnCode || '-'}
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>GST %:</strong> {item.gstPercentage || '0'}%
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>GST Amount:</strong> ₹{parseFloat(item.gstAmount || 0).toFixed(2)}
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>CGST:</strong> ₹{parseFloat(item.cgstAmount || 0).toFixed(2)}
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>SGST:</strong> ₹{parseFloat(item.sgstAmount || 0).toFixed(2)}
-                      </div>
-                      <div className="unified-secondary-field">
-                        <strong>IGST:</strong> ₹{parseFloat(item.igstAmount || 0).toFixed(2)}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Add Item Button */}
-      <div className="unified-form-actions" style={{ marginTop: '16px' }}>
-        <button
-          type="button"
-          className="unified-btn unified-btn-primary"
-          onClick={handleAddItem}
-          disabled={disabled}
-        >
-          Add Item
-        </button>
-      </div>
-
-      {/* Material Selector Modal */}
-      {materialSelectorOpen && (
-        <MaterialSelector
-          isOpen={materialSelectorOpen}
-          onClose={() => {
-            setMaterialSelectorOpen(false);
-            setSelectedItemIndex(null);
-          }}
-          onSelect={handleMaterialSelect}
-          surgicalCategories={surgicalCategories}
-        />
-      )}
     </div>
   );
 };
