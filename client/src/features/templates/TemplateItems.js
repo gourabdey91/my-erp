@@ -5,10 +5,10 @@ import '../../shared/styles/unified-design.css';
 
 const TemplateItems = ({ 
   items = [], 
-  surgicalCategories = [], 
   discountApplicable = false, 
   hospitalDependent = false,
   hospital = '',
+  surgicalCategory = '',
   onChange, 
   errors, 
   disabled = false 
@@ -448,6 +448,175 @@ const TemplateItems = ({
             </table>
           </div>
 
+          {/* Mobile Cards View */}
+          <div className="unified-mobile-cards">
+            {templateItems.map((item, index) => (
+              <div key={`mobile-${index}`} className="unified-mobile-card">
+                <div className="unified-card-header">
+                  <div>
+                    <h3 className="unified-card-title">
+                      {item.materialNumber || `Item ${item.serialNumber}`}
+                    </h3>
+                    {item.materialDescription && (
+                      <div className="card-subtitle">{item.materialDescription}</div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="unified-card-badge">
+                      ₹{parseFloat(item.totalAmount || 0).toLocaleString('en-IN', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </span>
+                    <div className="unified-card-menu">
+                      <button
+                        type="button"
+                        className="unified-menu-trigger"
+                        onClick={() => {
+                          // Toggle dropdown logic can be added here if needed
+                        }}
+                      >
+                        ⋮
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="unified-card-content">
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Serial No.</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input"
+                      value={item.serialNumber}
+                      onChange={(e) => handleInputChange(index, 'serialNumber', e.target.value)}
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Material No.</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        className="unified-input mobile-field-input"
+                        value={item.materialNumber}
+                        placeholder="Click Browse to select material"
+                        readOnly
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        className="unified-btn unified-btn-secondary unified-btn-sm"
+                        onClick={() => {
+                          setSelectedItemIndex(index);
+                          setMaterialSelectorOpen(true);
+                        }}
+                        disabled={disabled}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        Browse
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Unit Rate</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.unitRate}
+                      onChange={(e) => handleInputChange(index, 'unitRate', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Quantity</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.quantity}
+                      onChange={(e) => handleInputChange(index, 'quantity', e.target.value)}
+                      min="0.01"
+                      step="0.01"
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Unit</label>
+                    <input
+                      type="text"
+                      className="unified-input mobile-field-input"
+                      value={item.unit}
+                      onChange={(e) => handleInputChange(index, 'unit', e.target.value)}
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  {discountApplicable && (
+                    <>
+                      <div className="mobile-field-group">
+                        <label className="mobile-field-label">Discount %</label>
+                        <input
+                          type="number"
+                          className="unified-input mobile-field-input"
+                          value={item.discountPercentage}
+                          onChange={(e) => handleInputChange(index, 'discountPercentage', e.target.value)}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          disabled={disabled}
+                        />
+                      </div>
+
+                      <div className="mobile-field-group">
+                        <label className="mobile-field-label">Discount Amount</label>
+                        <input
+                          type="number"
+                          className="unified-input mobile-field-input"
+                          value={item.discountAmount}
+                          readOnly
+                          disabled={disabled}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mobile-field-group">
+                    <label className="mobile-field-label">Total Amount</label>
+                    <input
+                      type="number"
+                      className="unified-input mobile-field-input"
+                      value={item.totalAmount}
+                      readOnly
+                      disabled={disabled}
+                    />
+                  </div>
+
+                  {/* Mobile Actions */}
+                  <div className="mobile-field-group">
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      {templateItems.length > 1 && (
+                        <button
+                          type="button"
+                          className="unified-btn unified-btn-danger unified-btn-sm"
+                          onClick={() => handleRemoveItem(index)}
+                          disabled={disabled}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Add Item Button */}
           <div className="unified-form-actions" style={{ marginTop: '16px' }}>
             <button
@@ -469,8 +638,8 @@ const TemplateItems = ({
                 setSelectedItemIndex(null);
               }}
               onSelect={handleMaterialSelect}
-              surgicalCategories={surgicalCategories}
               hospital={hospitalDependent ? hospital : null}
+              surgicalCategory={surgicalCategory}
             />
           )}
         </div>

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Template = require('../models/Template');
 const Category = require('../models/Category');
-const PaymentType = require('../models/PaymentType');
 const Procedure = require('../models/Procedure');
 
 // Get all templates with pagination and search
@@ -13,7 +12,6 @@ router.get('/', async (req, res) => {
       limit = 10,
       search = '',
       surgicalCategory = '',
-      paymentMethod = '',
       surgicalProcedure = '',
       sortBy = 'createdAt',
       sortOrder = 'desc'
@@ -31,7 +29,6 @@ router.get('/', async (req, res) => {
 
     // Add filters
     if (surgicalCategory) query.surgicalCategory = surgicalCategory;
-    if (paymentMethod) query.paymentMethod = paymentMethod;
     if (surgicalProcedure) query.surgicalProcedure = surgicalProcedure;
 
     // Execute query with pagination
@@ -49,7 +46,6 @@ router.get('/', async (req, res) => {
             select: 'name description code'
           }
         },
-        { path: 'paymentMethod', select: 'description code' },
         { path: 'createdBy', select: 'name email' },
         { path: 'updatedBy', select: 'name email' },
         { path: 'businessUnit', select: 'name code' }
@@ -93,7 +89,6 @@ router.get('/:id', async (req, res) => {
           select: 'name description code'
         }
       })
-      .populate('paymentMethod', 'description code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
       .populate('businessUnit', 'name code');
@@ -125,10 +120,10 @@ router.post('/', async (req, res) => {
     const templateData = req.body;
     
     // Validate required fields
-    if (!templateData.description || !templateData.paymentMethod || !templateData.limit) {
+    if (!templateData.description || !templateData.surgicalCategory || !templateData.limit) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: description, paymentMethod, and limit are required'
+        message: 'Missing required fields: description, surgicalCategory, and limit are required'
       });
     }
 
@@ -149,7 +144,6 @@ router.post('/', async (req, res) => {
     const populatedTemplate = await Template.findById(template._id)
       .populate('surgicalCategory', 'description code')
       .populate('surgicalProcedure', 'name code totalLimit currency')
-      .populate('paymentMethod', 'description code')
       .populate('createdBy', 'name email')
       .populate('businessUnit', 'name code');
 
@@ -199,7 +193,6 @@ router.put('/:id', async (req, res) => {
     )
     .populate('surgicalCategory', 'description code')
     .populate('surgicalProcedure', 'name code totalLimit currency')
-    .populate('paymentMethod', 'description code')
     .populate('createdBy', 'name email')
     .populate('updatedBy', 'name email')
     .populate('businessUnit', 'name code');

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { templateAPI } from '../../services/templateAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
-import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
-import { procedureAPI } from '../procedures/services/procedureAPI';
 import { hospitalAPI } from '../hospitals/services/hospitalAPI';
 import TemplateForm from './TemplateForm';
 import MobileCard from '../../shared/components/MobileCard';
@@ -19,48 +17,36 @@ const Template = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
-    surgicalCategory: '',
-    surgicalProcedure: '',
-    paymentMethod: ''
+    surgicalCategory: ''
   });
   const [dropdownData, setDropdownData] = useState({
     surgicalCategories: [],
-    surgicalProcedures: [],
-    paymentMethods: [],
     hospitals: []
   });
 
   // Fetch dropdown data for filters
   const fetchDropdownData = useCallback(async () => {
     try {
-      const [categoriesRes, proceduresRes, paymentMethodsRes, hospitalsRes] = await Promise.all([
+      const [categoriesRes, hospitalsRes] = await Promise.all([
         categoryAPI.getAll({ page: 1, limit: 1000 }),
-        procedureAPI.getAll(),
-        paymentTypeAPI.getAll({ page: 1, limit: 1000 }),
         hospitalAPI.getAllHospitals()
       ]);
 
       console.log('Dropdown data fetched successfully');
-      console.log('Procedures response:', proceduresRes);
       console.log('Hospitals response:', hospitalsRes);
 
-      const proceduresData = proceduresRes?.success ? proceduresRes.data : (proceduresRes?.data || proceduresRes || []);
       const hospitalsData = hospitalsRes?.success ? hospitalsRes.data : (hospitalsRes?.data || hospitalsRes || []);
       
       console.log('Processed hospitals data:', hospitalsData);
 
       setDropdownData({
         surgicalCategories: categoriesRes.success ? categoriesRes.data : [],
-        surgicalProcedures: Array.isArray(proceduresData) ? proceduresData : [],
-        paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : [],
         hospitals: Array.isArray(hospitalsData) ? hospitalsData : []
       });
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       setDropdownData({
         surgicalCategories: [],
-        surgicalProcedures: [],
-        paymentMethods: [],
         hospitals: []
       });
     }
@@ -243,45 +229,13 @@ const Template = () => {
               ))}
             </select>
           </div>
-          <div className="unified-filter-group">
-            <label className="unified-form-label">Surgical Procedure</label>
-            <select
-              className="unified-filter-select"
-              value={filters.surgicalProcedure}
-              onChange={(e) => handleFilterChange('surgicalProcedure', e.target.value)}
-            >
-              <option value="">All Procedures</option>
-              {dropdownData.surgicalProcedures.map(procedure => (
-                <option key={procedure._id} value={procedure._id}>
-                  {procedure.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="unified-filter-group">
-            <label className="unified-form-label">Payment Method</label>
-            <select
-              className="unified-filter-select"
-              value={filters.paymentMethod}
-              onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
-            >
-              <option value="">All Payment Methods</option>
-              {dropdownData.paymentMethods.map(method => (
-                <option key={method._id} value={method._id}>
-                  {method.description}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
         <div className="unified-filters-row" style={{ gridTemplateColumns: 'auto auto 1fr', justifyContent: 'start' }}>
           <button
             className="unified-btn unified-btn-secondary unified-btn-sm"
             onClick={() => {
               setFilters({
-                surgicalCategory: '',
-                surgicalProcedure: '',
-                paymentMethod: ''
+                surgicalCategory: ''
               });
               setSearchTerm('');
               setCurrentPage(1);
@@ -323,8 +277,7 @@ const Template = () => {
                   <tr>
                     <th>Template #</th>
                     <th>Description</th>
-                    <th>Surgical Procedure</th>
-                    <th>Payment Method</th>
+                    <th>Surgical Category</th>
                     <th>Discount Applicable</th>
                     <th>Total Amount</th>
                     <th>Items Count</th>
@@ -340,8 +293,7 @@ const Template = () => {
                         <span className="unified-code-badge">{template.templateNumber}</span>
                       </td>
                       <td>{template.description}</td>
-                      <td>{template.surgicalProcedure?.name || '-'}</td>
-                      <td>{template.paymentMethod?.description}</td>
+                      <td>{template.surgicalCategory?.description}</td>
                       <td>
                         <span className={`unified-status-badge ${template.discountApplicable ? 'unified-status-active' : 'unified-status-inactive'}`}>
                           {template.discountApplicable ? 'Yes' : 'No'}
@@ -406,8 +358,7 @@ const Template = () => {
                   badge={template.templateNumber}
                   fields={[
                     { label: 'Description', value: template.description },
-                    { label: 'Procedure', value: template.surgicalProcedure?.name || '-' },
-                    { label: 'Payment', value: template.paymentMethod?.description || '-' },
+                    { label: 'Surgical Category', value: template.surgicalCategory?.description || '-' },
                     { 
                       label: 'Discount Applicable', 
                       value: template.discountApplicable ? 'Yes' : 'No'

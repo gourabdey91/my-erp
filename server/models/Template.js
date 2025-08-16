@@ -111,17 +111,12 @@ const templateSchema = new mongoose.Schema({
   surgicalCategory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: false  // Will be derived from procedure if not provided
+    required: true
   },
   surgicalProcedure: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Procedure'
     // Note: Optional field, not required
-  },
-  paymentMethod: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PaymentType',
-    required: true
   },
   limit: {
     amount: {

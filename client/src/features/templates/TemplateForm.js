@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import TemplateItems from './TemplateItems';
 import '../../shared/styles/unified-design.css';
 import '../inquiry/Inquiry.css'; // Import inquiry styles for categories
@@ -8,10 +8,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     templateNumber: template?.templateNumber || '',
     description: template?.description || '',
-    surgicalProcedure: template?.surgicalProcedure || '',
-    surgicalCategories: template?.surgicalCategories || [], // Multiple categories from procedure
-    paymentMethod: template?.paymentMethod || '',
-    categoryLimits: template?.categoryLimits || [], // Individual category limits
+    surgicalCategory: template?.surgicalCategory || '',
     limit: {
       amount: template?.limit?.amount || '',
       currency: template?.limit?.currency || 'INR'
@@ -24,61 +21,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [filteredSurgicalProcedures, setFilteredSurgicalProcedures] = useState([]);
-
-  // Fetch surgical procedures when category or payment method changes
-  const fetchSurgicalProcedures = useCallback(async (categoryId, paymentMethodId) => {
-    try {
-      console.log('Fetching procedures with:', { categoryId, paymentMethodId });
-      console.log('Available procedures from props:', dropdownData.surgicalProcedures);
-      
-      // Use procedures from dropdownData instead of making another API call
-      let procedures = dropdownData.surgicalProcedures || [];
-      
-      console.log('All procedures:', procedures);
-      
-      // Filter by payment method if provided
-      if (paymentMethodId && procedures.length > 0) {
-        procedures = procedures.filter(proc => {
-          const match = proc.paymentTypeId === paymentMethodId || 
-                       (proc.paymentTypeId && proc.paymentTypeId._id === paymentMethodId) ||
-                       proc.paymentMethod === paymentMethodId;
-          console.log(`Procedure ${proc.code}: paymentTypeId=${proc.paymentTypeId}, match=${match}`);
-          return match;
-        });
-      }
-      
-      console.log('Filtered procedures after payment method filter:', procedures);
-      
-      // Filter by category if provided
-      if (categoryId && procedures.length > 0) {
-        procedures = procedures.filter(proc => 
-          proc.items && proc.items.some(item => 
-            item.surgicalCategoryId === categoryId || 
-            (item.surgicalCategoryId && item.surgicalCategoryId._id === categoryId)
-          )
-        );
-      }
-      
-      console.log('Final filtered procedures:', procedures);
-      setFilteredSurgicalProcedures(procedures);
-    } catch (error) {
-      console.error('Error filtering surgical procedures:', error);
-      setFilteredSurgicalProcedures([]);
-    }
-  }, [dropdownData.surgicalProcedures]);
-
-  // Initialize dropdown data and filtered procedures
-  useEffect(() => {
-    console.log('Dropdown data received:', dropdownData);
-    console.log('Surgical procedures available:', dropdownData.surgicalProcedures?.length || 0);
-    
-    // Set initial procedures list when dropdown data is available
-    if (dropdownData.surgicalProcedures && dropdownData.surgicalProcedures.length > 0) {
-      console.log('Initializing procedures list with all procedures');
-      setFilteredSurgicalProcedures(dropdownData.surgicalProcedures);
-    }
-  }, [dropdownData]);
 
   // Initialize form data when template changes
   useEffect(() => {
@@ -87,112 +29,41 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       const newFormData = {
         templateNumber: template.templateNumber || '',
         description: template.description || '',
-        surgicalProcedure: template.surgicalProcedure?._id || template.surgicalProcedure || '',
-        surgicalCategories: template.surgicalProcedure?.items?.map(item => ({
-          id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
-          name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
-          limit: item.limit || 0,
-          originalLimit: item.limit || 0, // Store original limit from procedure master
-          currency: item.currency || 'INR',
-          originalCurrency: item.currency || 'INR' // Store original currency from procedure master
-        })) || [],
-        paymentMethod: template.paymentMethod?._id || template.paymentMethod || '',
-        categoryLimits: template.surgicalProcedure?.items || [],
+        surgicalCategory: template.surgicalCategory?._id || template.surgicalCategory || '',
         limit: {
-          amount: template.limit?.amount || template.surgicalProcedure?.totalLimit || '',
+          amount: template.limit?.amount || '',
           currency: template.limit?.currency || 'INR'
         },
         discountApplicable: template.discountApplicable || false,
+        hospitalDependent: template.hospitalDependent || false,
+        hospital: template.hospital?._id || template.hospital || '',
         items: template.items || [],
         totalTemplateAmount: template.totalTemplateAmount || 0
       };
       
       setFormData(newFormData);
-      
-      // If payment method is available, fetch procedures
-      if (newFormData.paymentMethod) {
-        fetchSurgicalProcedures('', newFormData.paymentMethod);
-      }
     } else {
       // New template
       setFormData({
         templateNumber: '',
         description: '',
-        surgicalProcedure: '',
-        surgicalCategories: [],
-        paymentMethod: '',
-        categoryLimits: [],
+        surgicalCategory: '',
         limit: {
           amount: '',
           currency: 'INR'
         },
         discountApplicable: false,
-        items: [],
-        totalTemplateAmount: 0,
         hospitalDependent: false,
-        hospital: ''
+        hospital: '',
+        items: [],
+        totalTemplateAmount: 0
       });
-      setFilteredSurgicalProcedures([]);
     }
-  }, [template, fetchSurgicalProcedures]);
+  }, [template]);
 
   // Handle input changes
   const handleChange = (field, value) => {
-    if (field === 'paymentMethod') {
-      // Payment method changed - clear procedure and fetch new procedures
-      setFormData(prev => ({
-        ...prev,
-        paymentMethod: value,
-        surgicalProcedure: '' // Clear surgical procedure when payment method changes
-      }));
-      
-      // Fetch new procedures based on payment method
-      fetchSurgicalProcedures('', value);
-    } else if (field === 'surgicalProcedure') {
-      // Surgical procedure changed - update categories and limits from selected procedure
-      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === value);
-      
-      if (selectedProcedure) {
-        // Extract surgical categories and their individual limits
-        const surgicalCategories = selectedProcedure.items?.map(item => ({
-          id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
-          name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
-          limit: item.limit || 0,
-          originalLimit: item.limit || 0, // Store original limit from procedure master
-          currency: item.currency || 'INR',
-          originalCurrency: item.currency || 'INR' // Store original currency from procedure master
-        })) || [];
-        
-        // Calculate total limit from all categories
-        const totalLimit = surgicalCategories.reduce((sum, category) => sum + (category.limit || 0), 0);
-        
-        // Determine if we should use category limits or preserve user input
-        const shouldUseUserInput = totalLimit === 0;
-        
-        setFormData(prev => ({
-          ...prev,
-          surgicalProcedure: value,
-          surgicalCategories: surgicalCategories,
-          categoryLimits: selectedProcedure.items || [],
-          limit: {
-            amount: shouldUseUserInput ? (prev.limit?.amount || 0) : totalLimit,
-            currency: selectedProcedure.currency || prev.limit?.currency || 'INR'
-          }
-        }));
-      } else {
-        // Clear procedure selection
-        setFormData(prev => ({
-          ...prev,
-          surgicalProcedure: value,
-          surgicalCategories: [],
-          categoryLimits: [],
-          limit: {
-            amount: '',
-            currency: 'INR'
-          }
-        }));
-      }
-    } else if (field.startsWith('limit.')) {
+    if (field.startsWith('limit.')) {
       const limitField = field.split('.')[1];
       setFormData(prev => ({
         ...prev,
@@ -201,43 +72,19 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
           [limitField]: value
         }
       }));
-    } else if (field.startsWith('categoryLimits.')) {
-      // Handle individual category limit changes
-      const [, index, limitField] = field.split('.');
-      const categoryIndex = parseInt(index);
-      
-      setFormData(prev => {
-        const newCategoryLimits = [...prev.categoryLimits];
-        if (!newCategoryLimits[categoryIndex]) {
-          newCategoryLimits[categoryIndex] = {};
-        }
-        newCategoryLimits[categoryIndex][limitField] = parseFloat(value) || 0;
-        
-        // Also update surgical categories display
-        const newSurgicalCategories = [...prev.surgicalCategories];
-        if (newSurgicalCategories[categoryIndex] && limitField === 'limit') {
-          newSurgicalCategories[categoryIndex].limit = parseFloat(value) || 0;
-        }
-        
-        // Recalculate total limit
-        const newTotalLimit = newCategoryLimits.reduce((sum, cat) => sum + (parseFloat(cat.limit) || 0), 0);
-        
-        return {
-          ...prev,
-          categoryLimits: newCategoryLimits,
-          surgicalCategories: newSurgicalCategories,
-          limit: {
-            ...prev.limit,
-            amount: newTotalLimit > 0 ? newTotalLimit : prev.limit.amount
-          }
-        };
-      });
     } else if (field === 'hospitalDependent') {
       // Hospital dependency changed - clear hospital field if unchecked
       setFormData(prev => ({
         ...prev,
         hospitalDependent: value,
         hospital: value ? prev.hospital : '' // Clear hospital if hospitalDependent is false
+      }));
+    } else if (field === 'surgicalCategory') {
+      // Surgical category changed - clear hospital field since hospital list will be filtered
+      setFormData(prev => ({
+        ...prev,
+        surgicalCategory: value,
+        hospital: '' // Clear hospital when surgical category changes
       }));
     } else {
       setFormData(prev => ({
@@ -265,8 +112,8 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       newErrors.description = 'Description is required';
     }
 
-    if (!formData.paymentMethod) {
-      newErrors.paymentMethod = 'Payment method is required';
+    if (!formData.surgicalCategory) {
+      newErrors.surgicalCategory = 'Surgical category is required';
     }
 
     if (formData.hospitalDependent && !formData.hospital) {
@@ -310,12 +157,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Determine if category limits should be editable
-  const isCategoryLimitEditable = (categoryIndex) => {
-    const category = formData.surgicalCategories[categoryIndex];
-    return !category || !category.originalLimit || category.originalLimit === 0;
   };
 
   return (
@@ -369,45 +210,126 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
               </div>
               
               <div className="unified-form-grid">
-                {/* Payment Method */}
+                {/* Surgical Category */}
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Payment Method *</label>
+                  <label className="unified-form-label">Surgical Category *</label>
                   <select
-                    className={`unified-input ${errors.paymentMethod ? 'unified-input-error' : ''}`}
-                    value={formData.paymentMethod}
-                    onChange={(e) => handleChange('paymentMethod', e.target.value)}
+                    className={`unified-input ${errors.surgicalCategory ? 'unified-input-error' : ''}`}
+                    value={formData.surgicalCategory}
+                    onChange={(e) => handleChange('surgicalCategory', e.target.value)}
                     disabled={loading}
                   >
-                    <option value="">Select Payment Method</option>
-                    {dropdownData.paymentMethods.map(method => (
-                      <option key={method._id} value={method._id}>
-                        {method.description}
+                    <option value="">Select Surgical Category</option>
+                    {dropdownData.surgicalCategories.map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.description}
                       </option>
                     ))}
                   </select>
-                  {errors.paymentMethod && (
-                    <span className="unified-error-text">{errors.paymentMethod}</span>
+                  {errors.surgicalCategory && (
+                    <span className="unified-error-text">{errors.surgicalCategory}</span>
                   )}
                 </div>
 
-                {/* Surgical Procedure */}
+                {/* Limit Amount - Moved here */}
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Procedure <span className="unified-optional">(Optional)</span></label>
+                  <label className="unified-form-label">Limit Amount *</label>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <input
+                      type="number"
+                      className={`unified-input ${errors.limit ? 'unified-input-error' : ''}`}
+                      placeholder="Enter limit amount"
+                      value={formData.limit?.amount || ''}
+                      onChange={(e) => handleChange('limit.amount', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      style={{ flex: '2' }}
+                      disabled={loading}
+                    />
+                    <select
+                      className="unified-input"
+                      value={formData.limit?.currency || 'INR'}
+                      onChange={(e) => handleChange('limit.currency', e.target.value)}
+                      style={{ flex: '1' }}
+                      disabled={loading}
+                    >
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                  </div>
+                  {errors.limit && (
+                    <span className="unified-error-text">{errors.limit}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Hospital field and Hospital Dependent - Always present but disabled when not hospital dependent */}
+              <div className="unified-form-grid">
+                <div className="unified-form-field">
+                  <label className="unified-form-label">
+                    Hospital {formData.hospitalDependent ? '*' : ''}
+                  </label>
                   <select
-                    className="unified-input"
-                    value={formData.surgicalProcedure}
-                    onChange={(e) => handleChange('surgicalProcedure', e.target.value)}
-                    disabled={loading || !formData.paymentMethod}
+                    className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
+                    value={formData.hospitalDependent ? formData.hospital : ''}
+                    onChange={(e) => handleChange('hospital', e.target.value)}
+                    disabled={loading || !formData.hospitalDependent}
                   >
-                    <option value="">Select Procedure (Optional)</option>
-                    {filteredSurgicalProcedures.map(procedure => (
-                      <option key={procedure._id} value={procedure._id}>
-                        {procedure.code} - {procedure.name} {procedure.totalLimit ? `(${procedure.totalLimit} ${procedure.currency || 'INR'})` : ''}
-                      </option>
-                    ))}
+                    <option value="">
+                      {formData.hospitalDependent ? 'Select Hospital' : 'All Hospitals'}
+                    </option>
+                    {dropdownData.hospitals
+                      .filter(hospital => {
+                        // Filter hospitals by surgical category if selected and hospital dependent
+                        if (!formData.surgicalCategory || !formData.hospitalDependent) {
+                          return true; // Show all hospitals if no category selected or not hospital dependent
+                        }
+                        // Check if hospital supports the selected surgical category
+                        if (!hospital.surgicalCategories || hospital.surgicalCategories.length === 0) {
+                          return true; // Include hospitals without category restrictions
+                        }
+                        return hospital.surgicalCategories.some(cat => 
+                          (cat._id || cat) === formData.surgicalCategory
+                        );
+                      })
+                      .map(hospital => (
+                        <option key={hospital._id} value={hospital._id}>
+                          {hospital.shortName || hospital.legalName}
+                        </option>
+                      ))}
                   </select>
+                  {errors.hospital && (
+                    <span className="unified-error-text">{errors.hospital}</span>
+                  )}
                 </div>
 
+                {/* Hospital Dependent Switch - Moved here */}
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Hospital Dependent</label>
+                  <div className="toggle-container">
+                    <label className="toggle-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.hospitalDependent}
+                        onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
+                        className="toggle-checkbox"
+                        disabled={loading}
+                      />
+                      <span className="toggle-slider"></span>
+                      <span className="toggle-text">
+                        {formData.hospitalDependent ? 'Yes' : 'No'}
+                      </span>
+                    </label>
+                    <div className="unified-help-text">
+                      Enable if template is specific to a hospital
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Second row with Discount Applicable and Description */}
+              <div className="unified-form-grid">
                 {/* Discount Applicable Switch */}
                 <div className="unified-form-field">
                   <label className="unified-form-label">Discount Applicable</label>
@@ -430,55 +352,9 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                     </div>
                   </div>
                 </div>
-
-                {/* Hospital Dependent Switch */}
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Hospital Dependent</label>
-                  <div className="toggle-container">
-                    <label className="toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.hospitalDependent}
-                        onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
-                        className="toggle-checkbox"
-                        disabled={loading}
-                      />
-                      <span className="toggle-slider"></span>
-                      <span className="toggle-text">
-                        {formData.hospitalDependent ? 'Yes' : 'No'}
-                      </span>
-                    </label>
-                    <div className="unified-help-text">
-                      Enable if template is specific to a hospital
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hospital (only show if hospital dependent) */}
-                {formData.hospitalDependent && (
-                  <div className="unified-form-field">
-                    <label className="unified-form-label">Hospital *</label>
-                    <select
-                      className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
-                      value={formData.hospital}
-                      onChange={(e) => handleChange('hospital', e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="">Select Hospital</option>
-                      {dropdownData.hospitals.map(hospital => (
-                        <option key={hospital._id} value={hospital._id}>
-                          {hospital.shortName || hospital.legalName}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.hospital && (
-                      <span className="unified-error-text">{errors.hospital}</span>
-                    )}
-                  </div>
-                )}
               </div>
 
-              {/* Description - Full width below discount applicable */}
+              {/* Description - Full width */}
               <div className="unified-form-field">
                 <label className="unified-form-label">Description *</label>
                 <input
@@ -496,115 +372,13 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
               </div>
             </div>
 
-            {/* Surgical Categories and Limits */}
-            {formData.surgicalCategories.length > 0 && (
-              <div className="form-section">
-                <div className="form-section-title">Surgical Categories & Limits</div>
-                
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Surgical Categories & Limits</label>
-                  <div className="categories-display">
-                    {formData.surgicalCategories.map((category, index) => (
-                      <div key={category.id} className="category-item">
-                        <div className="category-info">
-                          <div className="category-name">
-                            {category.name}
-                            {!isCategoryLimitEditable(index) && (
-                              <span className="field-helper" style={{ marginLeft: '8px', fontSize: '0.75rem' }}>
-                                (From Procedure Master)
-                              </span>
-                            )}
-                          </div>
-                          <div className="category-limit-input">
-                            <input
-                              type="number"
-                              className="unified-input"
-                              placeholder={isCategoryLimitEditable(index) ? "Enter limit" : "From procedure master"}
-                              value={category.limit || ''}
-                              onChange={(e) => handleChange(`categoryLimits.${index}.limit`, e.target.value)}
-                              min="0"
-                              step="0.01"
-                              style={{ 
-                                width: '120px',
-                                backgroundColor: !isCategoryLimitEditable(index) ? '#f8f9fa' : 'white',
-                                cursor: !isCategoryLimitEditable(index) ? 'not-allowed' : 'text'
-                              }}
-                              readOnly={!isCategoryLimitEditable(index)}
-                            />
-                            <select
-                              className="unified-input"
-                              value={category.currency || 'INR'}
-                              onChange={(e) => handleChange(`categoryLimits.${index}.currency`, e.target.value)}
-                              style={{ 
-                                width: '80px', 
-                                marginLeft: '5px',
-                                backgroundColor: !isCategoryLimitEditable(index) ? '#f8f9fa' : 'white',
-                                cursor: !isCategoryLimitEditable(index) ? 'not-allowed' : 'pointer'
-                              }}
-                              disabled={!isCategoryLimitEditable(index)}
-                            >
-                              <option value="INR">INR</option>
-                              <option value="USD">USD</option>
-                              <option value="EUR">EUR</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="unified-form-field">
-                  <label className="unified-form-label">
-                    Total Limit Amount
-                    <span className="field-helper">(Sum of all category limits - Always Read Only)</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <input
-                      type="number"
-                      className={`unified-input ${errors.limit ? 'unified-input-error' : ''}`}
-                      placeholder="Total calculated limit"
-                      value={formData.limit?.amount || ''}
-                      onChange={(e) => handleChange('limit.amount', e.target.value)}
-                      min="0"
-                      step="0.01"
-                      style={{ 
-                        flex: '2',
-                        backgroundColor: formData.surgicalCategories.some(cat => cat.originalLimit > 0) ? '#f8f9fa' : 'white',
-                        cursor: formData.surgicalCategories.some(cat => cat.originalLimit > 0) ? 'not-allowed' : 'text'
-                      }}
-                      readOnly={formData.surgicalCategories.some(cat => cat.originalLimit > 0)}
-                    />
-                    <select
-                      className="unified-input"
-                      value={formData.limit?.currency || 'INR'}
-                      onChange={(e) => handleChange('limit.currency', e.target.value)}
-                      style={{ 
-                        flex: '1',
-                        backgroundColor: formData.surgicalCategories.some(cat => cat.originalLimit > 0) ? '#f8f9fa' : 'white',
-                        cursor: formData.surgicalCategories.some(cat => cat.originalLimit > 0) ? 'not-allowed' : 'pointer'
-                      }}
-                      disabled={formData.surgicalCategories.some(cat => cat.originalLimit > 0)}
-                    >
-                      <option value="INR">INR</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                  </div>
-                  {errors.limit && (
-                    <span className="unified-error-text">{errors.limit}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Template Items */}
             <TemplateItems
               items={formData.items}
-              surgicalCategories={formData.surgicalCategories}
               discountApplicable={formData.discountApplicable}
               hospitalDependent={formData.hospitalDependent}
               hospital={formData.hospital}
+              surgicalCategory={formData.surgicalCategory}
               onChange={handleItemsChange}
               errors={errors.items}
               disabled={loading}
