@@ -88,7 +88,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
           name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
           limit: item.limit || 0,
-          currency: item.currency || 'INR'
+          originalLimit: item.limit || 0, // Store original limit from procedure master
+          currency: item.currency || 'INR',
+          originalCurrency: item.currency || 'INR' // Store original currency from procedure master
         })) || [],
         paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || '',
         categoryLimits: inquiry.surgicalProcedure?.items || [],
@@ -177,7 +179,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
           name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
           limit: item.limit || 0,
-          currency: item.currency || 'INR'
+          originalLimit: item.limit || 0, // Store original limit from procedure master
+          currency: item.currency || 'INR',
+          originalCurrency: item.currency || 'INR' // Store original currency from procedure master
         })) || [];
         
         // Calculate total limit from all categories
@@ -226,14 +230,25 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   };
 
+  // Helper function to determine if a category limit should be read-only
+  const isCategoryLimitReadOnly = (category) => {
+    // If the original limit from procedure master is greater than 0, make it read-only
+    return (category.originalLimit || 0) > 0;
+  };
+
   // Handle individual category limit change
   const handleCategoryLimitChange = (categoryIndex, newLimit) => {
     setFormData(prev => {
       const updatedCategories = [...prev.surgicalCategories];
-      updatedCategories[categoryIndex] = {
-        ...updatedCategories[categoryIndex],
-        limit: newLimit
-      };
+      const category = updatedCategories[categoryIndex];
+      
+      // Only update if the category limit is not read-only
+      if (!isCategoryLimitReadOnly(category)) {
+        updatedCategories[categoryIndex] = {
+          ...updatedCategories[categoryIndex],
+          limit: newLimit
+        };
+      }
       
       // Calculate new total limit
       const totalLimit = updatedCategories.reduce((sum, cat) => sum + (cat.limit || 0), 0);
@@ -253,10 +268,15 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
   const handleCategoryCurrencyChange = (categoryIndex, newCurrency) => {
     setFormData(prev => {
       const updatedCategories = [...prev.surgicalCategories];
-      updatedCategories[categoryIndex] = {
-        ...updatedCategories[categoryIndex],
-        currency: newCurrency
-      };
+      const category = updatedCategories[categoryIndex];
+      
+      // Only update if the category limit is not read-only
+      if (!isCategoryLimitReadOnly(category)) {
+        updatedCategories[categoryIndex] = {
+          ...updatedCategories[categoryIndex],
+          currency: newCurrency
+        };
+      }
       
       return {
         ...prev,
@@ -509,23 +529,41 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       {formData.surgicalCategories.map((category, index) => (
                         <div key={index} className="category-item">
                           <div className="category-info">
-                            <div className="category-name">{category.name || 'Unknown Category'}</div>
+                            <div className="category-name">
+                              {category.name || 'Unknown Category'}
+                              {isCategoryLimitReadOnly(category) && (
+                                <span className="field-helper" style={{ marginLeft: '8px', fontSize: '0.75rem' }}>
+                                  (From Procedure Master)
+                                </span>
+                              )}
+                            </div>
                             <div className="category-limit-input">
                               <input
                                 type="number"
                                 className="unified-input"
-                                placeholder="Enter limit"
+                                placeholder={isCategoryLimitReadOnly(category) ? "From procedure master" : "Enter limit"}
                                 value={category.limit || ''}
                                 onChange={(e) => handleCategoryLimitChange(index, parseFloat(e.target.value) || 0)}
                                 min="0"
                                 step="0.01"
-                                style={{ width: '120px' }}
+                                style={{ 
+                                  width: '120px',
+                                  backgroundColor: isCategoryLimitReadOnly(category) ? '#f8f9fa' : 'white',
+                                  cursor: isCategoryLimitReadOnly(category) ? 'not-allowed' : 'text'
+                                }}
+                                readOnly={isCategoryLimitReadOnly(category)}
                               />
                               <select
                                 className="unified-input"
                                 value={category.currency || 'INR'}
                                 onChange={(e) => handleCategoryCurrencyChange(index, e.target.value)}
-                                style={{ width: '80px', marginLeft: '5px' }}
+                                style={{ 
+                                  width: '80px', 
+                                  marginLeft: '5px',
+                                  backgroundColor: isCategoryLimitReadOnly(category) ? '#f8f9fa' : 'white',
+                                  cursor: isCategoryLimitReadOnly(category) ? 'not-allowed' : 'pointer'
+                                }}
+                                disabled={isCategoryLimitReadOnly(category)}
                               >
                                 <option value="INR">INR</option>
                                 <option value="USD">USD</option>
