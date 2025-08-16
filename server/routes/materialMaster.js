@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const MaterialMaster = require('../models/MaterialMaster');
 const Category = require('../models/Category');
@@ -34,7 +35,26 @@ router.get('/', async (req, res) => {
     }
 
     if (implantType) {
-      filter.implantType = implantType;
+      // If implantType is passed as a string (name), find the ObjectId first
+      if (typeof implantType === 'string' && !mongoose.Types.ObjectId.isValid(implantType)) {
+        const implantTypeDoc = await ImplantType.findOne({ name: implantType });
+        if (implantTypeDoc) {
+          filter.implantType = implantTypeDoc._id;
+        } else {
+          // If implant type not found, return empty results
+          return res.json({
+            materials: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              totalPages: 0
+            }
+          });
+        }
+      } else {
+        filter.implantType = implantType;
+      }
     }
 
     if (subCategory) {
@@ -470,6 +490,69 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
   } catch (error) {
     console.error('Error fetching filtered lengths:', error);
     res.status(500).json({ message: 'Server error while fetching lengths' });
+  }
+});
+
+// Get distinct implant types for a surgical category
+router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
+  try {
+    const { surgicalCategoryId } = req.params;
+    console.log('🎯 Getting distinct implant types for surgical category:', surgicalCategoryId);
+
+    // Get distinct implant types for the surgical category
+    const implantTypes = await MaterialMaster.aggregate([
+      {
+        $match: {
+          surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+          isActive: true,
+          implantType: { $exists: true, $ne: null }
+        }
+      },
+      {
+        $group: {
+          _id: '$implantType'
+        }
+      },
+      {
+        $lookup: {
+          from: 'implanttypes',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'implantTypeData'
+        }
+      },
+      {
+        $unwind: '$implantTypeData'
+      },
+      {
+        $project: {
+          _id: '$implantTypeData._id',
+          name: '$implantTypeData.name'
+        }
+      },
+      {
+        $sort: { name: 1 }
+      }
+    ]);
+
+    console.log(`✅ Found ${implantTypes.length} distinct implant types for category ${surgicalCategoryId}:`, implantTypes.map(t => t.name));
+
+    // Add cache control headers to prevent 304 responses
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
+    res.json({
+      success: true,
+      data: implantTypes
+    });
+  } catch (error) {
+    console.error('Error fetching distinct implant types:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching implant types',
+      error: error.message 
+    });
   }
 });
 

@@ -1,22 +1,40 @@
 import { API_BASE_URL } from '../config/api';
 
+// Request deduplication cache
+const ongoingRequests = new Map();
+
 const api = {
   get: async (url) => {
     // Ensure URL starts with /api if not already present
     const apiUrl = url.startsWith('/api/') ? url : `/api${url}`;
+    const fullUrl = `${API_BASE_URL}${apiUrl}`;
     
-    const response = await fetch(`${API_BASE_URL}${apiUrl}`, {
+    // Check for ongoing request
+    if (ongoingRequests.has(fullUrl)) {
+      console.log('🔄 Reusing ongoing request for:', fullUrl);
+      return ongoingRequests.get(fullUrl);
+    }
+
+    // Create new request promise
+    const requestPromise = fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    }).finally(() => {
+      // Remove from ongoing requests when done
+      ongoingRequests.delete(fullUrl);
     });
+
+    // Store the promise
+    ongoingRequests.set(fullUrl, requestPromise);
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
+    return requestPromise;
   }
 };
 
@@ -210,6 +228,98 @@ export const materialAPI = {
       return {
         success: false,
         error: error.message,
+        data: []
+      };
+    }
+  },
+
+  // General getMaterials method (wraps getMaterialsBySurgicalCategory for consistency)
+  getMaterials: async (params = {}) => {
+    return materialAPI.getMaterialsBySurgicalCategory(params);
+  },
+
+  // Get materials by surgical category (for hospital-agnostic templates)
+  getMaterialsBySurgicalCategory: async (filters = {}) => {
+    try {
+      console.log('Fetching materials by surgical category:', filters);
+      
+      const queryParams = new URLSearchParams();
+      
+      // Add filters to query parameters
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+          queryParams.append(key, filters[key]);
+        }
+      });
+      
+      // Set a reasonable limit for template material selection
+      queryParams.append('limit', '100');
+      queryParams.append('isActive', 'true');
+      
+      const queryString = queryParams.toString();
+      const url = `/material-master${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('Material API URL:', `${API_BASE_URL}${url}`);
+      
+      const response = await api.get(url);
+      console.log('Material API response:', response);
+      
+      // Handle the actual response format from material-master endpoint
+      if (response && response.materials) {
+        return {
+          success: true,
+          data: response.materials
+        };
+      } else if (response && Array.isArray(response)) {
+        return {
+          success: true,
+          data: response
+        };
+      } else {
+        return {
+          success: true,
+          data: []
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching materials by surgical category:', error);
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      };
+    }
+  },
+
+  // Get distinct implant types for a surgical category
+  getImplantTypesBySurgicalCategory: async (surgicalCategoryId) => {
+    try {
+      const timestamp = new Date().toISOString();
+      console.log(`🔧 [${timestamp}] Fetching distinct implant types for surgical category:`, surgicalCategoryId);
+      
+      if (!surgicalCategoryId) {
+        return { success: false, data: [] };
+      }
+
+      const url = `/material-master/implant-types/${surgicalCategoryId}`;
+      const response = await api.get(url);
+      
+      console.log(`📦 [${timestamp}] Implant types API response:`, response);
+      
+      if (response && response.success) {
+        return response;
+      } else {
+        return {
+          success: false,
+          data: []
+        };
+      }
+    } catch (error) {
+      const timestamp = new Date().toISOString();
+      console.error(`❌ [${timestamp}] Error fetching implant types:`, error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch implant types',
         data: []
       };
     }
