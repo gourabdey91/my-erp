@@ -3,6 +3,7 @@ import { templateAPI } from '../../services/templateAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
 import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import { procedureAPI } from '../procedures/services/procedureAPI';
+import { hospitalAPI } from '../hospitals/services/hospitalAPI';
 import TemplateForm from './TemplateForm';
 import MobileCard from '../../shared/components/MobileCard';
 import '../../shared/styles/unified-design.css';
@@ -25,16 +26,18 @@ const Template = () => {
   const [dropdownData, setDropdownData] = useState({
     surgicalCategories: [],
     surgicalProcedures: [],
-    paymentMethods: []
+    paymentMethods: [],
+    hospitals: []
   });
 
   // Fetch dropdown data for filters
   const fetchDropdownData = useCallback(async () => {
     try {
-      const [categoriesRes, proceduresRes, paymentMethodsRes] = await Promise.all([
+      const [categoriesRes, proceduresRes, paymentMethodsRes, hospitalsRes] = await Promise.all([
         categoryAPI.getAll({ page: 1, limit: 1000 }),
         procedureAPI.getAll(),
-        paymentTypeAPI.getAll({ page: 1, limit: 1000 })
+        paymentTypeAPI.getAll({ page: 1, limit: 1000 }),
+        hospitalAPI.getAllHospitals()
       ]);
 
       console.log('Dropdown data fetched successfully');
@@ -45,7 +48,8 @@ const Template = () => {
       setDropdownData({
         surgicalCategories: categoriesRes.success ? categoriesRes.data : [],
         surgicalProcedures: Array.isArray(proceduresData) ? proceduresData : [],
-        paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : []
+        paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : [],
+        hospitals: hospitalsRes.success ? hospitalsRes.data : []
       });
     } catch (error) {
       console.error('Error fetching dropdown data:', error);

@@ -7,6 +7,8 @@ const TemplateItems = ({
   items = [], 
   surgicalCategories = [], 
   discountApplicable = false, 
+  hospitalDependent = false,
+  hospital = '',
   onChange, 
   errors, 
   disabled = false 
@@ -468,6 +470,7 @@ const TemplateItems = ({
               }}
               onSelect={handleMaterialSelect}
               surgicalCategories={surgicalCategories}
+              hospital={hospitalDependent ? hospital : null}
             />
           )}
         </div>

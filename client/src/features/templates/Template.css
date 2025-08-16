@@ -106,12 +106,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: background-color 0.2s, color 0.2s; /* Only transition colors, not transform */
 }
 
 .material-selector-btn:hover {
   background-color: #f3f4f6;
   color: #374151;
+  /* Remove any additional transform that might cause movement */
 }
 
 .material-selector-btn:disabled {
@@ -274,4 +275,187 @@
   .categories-list {
     justify-content: flex-start;
   }
+}
+
+/* Material Selector Modal Styles */
+.material-selector-modal {
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80vh;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-select:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.search-section {
+  margin: 1rem 0;
+}
+
+.materials-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.material-item {
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.material-item:hover {
+  background-color: #f8fafc;
+}
+
+.material-item:last-child {
+  border-bottom: none;
+}
+
+.material-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.material-number {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.875rem;
+}
+
+.material-description {
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.material-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.material-details span {
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.loading-state, .no-materials {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.no-materials {
+  background: #f9fafb;
+  border-radius: 8px;
+  margin: 1rem;
+}
+
+/* Hospital Dependency Toggle Styles */
+.hospital-dependency-toggle {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  gap: 0.5rem;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background: #3b82f6;
+}
+
+.toggle-checkbox:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.toggle-label:hover .toggle-text {
+  color: #1f2937;
+}
+
+.toggle-checkbox:checked + .toggle-slider + .toggle-text {
+  color: #3b82f6;
 }

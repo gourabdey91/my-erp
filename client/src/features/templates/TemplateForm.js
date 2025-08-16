@@ -17,6 +17,8 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       currency: template?.limit?.currency || 'INR'
     },
     discountApplicable: template?.discountApplicable || false,
+    hospitalDependent: template?.hospitalDependent || false, // New field for hospital dependency
+    hospital: template?.hospital || '', // Hospital selection when dependent
     items: template?.items || [],
     totalTemplateAmount: template?.totalTemplateAmount || 0
   });
@@ -126,7 +128,9 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
         },
         discountApplicable: false,
         items: [],
-        totalTemplateAmount: 0
+        totalTemplateAmount: 0,
+        hospitalDependent: false,
+        hospital: ''
       });
       setFilteredSurgicalProcedures([]);
     }
@@ -228,6 +232,13 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
           }
         };
       });
+    } else if (field === 'hospitalDependent') {
+      // Hospital dependency changed - clear hospital field if unchecked
+      setFormData(prev => ({
+        ...prev,
+        hospitalDependent: value,
+        hospital: value ? prev.hospital : '' // Clear hospital if hospitalDependent is false
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -256,6 +267,10 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
 
     if (!formData.paymentMethod) {
       newErrors.paymentMethod = 'Payment method is required';
+    }
+
+    if (formData.hospitalDependent && !formData.hospital) {
+      newErrors.hospital = 'Hospital is required when template is hospital dependent';
     }
 
     if (!formData.limit?.amount || formData.limit.amount <= 0) {
@@ -332,6 +347,18 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                 })}
               </span>
             </div>
+            <div className="hospital-dependency-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={formData.hospitalDependent}
+                  onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
+                  className="toggle-checkbox"
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-text">Hospital Dependent</span>
+              </label>
+            </div>
             <button
               className="unified-btn unified-btn-secondary"
               onClick={onCancel}
@@ -374,6 +401,29 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                     <span className="unified-error-text">{errors.paymentMethod}</span>
                   )}
                 </div>
+
+                {/* Hospital (only show if hospital dependent) */}
+                {formData.hospitalDependent && (
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Hospital *</label>
+                    <select
+                      className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
+                      value={formData.hospital}
+                      onChange={(e) => handleChange('hospital', e.target.value)}
+                      disabled={loading}
+                    >
+                      <option value="">Select Hospital</option>
+                      {dropdownData.hospitals.map(hospital => (
+                        <option key={hospital._id} value={hospital._id}>
+                          {hospital.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.hospital && (
+                      <span className="unified-error-text">{errors.hospital}</span>
+                    )}
+                  </div>
+                )}
 
                 {/* Surgical Procedure */}
                 <div className="unified-form-field">
@@ -541,6 +591,8 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
               items={formData.items}
               surgicalCategories={formData.surgicalCategories}
               discountApplicable={formData.discountApplicable}
+              hospitalDependent={formData.hospitalDependent}
+              hospital={formData.hospital}
               onChange={handleItemsChange}
               errors={errors.items}
               disabled={loading}
