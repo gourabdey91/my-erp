@@ -47,12 +47,23 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
       const emptyItem = createEmptyItem(1);
       setInquiryItems([emptyItem]);
     } else {
+      // For existing inquiries, preserve the GST amounts from database
       setInquiryItems(items);
-      // Simple: if hospital is available and items have material numbers, fetch descriptions
+      
+      // Only fetch descriptions for items that don't have material descriptions
+      // but DO have material numbers - this prevents unnecessary GST recalculation
       const hospitalId = hospital?._id || hospital?.id;
       if (hospitalId) {
-        console.log('Hospital available, calling fetchDescriptionsForItems with hospitalId:', hospitalId);
-        fetchDescriptionsForItems(items, hospitalId);
+        const itemsNeedingDescriptions = items.filter(item => 
+          item.materialNumber && !item.materialDescription
+        );
+        
+        if (itemsNeedingDescriptions.length > 0) {
+          console.log('Hospital available, calling fetchDescriptionsForItems for items missing descriptions');
+          fetchDescriptionsForItems(itemsNeedingDescriptions, hospitalId);
+        } else {
+          console.log('All items have descriptions or no items need material data fetch');
+        }
       } else {
         console.log('Hospital not available yet, hospital id:', hospital?._id);
       }
@@ -95,21 +106,43 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
     if (hasChanges) {
       console.log('Updating items with material data');
       const itemsWithTotals = updatedItems.map(item => {
-        // Get state codes for GST calculation
-        const customerStateCode = hospital?.stateCode || '';
-        const companyStateCode = companyDetails?.compliance?.stateCode || '';
+        // Only calculate GST if the item doesn't already have saved GST amounts
+        // This prevents overwriting database values for existing inquiries
+        const hasExistingGST = item.cgstAmount > 0 || item.sgstAmount > 0 || item.igstAmount > 0;
         
-        console.log('Material fetch - State codes:', { customerStateCode, companyStateCode });
-        
-        const calculations = calculateItemTotal(item, customerStateCode, companyStateCode);
-        return { 
-          ...item, 
-          totalAmount: calculations.totalAmount,
-          gstAmount: calculations.gstAmount,       // Total GST amount for database storage
-          cgstAmount: calculations.cgstAmount,     // Central GST component
-          sgstAmount: calculations.sgstAmount,     // State GST component  
-          igstAmount: calculations.igstAmount      // Integrated GST component
-        };
+        if (!hasExistingGST && item.unitRate && item.quantity && item.gstPercentage) {
+          // Get state codes for GST calculation only for new items
+          const customerStateCode = hospital?.stateCode || '';
+          const companyStateCode = companyDetails?.compliance?.stateCode || '';
+          
+          console.log('Calculating GST for new material - State codes:', { customerStateCode, companyStateCode });
+          
+          const calculations = calculateItemTotal(item, customerStateCode, companyStateCode);
+          return { 
+            ...item, 
+            totalAmount: calculations.totalAmount,
+            gstAmount: calculations.gstAmount,       // Total GST amount for database storage
+            cgstAmount: calculations.cgstAmount,     // Central GST component
+            sgstAmount: calculations.sgstAmount,     // State GST component  
+            igstAmount: calculations.igstAmount      // Integrated GST component
+          };
+        } else {
+          console.log('Using existing GST amounts from database for item:', item.materialNumber);
+          // For existing items with saved GST, just return the item as-is
+          // or recalculate total if needed without changing GST breakdown
+          if (item.unitRate && item.quantity && item.gstAmount !== undefined) {
+            const baseAmount = parseFloat(item.unitRate) * parseFloat(item.quantity);
+            const gstAmount = parseFloat(item.gstAmount) || 0;
+            const discountAmount = parseFloat(item.discountAmount) || ((baseAmount * parseFloat(item.discountPercentage || 0)) / 100);
+            const totalAmount = Math.round((baseAmount + gstAmount - discountAmount) * 100) / 100;
+            
+            return {
+              ...item,
+              totalAmount: totalAmount
+            };
+          }
+          return item;
+        }
       });
 
       setInquiryItems(itemsWithTotals);
@@ -250,8 +283,29 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
           unitRate: materialData.assignedInstitutionalPrice,
           gstPercentage: materialData.gstPercentage,
           unit: materialData.unit,
-          isFromMaster: true
+          isFromMaster: true,
+          // Reset GST amounts when new material is selected - they'll be calculated below
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
+          gstAmount: 0
         };
+        
+        // Calculate GST for the new material
+        const customerStateCode = hospital?.stateCode || '';
+        const companyStateCode = companyDetails?.compliance?.stateCode || '';
+        
+        console.log('New material selected - calculating GST with state codes:', { customerStateCode, companyStateCode });
+        
+        const calculations = calculateItemTotal(updatedItems[index], customerStateCode, companyStateCode);
+        
+        // Update all calculated fields
+        updatedItems[index].totalAmount = calculations.totalAmount;
+        updatedItems[index].gstAmount = calculations.gstAmount;
+        updatedItems[index].cgstAmount = calculations.cgstAmount;
+        updatedItems[index].sgstAmount = calculations.sgstAmount;
+        updatedItems[index].igstAmount = calculations.igstAmount;
+        
       } else if (value?.trim() === '') {
         // Clear material data when material number is cleared
         updatedItems[index] = {
@@ -261,18 +315,24 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
           unitRate: '',
           gstPercentage: '',
           unit: '',
-          isFromMaster: false
+          isFromMaster: false,
+          // Reset GST amounts when material is cleared
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
+          gstAmount: 0,
+          totalAmount: 0
         };
       }
     }
     
-    // Auto-calculate totals when relevant fields change
+    // Auto-calculate totals when relevant fields change (but only for items being actively edited)
     if (['unitRate', 'quantity', 'gstPercentage', 'discountPercentage', 'discountAmount'].includes(field)) {
       // Get state codes for GST calculation
       const customerStateCode = hospital?.stateCode || '';
       const companyStateCode = companyDetails?.compliance?.stateCode || '';
       
-      console.log('State codes for GST calculation:', { customerStateCode, companyStateCode });
+      console.log('Recalculating totals due to field change:', field, 'State codes:', { customerStateCode, companyStateCode });
       
       const calculations = calculateItemTotal(updatedItems[index], customerStateCode, companyStateCode);
       

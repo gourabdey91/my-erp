@@ -285,10 +285,51 @@ inquirySchema.pre('save', async function(next) {
 
 // Pre-save hook for items to calculate totals and validate limit
 inquirySchema.pre('save', async function(next) {
-  // Calculate total for each item
+  // Get hospital and company state codes for accurate GST calculation
+  let customerStateCode = '';
+  let companyStateCode = '';
+  
+  try {
+    if (this.hospital) {
+      const Hospital = mongoose.model('Hospital');
+      const hospital = await Hospital.findById(this.hospital);
+      if (hospital && hospital.stateCode) {
+        customerStateCode = hospital.stateCode;
+      }
+    }
+    
+    // Get company details for company state code
+    const CompanyDetails = mongoose.model('CompanyDetails');
+    const company = await CompanyDetails.findOne({});
+    if (company && company.compliance && company.compliance.stateCode) {
+      companyStateCode = company.compliance.stateCode;
+    }
+  } catch (error) {
+    console.warn('Warning: Could not fetch state codes for GST calculation:', error.message);
+  }
+
+  // Calculate total for each item with proper state codes
   this.items.forEach(item => {
-    // Call calculateTotal with default state codes (same state)
-    item.totalAmount = item.calculateTotal('', ''); // Default to same state GST calculation
+    // Check if item has valid GST amounts already calculated (from frontend)
+    const hasValidGST = item.cgstAmount !== undefined || item.sgstAmount !== undefined || item.igstAmount !== undefined;
+    const gstAmountsExist = (item.cgstAmount || 0) + (item.sgstAmount || 0) + (item.igstAmount || 0) > 0;
+    
+    if (!hasValidGST || !gstAmountsExist) {
+      // Only recalculate if GST amounts are missing or all zero
+      // This is for items created directly through API or incomplete items
+      console.log('Backend: Recalculating GST for item without valid GST amounts:', item.materialNumber);
+      item.totalAmount = item.calculateTotal(customerStateCode, companyStateCode);
+    } else {
+      // GST amounts already calculated correctly on frontend, just recalculate total amount
+      console.log('Backend: Using existing GST amounts for item:', item.materialNumber);
+      const baseAmount = item.unitRate * item.quantity;
+      const gstAmount = (item.cgstAmount || 0) + (item.sgstAmount || 0) + (item.igstAmount || 0);
+      const discountAmount = item.discountAmount || ((baseAmount * item.discountPercentage) / 100);
+      item.totalAmount = Math.round((baseAmount + gstAmount - discountAmount) * 100) / 100;
+      
+      // Ensure gstAmount field is set correctly for database storage
+      item.gstAmount = Math.round(gstAmount * 100) / 100;
+    }
   });
   
   // Calculate total inquiry amount

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Calculation Fix Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .result { 
+            background-color: #f0f8ff; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 3px; 
+        }
+        .error { 
+            background-color: #ffe6e6; 
+            color: red; 
+        }
+        .success { 
+            background-color: #e6ffe6; 
+            color: green; 
+        }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { 
+            background-color: #0056b3; 
+        }
+    </style>
+</head>
+<body>
+    <h1>GST Calculation Fix Test</h1>
+    <p>This test verifies that CGST and SGST amounts are preserved after saving an inquiry.</p>
+
+    <div class="test-section">
+        <h3>Step 1: Create Test Inquiry with GST Items</h3>
+        <button onclick="createTestInquiry()">Create Test Inquiry</button>
+        <div id="createResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 2: Verify GST Amounts Before Save</h3>
+        <button onclick="verifyGSTBeforeSave()">Check GST Before Save</button>
+        <div id="beforeSaveResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 3: Save Inquiry and Check GST Amounts</h3>
+        <button onclick="saveInquiryAndVerifyGST()">Save and Verify GST</button>
+        <div id="afterSaveResult" class="result"></div>
+    </div>
+
+    <script>
+        let testInquiryId = null;
+
+        async function createTestInquiry() {
+            const resultDiv = document.getElementById('createResult');
+            
+            try {
+                const response = await fetch('/api/inquiries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inquiryNumber: `TEST-GST-${Date.now()}`,
+                        hospital: '64a1b2c3d4e5f6789012345a', // Sample hospital ID
+                        procedure: '64a1b2c3d4e5f6789012345b', // Sample procedure ID
+                        limit: {
+                            amount: 100000,
+                            currency: 'INR'
+                        },
+                        items: [
+                            {
+                                materialNumber: 'MAT001',
+                                materialDescription: 'Test Material 1',
+                                unitRate: 1000,
+                                quantity: 2,
+                                gstPercentage: 18,
+                                cgstAmount: 180, // 50% of GST for same state
+                                sgstAmount: 180, // 50% of GST for same state
+                                igstAmount: 0,
+                                discountPercentage: 0
+                            },
+                            {
+                                materialNumber: 'MAT002',
+                                materialDescription: 'Test Material 2',
+                                unitRate: 2000,
+                                quantity: 1,
+                                gstPercentage: 12,
+                                cgstAmount: 120, // 50% of GST for same state
+                                sgstAmount: 120, // 50% of GST for same state
+                                igstAmount: 0,
+                                discountPercentage: 0
+                            }
+                        ]
+                    })
+                });
+
+                if (response.ok) {
+                    const inquiry = await response.json();
+                    testInquiryId = inquiry._id;
+                    resultDiv.innerHTML = `<strong>✓ Success:</strong> Test inquiry created with ID: ${inquiry._id}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const error = await response.text();
+                    resultDiv.innerHTML = `<strong>✗ Error:</strong> ${error}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>✗ Error:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function verifyGSTBeforeSave() {
+            const resultDiv = document.getElementById('beforeSaveResult');
+            
+            if (!testInquiryId) {
+                resultDiv.innerHTML = '<strong>⚠ Warning:</strong> Please create test inquiry first';
+                resultDiv.className = 'result';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/inquiries/${testInquiryId}`);
+                
+                if (response.ok) {
+                    const inquiry = await response.json();
+                    let gstInfo = '<strong>GST Amounts Before Save:</strong><br>';
+                    
+                    inquiry.items.forEach((item, index) => {
+                        gstInfo += `Item ${index + 1} (${item.materialDescription}):<br>`;
+                        gstInfo += `&nbsp;&nbsp;CGST: ₹${item.cgstAmount || 0}<br>`;
+                        gstInfo += `&nbsp;&nbsp;SGST: ₹${item.sgstAmount || 0}<br>`;
+                        gstInfo += `&nbsp;&nbsp;IGST: ₹${item.igstAmount || 0}<br>`;
+                    });
+                    
+                    resultDiv.innerHTML = gstInfo;
+                    resultDiv.className = 'result';
+                } else {
+                    resultDiv.innerHTML = `<strong>✗ Error:</strong> Could not fetch inquiry`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>✗ Error:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function saveInquiryAndVerifyGST() {
+            const resultDiv = document.getElementById('afterSaveResult');
+            
+            if (!testInquiryId) {
+                resultDiv.innerHTML = '<strong>⚠ Warning:</strong> Please create test inquiry first';
+                resultDiv.className = 'result';
+                return;
+            }
+
+            try {
+                // Update the inquiry (this triggers the save)
+                const updateResponse = await fetch(`/api/inquiries/${testInquiryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        notes: 'Updated for GST test'
+                    })
+                });
+
+                if (!updateResponse.ok) {
+                    throw new Error('Failed to update inquiry');
+                }
+
+                // Fetch the updated inquiry
+                const response = await fetch(`/api/inquiries/${testInquiryId}`);
+                
+                if (response.ok) {
+                    const inquiry = await response.json();
+                    let gstInfo = '<strong>GST Amounts After Save:</strong><br>';
+                    let allGSTCorrect = true;
+                    
+                    inquiry.items.forEach((item, index) => {
+                        const expectedCGST = (item.unitRate * item.quantity * item.gstPercentage / 100) / 2;
+                        const expectedSGST = expectedCGST;
+                        const cgstCorrect = Math.abs(item.cgstAmount - expectedCGST) < 0.01;
+                        const sgstCorrect = Math.abs(item.sgstAmount - expectedSGST) < 0.01;
+                        const igstCorrect = item.igstAmount === 0;
+                        
+                        if (!cgstCorrect || !sgstCorrect || !igstCorrect) {
+                            allGSTCorrect = false;
+                        }
+                        
+                        gstInfo += `Item ${index + 1} (${item.materialDescription}):<br>`;
+                        gstInfo += `&nbsp;&nbsp;CGST: ₹${item.cgstAmount || 0} ${cgstCorrect ? '✓' : '✗'}<br>`;
+                        gstInfo += `&nbsp;&nbsp;SGST: ₹${item.sgstAmount || 0} ${sgstCorrect ? '✓' : '✗'}<br>`;
+                        gstInfo += `&nbsp;&nbsp;IGST: ₹${item.igstAmount || 0} ${igstCorrect ? '✓' : '✗'}<br>`;
+                    });
+                    
+                    if (allGSTCorrect) {
+                        gstInfo += '<br><strong>✓ Test Passed:</strong> All GST amounts are correct after save!';
+                        resultDiv.className = 'result success';
+                    } else {
+                        gstInfo += '<br><strong>✗ Test Failed:</strong> Some GST amounts are incorrect after save.';
+                        resultDiv.className = 'result error';
+                    }
+                    
+                    resultDiv.innerHTML = gstInfo;
+                } else {
+                    resultDiv.innerHTML = `<strong>✗ Error:</strong> Could not fetch inquiry after save`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>✗ Error:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
