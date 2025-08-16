@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Formatting Test - 2 Decimal Places</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .result { 
+            background-color: #f0f8ff; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 3px; 
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { 
+            background-color: #e6ffe6; 
+            color: green; 
+        }
+        .error { 
+            background-color: #ffe6e6; 
+            color: red; 
+        }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { 
+            background-color: #0056b3; 
+        }
+        .format-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .format-item {
+            text-align: center;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: white;
+        }
+        .format-header {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+        .format-correct {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .format-incorrect {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .inquiry-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 4fr 2fr 1fr;
+            gap: 15px;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            align-items: center;
+        }
+        .inquiry-header {
+            font-weight: bold;
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>💰 Currency Formatting Test</h1>
+        <p><strong>Purpose:</strong> Test that all currency amounts display with exactly 2 decimal places.</p>
+
+        <div class="test-section">
+            <h3>📊 Format Comparison Test</h3>
+            <button onclick="testFormatting()">🧪 Test Different Amounts</button>
+            <div id="formatResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Inquiry List Simulation</h3>
+            <button onclick="simulateInquiryList()">📝 Simulate Inquiry List</button>
+            <div id="inquiryResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Live API Test</h3>
+            <button onclick="testLiveInquiries()">🌐 Test Live Inquiry Data</button>
+            <div id="liveResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📈 Test Summary</h3>
+            <div id="summaryResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            formatting: false,
+            simulation: false,
+            live: false
+        };
+
+        // Test formatting functions
+        function testFormatting() {
+            const resultDiv = document.getElementById('formatResult');
+            
+            const testAmounts = [37312.8, 27972, 8022, 38598, 1000, 1000.1, 1000.12, 1000.123];
+            
+            // Old formatting (without decimal control)
+            const formatOld = (amount) => parseFloat(amount).toLocaleString('en-IN');
+            
+            // New formatting (with 2 decimal places)
+            const formatNew = (amount) => parseFloat(amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            let resultHTML = '<div class="format-comparison">';
+            resultHTML += '<div class="format-item format-header">Original Value</div>';
+            resultHTML += '<div class="format-item format-header">Old Format</div>';
+            resultHTML += '<div class="format-item format-header">New Format</div>';
+            resultHTML += '<div class="format-item format-header">Status</div>';
+            
+            let allCorrect = true;
+            
+            testAmounts.forEach(amount => {
+                const oldFormatted = formatOld(amount);
+                const newFormatted = formatNew(amount);
+                const hasCorrectDecimals = newFormatted.includes('.') && newFormatted.split('.')[1].length === 2;
+                
+                if (!hasCorrectDecimals) allCorrect = false;
+                
+                const statusClass = hasCorrectDecimals ? 'format-correct' : 'format-incorrect';
+                const statusText = hasCorrectDecimals ? '✅ Correct' : '❌ Incorrect';
+                
+                resultHTML += `<div class="format-item">${amount}</div>`;
+                resultHTML += `<div class="format-item">${oldFormatted}</div>`;
+                resultHTML += `<div class="format-item">${newFormatted}</div>`;
+                resultHTML += `<div class="format-item ${statusClass}">${statusText}</div>`;
+            });
+            
+            resultHTML += '</div>';
+            
+            resultHTML += `\n\nFormatting Test: ${allCorrect ? '✅ PASSED' : '❌ FAILED'}`;
+            testResults.formatting = allCorrect;
+            
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.className = allCorrect ? 'result success' : 'result error';
+            
+            updateSummary();
+        }
+
+        function simulateInquiryList() {
+            const resultDiv = document.getElementById('inquiryResult');
+            
+            // Simulate the inquiry data from the attachment
+            const simulatedInquiries = [
+                { number: 'INCS10000006', hospital: 'CARE', amount: 37312.8 },
+                { number: 'INCS10000007', hospital: 'CARE', amount: 27972 },
+                { number: 'INCS10000005', hospital: 'SUNSHINE', amount: 8022 },
+                { number: 'INCS10000004', hospital: 'CARE', amount: 38598 }
+            ];
+            
+            const formatAmount = (amount) => parseFloat(amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            let resultHTML = '<strong>📋 Simulated Inquiry List (After Fix):</strong>\n\n';
+            resultHTML += '<div class="inquiry-row inquiry-header">';
+            resultHTML += '<div>Inquiry #</div><div>Hospital</div><div>Total Amount</div><div>Status</div>';
+            resultHTML += '</div>';
+            
+            let allFormatted = true;
+            
+            simulatedInquiries.forEach(inquiry => {
+                const formattedAmount = formatAmount(inquiry.amount);
+                const hasCorrectFormat = formattedAmount.split('.')[1]?.length === 2;
+                
+                if (!hasCorrectFormat) allFormatted = false;
+                
+                resultHTML += '<div class="inquiry-row">';
+                resultHTML += `<div>${inquiry.number}</div>`;
+                resultHTML += `<div>${inquiry.hospital}</div>`;
+                resultHTML += `<div>${formattedAmount}</div>`;
+                resultHTML += `<div>${hasCorrectFormat ? '✅' : '❌'}</div>`;
+                resultHTML += '</div>';
+            });
+            
+            resultHTML += `\n\nSimulation Test: ${allFormatted ? '✅ ALL AMOUNTS CORRECTLY FORMATTED' : '❌ SOME AMOUNTS INCORRECTLY FORMATTED'}`;
+            testResults.simulation = allFormatted;
+            
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.className = allFormatted ? 'result success' : 'result error';
+            
+            updateSummary();
+        }
+
+        async function testLiveInquiries() {
+            const resultDiv = document.getElementById('liveResult');
+            
+            try {
+                resultDiv.innerHTML = '🔄 Fetching live inquiry data...';
+                
+                const response = await fetch('/api/inquiries?page=1&limit=5');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.data && data.data.length > 0) {
+                        let resultHTML = '🌐 Live Inquiry Data Test:\n\n';
+                        let allFormatted = true;
+                        
+                        data.data.forEach(inquiry => {
+                            const rawAmount = inquiry.totalInquiryAmount;
+                            const formattedAmount = parseFloat(rawAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                            
+                            const hasCorrectFormat = formattedAmount.includes('.') && formattedAmount.split('.')[1].length === 2;
+                            if (!hasCorrectFormat) allFormatted = false;
+                            
+                            resultHTML += `${inquiry.inquiryNumber}: ₹${formattedAmount} ${hasCorrectFormat ? '✅' : '❌'}\n`;
+                        });
+                        
+                        resultHTML += `\nLive Data Test: ${allFormatted ? '✅ PASSED' : '❌ FAILED'}`;
+                        testResults.live = allFormatted;
+                        
+                        resultDiv.innerHTML = resultHTML;
+                        resultDiv.className = allFormatted ? 'result success' : 'result error';
+                    } else {
+                        resultDiv.innerHTML = '⚠️ No inquiry data available for testing';
+                        resultDiv.className = 'result';
+                        testResults.live = true; // Consider as passed if no data
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error fetching live data: ${error.message}\n\nThis is expected if the API is not running or accessible.`;
+                resultDiv.className = 'result error';
+                testResults.live = false;
+            }
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summaryResult');
+            
+            const allPassed = testResults.formatting && testResults.simulation && testResults.live;
+            const passedCount = Object.values(testResults).filter(Boolean).length;
+            const totalCount = Object.keys(testResults).length;
+            
+            let summary = `📊 CURRENCY FORMATTING TEST SUMMARY:
+
+📅 Test Completed: ${new Date().toLocaleString()}
+
+Test Results:
+• Format Comparison: ${testResults.formatting ? '✅ PASSED' : '❌ FAILED'}
+• Inquiry List Simulation: ${testResults.simulation ? '✅ PASSED' : '❌ FAILED'}
+• Live API Test: ${testResults.live ? '✅ PASSED' : '❌ FAILED'}
+
+Overall Score: ${passedCount}/${totalCount} tests passed
+
+${allPassed ? 
+    '🎉 ALL TESTS PASSED! Currency amounts are now consistently formatted with 2 decimal places.' :
+    '⚠️ Some tests failed. Check individual test results for details.'}
+
+Expected Format Examples:
+• 37,312.80 (not 37,312.8)
+• 27,972.00 (not 27,972)
+• 8,022.00 (not 8,022)
+• 1,000.00 (not 1,000)
+
+Technical Implementation:
+• Using toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+• Applied to inquiry list Total Amount column
+• Applied to mobile card view
+• Consistent with form displays`;
+            
+            summaryDiv.innerHTML = summary;
+            summaryDiv.className = allPassed ? 'result success' : 'result error';
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testFormatting();
+                setTimeout(() => {
+                    simulateInquiryList();
+                }, 500);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

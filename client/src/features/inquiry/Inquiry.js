@@ -333,7 +333,10 @@ const Inquiry = () => {
                       <td>
                         {inquiry.totalInquiryAmount ? (
                           <span className="unified-amount-text">
-                            {parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}
+                            {parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
                           </span>
                         ) : (
                           <span className="unified-text-muted">-</span>
@@ -396,7 +399,10 @@ const Inquiry = () => {
                         { 
                           label: 'Total Amount', 
                           value: inquiry.totalInquiryAmount 
-                            ? `₹${parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}`
+                            ? `₹${parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}`
                             : '-'
                         }
                       ]
