@@ -457,16 +457,10 @@ router.delete('/:id', async (req, res) => {
       return res.status(400).json({ message: 'Updated by is required' });
     }
 
-    console.log('Attempting to delete credit note with ID:', req.params.id);
-    console.log('Updated by user ID:', updatedBy);
-
     const creditNote = await CreditNote.findById(req.params.id);
     if (!creditNote) {
-      console.log('Credit note not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Credit note not found' });
     }
-
-    console.log('Credit note found, current isActive status:', creditNote.isActive);
 
     // Use findByIdAndUpdate to avoid validation issues during save
     const updatedCreditNote = await CreditNote.findByIdAndUpdate(
@@ -479,8 +473,6 @@ router.delete('/:id', async (req, res) => {
       { new: true, runValidators: false } // Skip validators to avoid issues with required fields during soft delete
     );
 
-    console.log('Credit note soft deleted successfully, new isActive status:', updatedCreditNote.isActive);
-
     res.json({ message: 'Credit note deleted successfully' });
   } catch (error) {
     console.error('Error deleting credit note:', error);
@@ -489,6 +481,7 @@ router.delete('/:id', async (req, res) => {
       error: error.message 
     });
   }
+});
 });
 
 module.exports = router;

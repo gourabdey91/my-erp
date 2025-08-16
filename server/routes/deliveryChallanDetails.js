@@ -207,17 +207,11 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/delivery-challan-details/:id - Soft delete delivery challan details
 router.delete('/:id', async (req, res) => {
   try {
-    console.log('Attempting to delete delivery challan details with ID:', req.params.id);
-    console.log('User from request:', req.user?._id || 'No user in request');
-
     const deliveryChallan = await DeliveryChallanDetails.findById(req.params.id);
     
     if (!deliveryChallan) {
-      console.log('Delivery challan details not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Delivery challan details not found' });
     }
-
-    console.log('Delivery challan found, current isActive status:', deliveryChallan.isActive);
 
     // Use findByIdAndUpdate to avoid validation issues during save
     const updatedDeliveryChallan = await DeliveryChallanDetails.findByIdAndUpdate(
@@ -229,8 +223,6 @@ router.delete('/:id', async (req, res) => {
       },
       { new: true, runValidators: false } // Skip validators to avoid issues with required fields during soft delete
     );
-
-    console.log('Delivery challan details soft deleted successfully, new isActive status:', updatedDeliveryChallan.isActive);
 
     res.json({ message: 'Delivery challan details deleted successfully' });
   } catch (error) {
