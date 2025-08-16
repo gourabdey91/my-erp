@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Credit Note Delete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .error {
+            background-color: #ffe6e6;
+            color: #d00;
+        }
+        .success {
+            background-color: #e6ffe6;
+            color: #080;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Credit Note Delete Issue</h1>
+
+    <div class="test-section">
+        <h2>Step 1: Get Credit Notes</h2>
+        <button onclick="getCreditNotes()">Fetch Credit Notes</button>
+        <div id="creditNotesResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Test Delete</h2>
+        <input type="text" id="creditNoteId" placeholder="Enter Credit Note ID" style="width: 300px;">
+        <button onclick="testDelete()">Test Delete</button>
+        <div id="deleteResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Verify Delete</h2>
+        <button onclick="verifyCreditNotes()">Verify Credit Notes After Delete</button>
+        <div id="verifyResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        // You'll need to replace this with an actual hospital ID from your system
+        const HOSPITAL_ID = '507f1f77bcf86cd799439011'; // Replace with actual hospital ID
+        const CURRENT_USER_ID = '507f1f77bcf86cd799439011'; // Replace with actual user ID
+        
+        async function getCreditNotes() {
+            const resultDiv = document.getElementById('creditNotesResult');
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = 'Loading credit notes...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/credit-notes/hospital/${HOSPITAL_ID}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Found ${data.length} credit notes:</h3>
+                        <pre>${JSON.stringify(data.map(cn => ({
+                            id: cn._id,
+                            description: cn.description || 'No description',
+                            isActive: cn.isActive,
+                            paymentType: cn.paymentType?.description || 'All payment types',
+                            procedure: cn.procedure?.name || 'All procedures'
+                        })), null, 2)}</pre>
+                        ${data.length > 0 ? `<p><strong>Use this ID for testing:</strong> ${data[0]._id}</p>` : ''}
+                    `;
+                    
+                    // Auto-fill the first credit note ID for testing
+                    if (data.length > 0) {
+                        document.getElementById('creditNoteId').value = data[0]._id;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>Error:</h3><p>${data.message || 'Failed to fetch credit notes'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>Error:</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function testDelete() {
+            const creditNoteId = document.getElementById('creditNoteId').value;
+            const resultDiv = document.getElementById('deleteResult');
+            
+            if (!creditNoteId) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '<h3>Error:</h3><p>Please enter a credit note ID</p>';
+                return;
+            }
+            
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = 'Attempting to delete credit note...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/credit-notes/${creditNoteId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ updatedBy: CURRENT_USER_ID })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Success!</h3>
+                        <p>${data.message}</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>Delete Failed!</h3>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Message:</strong> ${data.message || 'Unknown error'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>Network Error:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function verifyCreditNotes() {
+            const resultDiv = document.getElementById('verifyResult');
+            resultDiv.className = 'result loading';
+            resultDiv.innerHTML = 'Verifying credit notes after delete...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/credit-notes/hospital/${HOSPITAL_ID}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Verification Results:</h3>
+                        <p><strong>Active credit notes remaining:</strong> ${data.length}</p>
+                        <pre>${JSON.stringify(data.map(cn => ({
+                            id: cn._id,
+                            description: cn.description || 'No description',
+                            isActive: cn.isActive,
+                            paymentType: cn.paymentType?.description || 'All payment types',
+                            procedure: cn.procedure?.name || 'All procedures'
+                        })), null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>Error:</h3><p>${data.message || 'Failed to fetch credit notes'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>Error:</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        // Instructions
+        window.onload = function() {
+            const instructions = document.createElement('div');
+            instructions.className = 'test-section';
+            instructions.innerHTML = `
+                <h2>📋 Instructions</h2>
+                <ol>
+                    <li><strong>Update the hospital and user IDs</strong> at the top of this script with actual values from your system</li>
+                    <li><strong>Click "Fetch Credit Notes"</strong> to see available credit notes</li>
+                    <li><strong>Use the auto-filled ID or enter a specific credit note ID</strong></li>
+                    <li><strong>Click "Test Delete"</strong> to attempt deletion</li>
+                    <li><strong>Click "Verify"</strong> to check if the deletion worked</li>
+                </ol>
+                <p><strong>Note:</strong> This is a soft delete, so isActive should be set to false, not removed from database.</p>
+            `;
+            document.body.insertBefore(instructions, document.body.firstChild.nextSibling);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Limits Read-Only Logic Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .feature-highlight {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+        }
+        .logic-example {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+        .scenario {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .scenario-readonly {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        .scenario-editable {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4caf50;
+        }
+        .field-demo {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .field-readonly {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .field-editable {
+            background-color: #fff;
+            border: 1px solid #28a745;
+        }
+        .input-demo {
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            width: 100px;
+        }
+        .input-readonly {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        .input-editable {
+            background-color: white;
+            cursor: text;
+        }
+        .label-small {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Category Limits Read-Only Logic Implementation</h1>
+    
+    <div class="feature-highlight">
+        <h3>✅ New Feature: Smart Read-Only Category Limits</h3>
+        <p>Category limit fields are now conditionally read-only based on whether they are predefined in the surgical procedure master or not.</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎯 Business Logic</h2>
+        <div class="logic-example">
+            <h4>Decision Logic:</h4>
+            <code>
+                if (category.originalLimit > 0) {<br>
+                &nbsp;&nbsp;// Limit is defined in procedure master → READ-ONLY<br>
+                &nbsp;&nbsp;fieldStyle = { backgroundColor: '#f8f9fa', cursor: 'not-allowed' }<br>
+                } else {<br>
+                &nbsp;&nbsp;// Limit not defined in procedure master → EDITABLE<br>
+                &nbsp;&nbsp;fieldStyle = { backgroundColor: 'white', cursor: 'text' }<br>
+                }
+            </code>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>📋 Usage Scenarios</h2>
+        
+        <div class="scenario scenario-readonly">
+            <h4>🔒 Scenario 1: Procedure with Predefined Limits (READ-ONLY)</h4>
+            <p><strong>Example:</strong> Cardiac Surgery Procedure</p>
+            <div class="field-demo field-readonly">
+                <span>Surgical Category:</span>
+                <input type="text" value="Cardiac Surgery" class="input-demo input-readonly" readonly>
+                <span class="label-small">(From Procedure Master)</span>
+            </div>
+            <div class="field-demo field-readonly">
+                <span>Limit Amount:</span>
+                <input type="number" value="150000" class="input-demo input-readonly" readonly>
+                <span>Currency:</span>
+                <select class="input-demo input-readonly" disabled>
+                    <option>INR</option>
+                </select>
+            </div>
+            <p><strong>User Experience:</strong> Fields are grayed out, cursor shows "not-allowed", placeholder shows "From procedure master"</p>
+        </div>
+
+        <div class="scenario scenario-editable">
+            <h4>✏️ Scenario 2: Procedure without Predefined Limits (EDITABLE)</h4>
+            <p><strong>Example:</strong> General Surgery Procedure</p>
+            <div class="field-demo field-editable">
+                <span>Surgical Category:</span>
+                <input type="text" value="General Surgery" class="input-demo input-editable">
+            </div>
+            <div class="field-demo field-editable">
+                <span>Limit Amount:</span>
+                <input type="number" value="" placeholder="Enter limit" class="input-demo input-editable">
+                <span>Currency:</span>
+                <select class="input-demo input-editable">
+                    <option>INR</option>
+                    <option>USD</option>
+                    <option>EUR</option>
+                </select>
+            </div>
+            <p><strong>User Experience:</strong> Fields are white/editable, normal cursor, placeholder shows "Enter limit"</p>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🔧 Technical Implementation</h2>
+        <h3>Key Functions Added:</h3>
+        <ul>
+            <li><code>isCategoryLimitReadOnly(category)</code> - Determines if category limit should be read-only</li>
+            <li><code>originalLimit</code> and <code>originalCurrency</code> - Track values from procedure master</li>
+            <li>Updated <code>handleCategoryLimitChange()</code> - Prevents changes to read-only fields</li>
+            <li>Updated <code>handleCategoryCurrencyChange()</code> - Prevents changes to read-only fields</li>
+        </ul>
+
+        <h3>Data Structure Enhancement:</h3>
+        <div class="logic-example">
+            <strong>Before:</strong>
+            <pre>{
+  id: "cat123",
+  name: "Cardiac Surgery", 
+  limit: 150000,
+  currency: "INR"
+}</pre>
+            <strong>After:</strong>
+            <pre>{
+  id: "cat123",
+  name: "Cardiac Surgery", 
+  limit: 150000,
+  originalLimit: 150000,  ← NEW: Track original from master
+  currency: "INR",
+  originalCurrency: "INR" ← NEW: Track original currency
+}</pre>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎨 UI/UX Enhancements</h2>
+        <h3>Visual Feedback:</h3>
+        <ul>
+            <li><strong>Read-only fields:</strong> Gray background (#f8f9fa), "not-allowed" cursor</li>
+            <li><strong>Editable fields:</strong> White background, normal text cursor</li>
+            <li><strong>Contextual placeholders:</strong> "From procedure master" vs "Enter limit"</li>
+            <li><strong>Helper labels:</strong> "(From Procedure Master)" indicator</li>
+        </ul>
+
+        <h3>User Benefits:</h3>
+        <ul>
+            <li>✅ Clear visual distinction between editable and non-editable fields</li>
+            <li>✅ Prevents accidental modification of master data</li>
+            <li>✅ Maintains data integrity and consistency</li>
+            <li>✅ Flexible input for procedures without predefined limits</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>📊 Summary</h2>
+        <div class="feature-highlight">
+            <h4>🎯 Implementation Status: COMPLETED</h4>
+            <ul>
+                <li>✅ Category limits are read-only when originalLimit > 0</li>
+                <li>✅ Category limits remain editable when originalLimit = 0</li>
+                <li>✅ Total limit field is always read-only (sum calculation)</li>
+                <li>✅ Visual indicators help users understand field states</li>
+                <li>✅ Change handlers prevent unwanted modifications</li>
+                <li>✅ Data integrity is maintained between procedure master and inquiry</li>
+            </ul>
+        </div>
+        
+        <p><strong>Result:</strong> Perfect balance between data integrity (read-only master limits) and flexibility (editable undefined limits)!</p>
+    </div>
+
+    <script>
+        console.log('🔒 Category Limits Read-Only Logic Implemented!');
+        console.log('✅ Smart conditional read-only based on procedure master');
+        console.log('✅ Visual feedback for user guidance');
+        console.log('✅ Data integrity protection');
+        console.log('✅ Flexible input when needed');
+    </script>
+</body>
+</html>
