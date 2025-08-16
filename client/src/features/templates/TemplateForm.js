@@ -347,18 +347,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                 })}
               </span>
             </div>
-            <div className="hospital-dependency-toggle">
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={formData.hospitalDependent}
-                  onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
-                  className="toggle-checkbox"
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-text">Hospital Dependent</span>
-              </label>
-            </div>
             <button
               className="unified-btn unified-btn-secondary"
               onClick={onCancel}
@@ -402,29 +390,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                   )}
                 </div>
 
-                {/* Hospital (only show if hospital dependent) */}
-                {formData.hospitalDependent && (
-                  <div className="unified-form-field">
-                    <label className="unified-form-label">Hospital *</label>
-                    <select
-                      className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
-                      value={formData.hospital}
-                      onChange={(e) => handleChange('hospital', e.target.value)}
-                      disabled={loading}
-                    >
-                      <option value="">Select Hospital</option>
-                      {dropdownData.hospitals.map(hospital => (
-                        <option key={hospital._id} value={hospital._id}>
-                          {hospital.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.hospital && (
-                      <span className="unified-error-text">{errors.hospital}</span>
-                    )}
-                  </div>
-                )}
-
                 {/* Surgical Procedure */}
                 <div className="unified-form-field">
                   <label className="unified-form-label">Surgical Procedure <span className="unified-optional">(Optional)</span></label>
@@ -443,18 +408,22 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                   </select>
                 </div>
 
-                {/* Discount Applicable */}
+                {/* Discount Applicable Switch */}
                 <div className="unified-form-field">
-                  <div className="unified-checkbox-container">
-                    <label className="unified-checkbox-label">
+                  <label className="unified-form-label">Discount Applicable</label>
+                  <div className="toggle-container">
+                    <label className="toggle-label">
                       <input
                         type="checkbox"
-                        className="unified-checkbox"
                         checked={formData.discountApplicable}
                         onChange={(e) => handleChange('discountApplicable', e.target.checked)}
+                        className="toggle-checkbox"
                         disabled={loading}
                       />
-                      Discount Applicable
+                      <span className="toggle-slider"></span>
+                      <span className="toggle-text">
+                        {formData.discountApplicable ? 'Yes' : 'No'}
+                      </span>
                     </label>
                     <div className="unified-help-text">
                       Enable discount columns in items section
@@ -462,8 +431,51 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                   </div>
                 </div>
 
-                {/* Empty space to balance grid */}
-                <div className="unified-form-field"></div>
+                {/* Hospital Dependent Switch */}
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Hospital Dependent</label>
+                  <div className="toggle-container">
+                    <label className="toggle-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.hospitalDependent}
+                        onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
+                        className="toggle-checkbox"
+                        disabled={loading}
+                      />
+                      <span className="toggle-slider"></span>
+                      <span className="toggle-text">
+                        {formData.hospitalDependent ? 'Yes' : 'No'}
+                      </span>
+                    </label>
+                    <div className="unified-help-text">
+                      Enable if template is specific to a hospital
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hospital (only show if hospital dependent) */}
+                {formData.hospitalDependent && (
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Hospital *</label>
+                    <select
+                      className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
+                      value={formData.hospital}
+                      onChange={(e) => handleChange('hospital', e.target.value)}
+                      disabled={loading}
+                    >
+                      <option value="">Select Hospital</option>
+                      {dropdownData.hospitals.map(hospital => (
+                        <option key={hospital._id} value={hospital._id}>
+                          {hospital.shortName || hospital.legalName}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.hospital && (
+                      <span className="unified-error-text">{errors.hospital}</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Description - Full width below discount applicable */}

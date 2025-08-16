@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hospital API</title>
+</head>
+<body>
+    <h1>Hospital API Test</h1>
+    <button onclick="testHospitalAPI()">Test Hospital API</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testHospitalAPI() {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/hospitals');
+                const data = await response.json();
+                
+                resultElement.textContent = JSON.stringify({
+                    status: response.status,
+                    success: data.success,
+                    dataLength: data.data ? data.data.length : 0,
+                    data: data
+                }, null, 2);
+            } catch (error) {
+                resultElement.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

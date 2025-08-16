@@ -42,21 +42,26 @@ const Template = () => {
 
       console.log('Dropdown data fetched successfully');
       console.log('Procedures response:', proceduresRes);
+      console.log('Hospitals response:', hospitalsRes);
 
       const proceduresData = proceduresRes?.success ? proceduresRes.data : (proceduresRes?.data || proceduresRes || []);
+      const hospitalsData = hospitalsRes?.success ? hospitalsRes.data : (hospitalsRes?.data || hospitalsRes || []);
+      
+      console.log('Processed hospitals data:', hospitalsData);
 
       setDropdownData({
         surgicalCategories: categoriesRes.success ? categoriesRes.data : [],
         surgicalProcedures: Array.isArray(proceduresData) ? proceduresData : [],
         paymentMethods: paymentMethodsRes.success ? paymentMethodsRes.data : [],
-        hospitals: hospitalsRes.success ? hospitalsRes.data : []
+        hospitals: Array.isArray(hospitalsData) ? hospitalsData : []
       });
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       setDropdownData({
         surgicalCategories: [],
         surgicalProcedures: [],
-        paymentMethods: []
+        paymentMethods: [],
+        hospitals: []
       });
     }
   }, []);
