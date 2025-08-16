@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Delivery Challan Delete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c82333;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Delivery Challan Delete Functionality</h1>
+    
+    <div class="test-section">
+        <h3>Delete Delivery Challan Details</h3>
+        <input type="text" id="challanId" placeholder="Enter Delivery Challan ID" style="width: 300px;">
+        <button onclick="deleteDeliveryChallan()">Delete Challan</button>
+        <div id="deleteResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>List All Active Delivery Challans</h3>
+        <button onclick="listDeliveryChallans()">List Active Challans</button>
+        <div id="listResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Set the API base URL
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        async function deleteDeliveryChallan() {
+            const challanId = document.getElementById('challanId').value.trim();
+            const resultDiv = document.getElementById('deleteResult');
+            
+            if (!challanId) {
+                showResult(resultDiv, 'Please enter a delivery challan ID', 'error');
+                return;
+            }
+
+            try {
+                console.log('Attempting to delete delivery challan:', challanId);
+                
+                const response = await fetch(`${API_BASE_URL}/delivery-challan-details/${challanId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+                console.log('Delete response:', data);
+
+                if (response.ok) {
+                    showResult(resultDiv, `Success: ${data.message}`, 'success');
+                } else {
+                    showResult(resultDiv, `Error: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting delivery challan:', error);
+                showResult(resultDiv, `Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function listDeliveryChallans() {
+            const resultDiv = document.getElementById('listResult');
+
+            try {
+                console.log('Fetching active delivery challans...');
+                
+                const response = await fetch(`${API_BASE_URL}/delivery-challan-details?isActive=true`);
+                const data = await response.json();
+                
+                console.log('Delivery challans response:', data);
+
+                if (response.ok) {
+                    let html = `<strong>Found ${data.length} active delivery challans:</strong><br><br>`;
+                    data.forEach(challan => {
+                        html += `
+                            <div style="margin: 5px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                <strong>ID:</strong> ${challan._id}<br>
+                                <strong>Challan Number:</strong> ${challan.deliveryChallanNumber || 'N/A'}<br>
+                                <strong>Hospital:</strong> ${challan.hospital?.name || 'N/A'}<br>
+                                <strong>Status:</strong> ${challan.isActive ? 'Active' : 'Inactive'}<br>
+                                <strong>Created:</strong> ${new Date(challan.createdAt).toLocaleString()}<br>
+                            </div>
+                        `;
+                    });
+                    showResult(resultDiv, html, 'success');
+                } else {
+                    showResult(resultDiv, `Error: ${data.message || 'Failed to fetch challans'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error fetching delivery challans:', error);
+                showResult(resultDiv, `Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(element, message, type) {
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        // Load delivery challans on page load
+        window.onload = () => {
+            listDeliveryChallans();
+        };
+    </script>
+</body>
+</html>
