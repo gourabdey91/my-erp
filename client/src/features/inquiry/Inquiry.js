@@ -4,6 +4,7 @@ import { hospitalAPI } from '../hospitals/services/hospitalAPI';
 import { categoryAPI } from '../categories/services/categoryAPI';
 import { paymentTypeAPI } from '../payment-types/services/paymentTypeAPI';
 import InquiryForm from './InquiryForm';
+import MobileCard from '../../shared/components/MobileCard';
 import '../../shared/styles/unified-design.css';
 import './Inquiry.css';
 
@@ -303,110 +304,121 @@ const Inquiry = () => {
             </div>
           </div>
         ) : (
-          <div className="unified-table-responsive">
-            <table className="unified-table">
-              <thead>
-                <tr>
-                  <th>Inquiry #</th>
-                  <th>Hospital</th>
-                  <th>Date</th>
-                  <th>Surgical Category</th>
-                  <th>Payment Method</th>
-                  <th>Total Amount</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inquiries.map(inquiry => (
-                  <tr key={inquiry._id}>
-                    <td>
-                      <span className="unified-code-badge">{inquiry.inquiryNumber}</span>
-                    </td>
-                    <td>{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
-                    <td>{formatDate(inquiry.inquiryDate)}</td>
-                    <td>{inquiry.surgicalCategory?.description}</td>
-                    <td>{inquiry.paymentMethod?.description}</td>
-                    <td>
-                      {inquiry.totalInquiryAmount ? (
-                        <span className="unified-amount-text">
-                          {parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}
-                        </span>
-                      ) : (
-                        <span className="unified-text-muted">-</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
-                        {inquiry.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="unified-table-actions">
-                        <button
-                          className="unified-table-action edit"
-                          onClick={() => handleEdit(inquiry)}
-                          title="Edit"
-                          disabled={loading}
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="unified-table-action delete"
-                          onClick={() => handleDelete(inquiry._id)}
-                          title="Delete"
-                          disabled={loading}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Desktop Table */}
+            <div className="unified-table-responsive">
+              <table className="unified-table">
+                <thead>
+                  <tr>
+                    <th>Inquiry #</th>
+                    <th>Hospital</th>
+                    <th>Date</th>
+                    <th>Surgical Procedure</th>
+                    <th>Payment Method</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            <div className="unified-pagination">
-              <div className="unified-pagination-info">
-                Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} inquiries
-              </div>
-              <div className="unified-pagination-controls">
-                <button
-                  className="unified-btn unified-btn-sm unified-btn-secondary"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                >
-                  Previous
-                </button>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const startPage = Math.max(1, currentPage - 2);
-                  const page = startPage + i;
-                  
-                  if (page > totalPages) return null;
-                  
-                  return (
-                    <button
-                      key={page}
-                      className={`unified-btn unified-btn-sm ${currentPage === page ? 'unified-btn-primary' : 'unified-btn-secondary'}`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-                
-                <button
-                  className="unified-btn unified-btn-sm unified-btn-secondary"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                >
-                  Next
-                </button>
-              </div>
+                </thead>
+                <tbody>
+                  {inquiries.map(inquiry => (
+                    <tr key={inquiry._id}>
+                      <td>
+                        <span className="unified-code-badge">{inquiry.inquiryNumber}</span>
+                      </td>
+                      <td>{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
+                      <td>{formatDate(inquiry.inquiryDate)}</td>
+                      <td>{inquiry.surgicalProcedure?.name || '-'}</td>
+                      <td>{inquiry.paymentMethod?.description}</td>
+                      <td>
+                        {inquiry.totalInquiryAmount ? (
+                          <span className="unified-amount-text">
+                            {parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}
+                          </span>
+                        ) : (
+                          <span className="unified-text-muted">-</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`unified-status-badge ${inquiry.isActive ? 'unified-status-active' : 'unified-status-inactive'}`}>
+                          {inquiry.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="unified-table-actions">
+                          <button
+                            className="unified-table-action edit"
+                            onClick={() => handleEdit(inquiry)}
+                            title="Edit"
+                            disabled={loading}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="unified-table-action delete"
+                            onClick={() => handleDelete(inquiry._id)}
+                            title="Delete"
+                            disabled={loading}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            {/* Mobile Cards */}
+            <div className="unified-mobile-cards">
+              {inquiries.map((inquiry) => (
+                <MobileCard
+                  key={inquiry._id}
+                  id={inquiry._id}
+                  title={`${inquiry.patientName || 'Unknown Patient'}`}
+                  badge={inquiry.inquiryNumber}
+                  fields={[
+                    { label: 'Patient', value: inquiry.patientName || 'Unknown Patient' },
+                    { label: 'Hospital', value: inquiry.hospital?.shortName || inquiry.hospital?.legalName || '-' },
+                    { label: 'Procedure', value: inquiry.surgicalProcedure?.name || '-' },
+                    { label: 'Payment', value: inquiry.paymentMethod?.description || '-' },
+                    { 
+                      label: 'Status', 
+                      value: inquiry.isActive ? 'Active' : 'Inactive'
+                    }
+                  ]}
+                  sections={[
+                    {
+                      title: 'Details',
+                      items: [
+                        { label: 'Date', value: formatDate(inquiry.inquiryDate) },
+                        { 
+                          label: 'Total Amount', 
+                          value: inquiry.totalInquiryAmount 
+                            ? `₹${parseFloat(inquiry.totalInquiryAmount).toLocaleString('en-IN')}`
+                            : '-'
+                        }
+                      ]
+                    }
+                  ]}
+                  actions={[
+                    {
+                      label: 'Edit',
+                      icon: '✏️',
+                      onClick: () => handleEdit(inquiry)
+                    },
+                    {
+                      label: 'Delete',
+                      icon: '🗑️',
+                      variant: 'danger',
+                      onClick: () => handleDelete(inquiry._id)
+                    }
+                  ]}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

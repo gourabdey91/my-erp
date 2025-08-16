@@ -1011,13 +1011,13 @@ select.unified-input {
     padding: 1rem;
   }
   
-  /* Keep table visible in mobile - use responsive styles instead of hiding */
+  /* Hide table in mobile and show cards */
   .unified-table-responsive {
-    display: block;
+    display: none !important;
   }
   
   .unified-mobile-cards {
-    display: block;
+    display: block !important;
   }
   
   .unified-section-content {
@@ -1053,11 +1053,11 @@ select.unified-input {
 
 @media (min-width: 769px) {
   .unified-mobile-cards {
-    display: none;
+    display: none !important;
   }
   
   .unified-table-responsive {
-    display: block;
+    display: block !important;
   }
 }
 
@@ -2615,26 +2615,14 @@ select.unified-input {
 
 /* Mobile responsive inquiry items */
 @media (max-width: 768px) {
-  /* Improve table display on mobile instead of hiding */
+  /* Hide table and show mobile cards for proper mobile experience */
   .unified-table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    display: none !important;
   }
   
-  .unified-table {
-    min-width: 600px; /* Minimum width to prevent cramping */
-    font-size: 0.8rem;
-  }
-  
-  .unified-table th,
-  .unified-table td {
-    padding: 0.5rem 0.25rem;
-    white-space: nowrap;
-  }
-  
-  /* Show mobile cards as fallback if needed */
+  /* Show mobile cards for better mobile UX */
   .unified-mobile-cards {
-    display: none; /* Keep hidden unless specifically implemented */
+    display: block !important;
   }
   
   /* Style mobile inquiry items summary */
