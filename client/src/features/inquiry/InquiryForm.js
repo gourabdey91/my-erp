@@ -73,6 +73,27 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   }, []);
 
+  // Helper function to check if procedure has valid limits (non-zero)
+  const procedureHasValidLimits = useCallback(() => {
+    if (!formData.surgicalCategories || formData.surgicalCategories.length === 0) {
+      return false;
+    }
+    
+    // Check if any category has a limit > 0
+    return formData.surgicalCategories.some(category => (category.limit || 0) > 0);
+  }, [formData.surgicalCategories]);
+
+  // Helper function to determine if limit field should be editable
+  const isLimitFieldEditable = useCallback(() => {
+    // If no procedure is selected, field is editable
+    if (!formData.surgicalProcedure) {
+      return true;
+    }
+    
+    // If procedure has no categories or all limits are zero, field is editable
+    return !procedureHasValidLimits();
+  }, [formData.surgicalProcedure, procedureHasValidLimits]);
+
   // Initialize form data when inquiry changes
   useEffect(() => {
     if (inquiry) {
@@ -183,14 +204,17 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         // Calculate total limit from all categories
         const totalLimit = surgicalCategories.reduce((sum, category) => sum + (category.limit || 0), 0);
         
+        // Determine if we should use category limits or preserve user input
+        const shouldUseUserInput = totalLimit === 0;
+        
         setFormData(prev => ({
           ...prev,
           surgicalProcedure: value,
           surgicalCategories: surgicalCategories,
           categoryLimits: selectedProcedure.items || [],
           limit: {
-            amount: totalLimit,
-            currency: selectedProcedure.currency || 'INR'
+            amount: shouldUseUserInput ? (prev.limit?.amount || 0) : totalLimit,
+            currency: selectedProcedure.currency || prev.limit?.currency || 'INR'
           }
         }));
       } else {
@@ -207,11 +231,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         }));
       }
     } else if (field === 'limit.amount') {
-      // Allow manual edit of limit if no procedure is selected OR if procedure has zero/no limit
-      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-      const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-      
-      if (!formData.surgicalProcedure || procedureHasNoLimit) {
+      // Allow manual edit of limit only if field is editable (no valid category limits)
+      if (isLimitFieldEditable()) {
         setFormData(prev => ({
           ...prev,
           limit: {
@@ -221,11 +242,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         }));
       }
     } else if (field === 'limit.currency') {
-      // Allow manual edit of limit currency if no procedure is selected OR if procedure has zero/no limit
-      const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-      const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-      
-      if (!formData.surgicalProcedure || procedureHasNoLimit) {
+      // Allow manual edit of limit currency only if field is editable (no valid category limits)
+      if (isLimitFieldEditable()) {
         setFormData(prev => ({
           ...prev,
           limit: {
@@ -512,8 +530,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 <div className="unified-form-field">
                   <label className="unified-form-label">
                     Total Limit Amount
-                    {formData.surgicalCategories && formData.surgicalCategories.length > 0 && (
+                    {!isLimitFieldEditable() && (
                       <span className="field-helper">(Sum of all category limits - Read Only)</span>
+                    )}
+                    {isLimitFieldEditable() && (
+                      <span className="field-helper">(Editable - No category limits defined)</span>
                     )}
                   </label>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -527,22 +548,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       step="0.01"
                       style={{ 
                         flex: '2',
-                        backgroundColor: (formData.surgicalCategories && formData.surgicalCategories.length > 0) ? '#f8f9fa' : (() => {
-                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'white' : '#f8f9fa';
-                        })(),
-                        cursor: (formData.surgicalCategories && formData.surgicalCategories.length > 0) ? 'not-allowed' : (() => {
-                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'text' : 'not-allowed';
-                        })()
+                        backgroundColor: isLimitFieldEditable() ? 'white' : '#f8f9fa',
+                        cursor: isLimitFieldEditable() ? 'text' : 'not-allowed'
                       }}
-                      readOnly={(formData.surgicalCategories && formData.surgicalCategories.length > 0) || (() => {
-                        const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                        const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
-                        return formData.surgicalProcedure && procedureHasLimit;
-                      })()}
+                      readOnly={!isLimitFieldEditable()}
                     />
                     <select
                       className="unified-input"
@@ -550,22 +559,10 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       onChange={(e) => handleChange('limit.currency', e.target.value)}
                       style={{ 
                         flex: '1',
-                        backgroundColor: (() => {
-                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'white' : '#f8f9fa';
-                        })(),
-                        cursor: (() => {
-                          const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                          const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
-                          return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'pointer' : 'not-allowed';
-                        })()
+                        backgroundColor: isLimitFieldEditable() ? 'white' : '#f8f9fa',
+                        cursor: isLimitFieldEditable() ? 'pointer' : 'not-allowed'
                       }}
-                      disabled={(() => {
-                        const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
-                        const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
-                        return formData.surgicalProcedure && procedureHasLimit;
-                      })()}
+                      disabled={!isLimitFieldEditable()}
                     >
                       <option value="INR">INR</option>
                       <option value="USD">USD</option>
