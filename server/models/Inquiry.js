@@ -62,6 +62,12 @@ const inquiryItemSchema = new mongoose.Schema({
     set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
   },
   // GST Amount Breakdown
+  gstAmount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    set: v => Math.round(v * 100) / 100 // Round to 2 decimal places - Total GST amount
+  },
   cgstAmount: {
     type: Number,
     default: 0,
@@ -198,9 +204,10 @@ inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', comp
   const totalAmount = baseAmount + gstAmount - discountAmount;
   
   // Update GST amounts on the item
-  this.cgstAmount = Math.round(cgstAmount * 100) / 100;
-  this.sgstAmount = Math.round(sgstAmount * 100) / 100;
-  this.igstAmount = Math.round(igstAmount * 100) / 100;
+  this.gstAmount = Math.round(gstAmount * 100) / 100;      // Total GST amount
+  this.cgstAmount = Math.round(cgstAmount * 100) / 100;    // Central GST
+  this.sgstAmount = Math.round(sgstAmount * 100) / 100;    // State GST
+  this.igstAmount = Math.round(igstAmount * 100) / 100;    // Integrated GST
   
   return Math.round(totalAmount * 100) / 100;
 };
