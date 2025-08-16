@@ -1,0 +1,299 @@
+const express = require('express');
+const router = express.Router();
+const Template = require('../models/Template');
+const Category = require('../models/Category');
+const PaymentType = require('../models/PaymentType');
+const Procedure = require('../models/Procedure');
+
+// Get all templates with pagination and search
+router.get('/', async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      surgicalCategory = '',
+      paymentMethod = '',
+      surgicalProcedure = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+
+    const query = { isActive: true };
+
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { templateNumber: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Add filters
+    if (surgicalCategory) query.surgicalCategory = surgicalCategory;
+    if (paymentMethod) query.paymentMethod = paymentMethod;
+    if (surgicalProcedure) query.surgicalProcedure = surgicalProcedure;
+
+    // Execute query with pagination
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
+      populate: [
+        { path: 'surgicalCategory', select: 'description code' },
+        { 
+          path: 'surgicalProcedure', 
+          select: 'name code totalLimit currency items',
+          populate: {
+            path: 'items.surgicalCategoryId',
+            select: 'name description code'
+          }
+        },
+        { path: 'paymentMethod', select: 'description code' },
+        { path: 'createdBy', select: 'name email' },
+        { path: 'updatedBy', select: 'name email' },
+        { path: 'businessUnit', select: 'name code' }
+      ]
+    };
+
+    const result = await Template.paginate(query, options);
+
+    res.json({
+      success: true,
+      data: result.docs,
+      pagination: {
+        currentPage: result.page,
+        totalPages: result.totalPages,
+        totalItems: result.totalDocs,
+        itemsPerPage: result.limit,
+        hasNextPage: result.hasNextPage,
+        hasPrevPage: result.hasPrevPage
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching templates',
+      error: error.message
+    });
+  }
+});
+
+// Get template by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const template = await Template.findById(req.params.id)
+      .populate('surgicalCategory', 'description code')
+      .populate({
+        path: 'surgicalProcedure',
+        select: 'name code totalLimit currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'name description code'
+        }
+      })
+      .populate('paymentMethod', 'description code')
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email')
+      .populate('businessUnit', 'name code');
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: template
+    });
+  } catch (error) {
+    console.error('Error fetching template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching template',
+      error: error.message
+    });
+  }
+});
+
+// Create new template
+router.post('/', async (req, res) => {
+  try {
+    const templateData = req.body;
+    
+    // Validate required fields
+    if (!templateData.description || !templateData.paymentMethod || !templateData.limit) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: description, paymentMethod, and limit are required'
+      });
+    }
+
+    // Set createdBy from request user or body
+    if (req.user) {
+      templateData.createdBy = req.user._id;
+    } else if (!templateData.createdBy) {
+      return res.status(400).json({
+        success: false,
+        message: 'createdBy is required'
+      });
+    }
+
+    const template = new Template(templateData);
+    await template.save();
+
+    // Populate the saved template for response
+    const populatedTemplate = await Template.findById(template._id)
+      .populate('surgicalCategory', 'description code')
+      .populate('surgicalProcedure', 'name code totalLimit currency')
+      .populate('paymentMethod', 'description code')
+      .populate('createdBy', 'name email')
+      .populate('businessUnit', 'name code');
+
+    res.status(201).json({
+      success: true,
+      data: populatedTemplate,
+      message: 'Template created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating template:', error);
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Template number already exists',
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Error creating template',
+      error: error.message
+    });
+  }
+});
+
+// Update template
+router.put('/:id', async (req, res) => {
+  try {
+    const templateData = req.body;
+    
+    // Set updatedBy from request user or body
+    if (req.user) {
+      templateData.updatedBy = req.user._id;
+    } else if (!templateData.updatedBy) {
+      return res.status(400).json({
+        success: false,
+        message: 'updatedBy is required'
+      });
+    }
+
+    const template = await Template.findByIdAndUpdate(
+      req.params.id,
+      templateData,
+      { new: true, runValidators: true }
+    )
+    .populate('surgicalCategory', 'description code')
+    .populate('surgicalProcedure', 'name code totalLimit currency')
+    .populate('paymentMethod', 'description code')
+    .populate('createdBy', 'name email')
+    .populate('updatedBy', 'name email')
+    .populate('businessUnit', 'name code');
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: 'Template not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: template,
+      message: 'Template updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating template:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating template',
+      error: error.message
+    });
+  }
+});
+
+// Soft delete template
+router.delete('/:id', async (req, res) => {
+  try {
+    const { updatedBy } = req.body;
+
+    if (!updatedBy && !req.user) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'updatedBy is required' 
+      });
+    }
+
+    const template = await Template.findById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Template not found' 
+      });
+    }
+
+    // Use findByIdAndUpdate to avoid validation issues during soft delete
+    const updatedTemplate = await Template.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isActive: false,
+        updatedBy: updatedBy || req.user._id,
+        updatedAt: new Date()
+      },
+      { new: true, runValidators: false }
+    );
+
+    res.json({ 
+      success: true,
+      message: 'Template deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Error deleting template:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while deleting template',
+      error: error.message 
+    });
+  }
+});
+
+// Get template dropdown options
+router.get('/dropdown/options', async (req, res) => {
+  try {
+    const templates = await Template.find(
+      { isActive: true },
+      { templateNumber: 1, description: 1, surgicalCategory: 1, surgicalProcedure: 1 }
+    )
+    .populate('surgicalCategory', 'description code')
+    .populate('surgicalProcedure', 'name code')
+    .sort({ templateNumber: 1 });
+
+    res.json({
+      success: true,
+      data: templates
+    });
+  } catch (error) {
+    console.error('Error fetching template dropdown options:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching template dropdown options',
+      error: error.message
+    });
+  }
+});
+
+module.exports = router;
