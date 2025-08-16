@@ -57,17 +57,39 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .category-name {
   font-weight: 500;
   color: #333;
+  width: 100%;
+  text-align: left;
 }
 
 .category-limit {
   font-weight: 600;
   color: #0277bd;
   font-size: 0.9rem;
+}
+
+/* New styles for editable category limits */
+.category-limit-input {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  width: 100%;
+}
+
+.category-limit-input input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.category-limit-input select {
+  flex: 0 0 auto;
+  width: 70px;
 }
 
 .field-helper {

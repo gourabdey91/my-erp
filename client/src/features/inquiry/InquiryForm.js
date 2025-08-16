@@ -73,27 +73,6 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   }, []);
 
-  // Helper function to check if procedure has valid limits (non-zero)
-  const procedureHasValidLimits = useCallback(() => {
-    if (!formData.surgicalCategories || formData.surgicalCategories.length === 0) {
-      return false;
-    }
-    
-    // Check if any category has a limit > 0
-    return formData.surgicalCategories.some(category => (category.limit || 0) > 0);
-  }, [formData.surgicalCategories]);
-
-  // Helper function to determine if limit field should be editable
-  const isLimitFieldEditable = useCallback(() => {
-    // If no procedure is selected, field is editable
-    if (!formData.surgicalProcedure) {
-      return true;
-    }
-    
-    // If procedure has no categories or all limits are zero, field is editable
-    return !procedureHasValidLimits();
-  }, [formData.surgicalProcedure, procedureHasValidLimits]);
-
   // Initialize form data when inquiry changes
   useEffect(() => {
     if (inquiry) {
@@ -225,30 +204,8 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
           surgicalCategories: [],
           categoryLimits: [],
           limit: {
-            amount: '',
+            amount: 0,
             currency: 'INR'
-          }
-        }));
-      }
-    } else if (field === 'limit.amount') {
-      // Allow manual edit of limit only if field is editable (no valid category limits)
-      if (isLimitFieldEditable()) {
-        setFormData(prev => ({
-          ...prev,
-          limit: {
-            ...prev.limit,
-            amount: value
-          }
-        }));
-      }
-    } else if (field === 'limit.currency') {
-      // Allow manual edit of limit currency only if field is editable (no valid category limits)
-      if (isLimitFieldEditable()) {
-        setFormData(prev => ({
-          ...prev,
-          limit: {
-            ...prev.limit,
-            currency: value
           }
         }));
       }
@@ -267,6 +224,45 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         [field]: ''
       }));
     }
+  };
+
+  // Handle individual category limit change
+  const handleCategoryLimitChange = (categoryIndex, newLimit) => {
+    setFormData(prev => {
+      const updatedCategories = [...prev.surgicalCategories];
+      updatedCategories[categoryIndex] = {
+        ...updatedCategories[categoryIndex],
+        limit: newLimit
+      };
+      
+      // Calculate new total limit
+      const totalLimit = updatedCategories.reduce((sum, cat) => sum + (cat.limit || 0), 0);
+      
+      return {
+        ...prev,
+        surgicalCategories: updatedCategories,
+        limit: {
+          ...prev.limit,
+          amount: totalLimit
+        }
+      };
+    });
+  };
+
+  // Handle individual category currency change
+  const handleCategoryCurrencyChange = (categoryIndex, newCurrency) => {
+    setFormData(prev => {
+      const updatedCategories = [...prev.surgicalCategories];
+      updatedCategories[categoryIndex] = {
+        ...updatedCategories[categoryIndex],
+        currency: newCurrency
+      };
+      
+      return {
+        ...prev,
+        surgicalCategories: updatedCategories
+      };
+    });
   };
 
   // Handle items change
@@ -505,21 +501,37 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                   </select>
                 </div>
 
-                {/* Surgical Categories Display */}
+                {/* Surgical Categories with Editable Limits */}
                 {formData.surgicalCategories && formData.surgicalCategories.length > 0 && (
                   <div className="unified-form-field">
-                    <label className="unified-form-label">Surgical Categories</label>
+                    <label className="unified-form-label">Surgical Categories & Limits</label>
                     <div className="categories-display">
                       {formData.surgicalCategories.map((category, index) => (
                         <div key={index} className="category-item">
                           <div className="category-info">
-                            <span className="category-name">{category.name || 'Unknown Category'}</span>
-                            <span className="category-limit">
-                              ₹{parseFloat(category.limit || 0).toLocaleString('en-IN', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })} {typeof category.currency === 'string' ? category.currency : 'INR'}
-                            </span>
+                            <div className="category-name">{category.name || 'Unknown Category'}</div>
+                            <div className="category-limit-input">
+                              <input
+                                type="number"
+                                className="unified-input"
+                                placeholder="Enter limit"
+                                value={category.limit || ''}
+                                onChange={(e) => handleCategoryLimitChange(index, parseFloat(e.target.value) || 0)}
+                                min="0"
+                                step="0.01"
+                                style={{ width: '120px' }}
+                              />
+                              <select
+                                className="unified-input"
+                                value={category.currency || 'INR'}
+                                onChange={(e) => handleCategoryCurrencyChange(index, e.target.value)}
+                                style={{ width: '80px', marginLeft: '5px' }}
+                              >
+                                <option value="INR">INR</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -530,39 +542,32 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                 <div className="unified-form-field">
                   <label className="unified-form-label">
                     Total Limit Amount
-                    {!isLimitFieldEditable() && (
-                      <span className="field-helper">(Sum of all category limits - Read Only)</span>
-                    )}
-                    {isLimitFieldEditable() && (
-                      <span className="field-helper">(Editable - No category limits defined)</span>
-                    )}
+                    <span className="field-helper">(Sum of all category limits - Always Read Only)</span>
                   </label>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <input
                       type="number"
                       className="unified-input"
-                      placeholder="Enter limit amount"
+                      placeholder="Total calculated limit"
                       value={formData.limit.amount}
-                      onChange={(e) => handleChange('limit.amount', e.target.value)}
                       min="0"
                       step="0.01"
                       style={{ 
                         flex: '2',
-                        backgroundColor: isLimitFieldEditable() ? 'white' : '#f8f9fa',
-                        cursor: isLimitFieldEditable() ? 'text' : 'not-allowed'
+                        backgroundColor: '#f8f9fa',
+                        cursor: 'not-allowed'
                       }}
-                      readOnly={!isLimitFieldEditable()}
+                      readOnly={true}
                     />
                     <select
                       className="unified-input"
                       value={formData.limit.currency}
-                      onChange={(e) => handleChange('limit.currency', e.target.value)}
                       style={{ 
                         flex: '1',
-                        backgroundColor: isLimitFieldEditable() ? 'white' : '#f8f9fa',
-                        cursor: isLimitFieldEditable() ? 'pointer' : 'not-allowed'
+                        backgroundColor: '#f8f9fa',
+                        cursor: 'not-allowed'
                       }}
-                      disabled={!isLimitFieldEditable()}
+                      disabled={true}
                     >
                       <option value="INR">INR</option>
                       <option value="USD">USD</option>
