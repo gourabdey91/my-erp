@@ -44,7 +44,14 @@ router.get('/', async (req, res) => {
       populate: [
         { path: 'hospital', select: 'shortName legalName code' },
         { path: 'surgicalCategory', select: 'description code' },
-        { path: 'surgicalProcedure', select: 'name code amount currency' },
+        { 
+          path: 'surgicalProcedure', 
+          select: 'name code totalLimit currency items',
+          populate: {
+            path: 'items.surgicalCategoryId',
+            select: 'name description code'
+          }
+        },
         { path: 'paymentMethod', select: 'description code' },
         { path: 'createdBy', select: 'name email' },
         { path: 'updatedBy', select: 'name email' }
@@ -81,7 +88,14 @@ router.get('/:id', async (req, res) => {
     const inquiry = await Inquiry.findById(req.params.id)
       .populate('hospital', 'shortName legalName code')
       .populate('surgicalCategory', 'description code')
-      .populate('surgicalProcedure', 'name code amount currency')
+      .populate({
+        path: 'surgicalProcedure',
+        select: 'name code totalLimit currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'name description code'
+        }
+      })
       .populate('paymentMethod', 'description code')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
@@ -121,7 +135,14 @@ router.post('/', async (req, res) => {
     await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
-      { path: 'surgicalProcedure', select: 'name code amount currency' },
+      { 
+        path: 'surgicalProcedure', 
+        select: 'name code amount currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'description code'
+        }
+      },
       { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' }
     ]);
@@ -203,7 +224,14 @@ router.put('/:id', async (req, res) => {
     await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
       { path: 'surgicalCategory', select: 'description code' },
-      { path: 'surgicalProcedure', select: 'name code amount currency' },
+      { 
+        path: 'surgicalProcedure', 
+        select: 'name code amount currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'description code'
+        }
+      },
       { path: 'paymentMethod', select: 'description code' },
       { path: 'createdBy', select: 'name email' },
       { path: 'updatedBy', select: 'name email' }

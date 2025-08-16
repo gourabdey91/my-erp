@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Inquiry with Surgical Categories</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .error {
+            background-color: #ffe6e6;
+            color: #d00;
+        }
+        .success {
+            background-color: #e6ffe6;
+            color: #080;
+        }
+        .category-item {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f0f8ff;
+            border-left: 3px solid #007acc;
+        }
+        .limit-total {
+            font-weight: bold;
+            color: #007acc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inquiry Surgical Categories Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Fetch Single Inquiry with Categories</h2>
+        <button onclick="testSingleInquiry()">Test Single Inquiry</button>
+        <div id="singleInquiryResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Fetch All Inquiries with Categories</h2>
+        <button onclick="testAllInquiries()">Test All Inquiries</button>
+        <div id="allInquiriesResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Category and Limit Display</h2>
+        <div id="categoryDisplayTest"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        async function testSingleInquiry() {
+            const resultDiv = document.getElementById('singleInquiryResult');
+            
+            try {
+                // First get list of inquiries to get an ID
+                const listResponse = await fetch(`${API_BASE}/api/inquiry`);
+                const listData = await listResponse.json();
+                
+                if (!listData.success || !listData.data.length) {
+                    throw new Error('No inquiries found to test with');
+                }
+                
+                const inquiryId = listData.data[0]._id;
+                
+                // Now fetch single inquiry
+                const response = await fetch(`${API_BASE}/api/inquiry/${inquiryId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Success!</h3>
+                        <p><strong>Inquiry Number:</strong> ${data.data.inquiryNumber || 'N/A'}</p>
+                        <p><strong>Procedure:</strong> ${data.data.surgicalProcedure?.name || 'N/A'}</p>
+                        <div><strong>Surgical Categories:</strong></div>
+                        ${displayCategories(data.data)}
+                        <p><strong>Calculated Limit:</strong> <span class="limit-total">${calculateTotalLimit(data.data)}</span></p>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Failed to fetch inquiry');
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>Error:</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function testAllInquiries() {
+            const resultDiv = document.getElementById('allInquiriesResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/inquiry`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>Success! Found ${data.data.length} inquiries</h3>
+                        ${data.data.slice(0, 3).map((inquiry, index) => `
+                            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc;">
+                                <p><strong>Inquiry ${index + 1}:</strong> ${inquiry.inquiryNumber || 'N/A'}</p>
+                                <p><strong>Procedure:</strong> ${inquiry.surgicalProcedure?.name || 'N/A'}</p>
+                                <div><strong>Categories:</strong></div>
+                                ${displayCategories(inquiry)}
+                                <p><strong>Calculated Limit:</strong> <span class="limit-total">${calculateTotalLimit(inquiry)}</span></p>
+                            </div>
+                        `).join('')}
+                        ${data.data.length > 3 ? `<p>... and ${data.data.length - 3} more inquiries</p>` : ''}
+                    `;
+                } else {
+                    throw new Error(data.message || 'Failed to fetch inquiries');
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>Error:</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        function displayCategories(inquiry) {
+            if (!inquiry.surgicalProcedure || !inquiry.surgicalProcedure.items) {
+                return '<p>No categories available</p>';
+            }
+            
+            return inquiry.surgicalProcedure.items.map(item => `
+                <div class="category-item">
+                    <strong>${item.surgicalCategoryId?.description || 'Unknown Category'}</strong>
+                    <br>Limit: ₹${item.limit ? item.limit.toFixed(2) : '0.00'}
+                </div>
+            `).join('');
+        }
+        
+        function calculateTotalLimit(inquiry) {
+            if (!inquiry.surgicalProcedure || !inquiry.surgicalProcedure.items) {
+                return '₹0.00';
+            }
+            
+            const total = inquiry.surgicalProcedure.items.reduce((sum, item) => {
+                return sum + (item.limit || 0);
+            }, 0);
+            
+            return `₹${total.toFixed(2)}`;
+        }
+        
+        // Auto-run category display test
+        document.getElementById('categoryDisplayTest').innerHTML = `
+            <p>This section demonstrates how categories and limits should be displayed:</p>
+            <div class="category-item">
+                <strong>Orthopedic Surgery</strong>
+                <br>Limit: ₹25,000.00
+            </div>
+            <div class="category-item">
+                <strong>Implant Materials</strong>
+                <br>Limit: ₹15,000.00
+            </div>
+            <div class="category-item">
+                <strong>Anesthesia</strong>
+                <br>Limit: ₹5,000.00
+            </div>
+            <p><strong>Total Calculated Limit:</strong> <span class="limit-total">₹45,000.00</span></p>
+        `;
+    </script>
+</body>
+</html>

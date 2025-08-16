@@ -13,7 +13,9 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     patientUHID: inquiry?.patientUHID || '',
     hospital: inquiry?.hospital || '',
     surgicalProcedure: inquiry?.surgicalProcedure || '',
+    surgicalCategories: inquiry?.surgicalCategories || [], // Multiple categories from procedure
     paymentMethod: inquiry?.paymentMethod || '',
+    categoryLimits: inquiry?.categoryLimits || [], // Individual category limits
     limit: {
       amount: inquiry?.limit?.amount || '',
       currency: inquiry?.limit?.currency || 'INR'
@@ -76,14 +78,22 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     if (inquiry) {
       // Set form data
       const newFormData = {
+        inquiryNumber: inquiry.inquiryNumber || '',
         inquiryDate: inquiry.inquiryDate ? new Date(inquiry.inquiryDate).toISOString().split('T')[0] : '',
         patientName: inquiry.patientName || '',
         patientUHID: inquiry.patientUHID || '',
         hospital: inquiry.hospital?._id || inquiry.hospital || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || inquiry.surgicalProcedure || '',
+        surgicalCategories: inquiry.surgicalProcedure?.items?.map(item => ({
+          id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
+          name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
+          limit: item.limit || 0,
+          currency: item.currency || 'INR'
+        })) || [],
         paymentMethod: inquiry.paymentMethod?._id || inquiry.paymentMethod || '',
+        categoryLimits: inquiry.surgicalProcedure?.items || [],
         limit: {
-          amount: inquiry.limit?.amount || '',
+          amount: inquiry.limit?.amount || inquiry.surgicalProcedure?.totalLimit || '',
           currency: inquiry.limit?.currency || 'INR'
         },
         items: inquiry.items || [],
@@ -104,12 +114,15 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     } else {
       // New inquiry
       setFormData({
+        inquiryNumber: '',
         inquiryDate: new Date().toISOString().split('T')[0],
         patientName: '',
         patientUHID: '',
         hospital: '',
         surgicalProcedure: '',
+        surgicalCategories: [],
         paymentMethod: '',
+        categoryLimits: [],
         limit: {
           amount: '',
           currency: 'INR'
@@ -155,20 +168,44 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         setFilteredSurgicalProcedures([]);
       }
     } else if (field === 'surgicalProcedure') {
-      // Surgical procedure changed - update limit from selected procedure
+      // Surgical procedure changed - update categories and limits from selected procedure
       const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === value);
       
-      setFormData(prev => ({
-        ...prev,
-        surgicalProcedure: value,
-        limit: selectedProcedure ? {
-          amount: selectedProcedure.totalLimit,
-          currency: selectedProcedure.currency || 'INR'
-        } : {
-          amount: '',
-          currency: 'INR'
-        }
-      }));
+      if (selectedProcedure) {
+        // Extract surgical categories and their individual limits
+        const surgicalCategories = selectedProcedure.items?.map(item => ({
+          id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
+          name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category',
+          limit: item.limit || 0,
+          currency: item.currency || 'INR'
+        })) || [];
+        
+        // Calculate total limit from all categories
+        const totalLimit = surgicalCategories.reduce((sum, category) => sum + (category.limit || 0), 0);
+        
+        setFormData(prev => ({
+          ...prev,
+          surgicalProcedure: value,
+          surgicalCategories: surgicalCategories,
+          categoryLimits: selectedProcedure.items || [],
+          limit: {
+            amount: totalLimit,
+            currency: selectedProcedure.currency || 'INR'
+          }
+        }));
+      } else {
+        // Clear categories and limits if no procedure selected
+        setFormData(prev => ({
+          ...prev,
+          surgicalProcedure: value,
+          surgicalCategories: [],
+          categoryLimits: [],
+          limit: {
+            amount: '',
+            currency: 'INR'
+          }
+        }));
+      }
     } else if (field === 'limit.amount') {
       // Allow manual edit of limit if no procedure is selected OR if procedure has zero/no limit
       const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
@@ -310,7 +347,12 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       <div className="unified-header">
         <div className="unified-header-content">
           <div className="unified-header-text">
-            <h1>{inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}</h1>
+            <h1>
+              {inquiry ? 'Edit Inquiry' : 'Add New Inquiry'}
+              {inquiry && formData.inquiryNumber && (
+                <span className="inquiry-number-badge">#{formData.inquiryNumber}</span>
+              )}
+            </h1>
             <p>
               {inquiry 
                 ? 'Update inquiry information and patient details with hospital-specific surgical categories.'
@@ -445,8 +487,35 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                   </select>
                 </div>
 
+                {/* Surgical Categories Display */}
+                {formData.surgicalCategories && formData.surgicalCategories.length > 0 && (
+                  <div className="unified-form-field">
+                    <label className="unified-form-label">Surgical Categories</label>
+                    <div className="categories-display">
+                      {formData.surgicalCategories.map((category, index) => (
+                        <div key={index} className="category-item">
+                          <div className="category-info">
+                            <span className="category-name">{category.name || 'Unknown Category'}</span>
+                            <span className="category-limit">
+                              ₹{parseFloat(category.limit || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })} {typeof category.currency === 'string' ? category.currency : 'INR'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="unified-form-field">
-                  <label className="unified-form-label">Limit Amount</label>
+                  <label className="unified-form-label">
+                    Total Limit Amount
+                    {formData.surgicalCategories && formData.surgicalCategories.length > 0 && (
+                      <span className="field-helper">(Sum of all category limits - Read Only)</span>
+                    )}
+                  </label>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <input
                       type="number"
@@ -458,18 +527,18 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                       step="0.01"
                       style={{ 
                         flex: '2',
-                        backgroundColor: (() => {
+                        backgroundColor: (formData.surgicalCategories && formData.surgicalCategories.length > 0) ? '#f8f9fa' : (() => {
                           const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
                           const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
                           return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'white' : '#f8f9fa';
                         })(),
-                        cursor: (() => {
+                        cursor: (formData.surgicalCategories && formData.surgicalCategories.length > 0) ? 'not-allowed' : (() => {
                           const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
                           const procedureHasNoLimit = !selectedProcedure || !selectedProcedure.totalLimit || selectedProcedure.totalLimit === 0;
                           return (!formData.surgicalProcedure || procedureHasNoLimit) ? 'text' : 'not-allowed';
                         })()
                       }}
-                      readOnly={(() => {
+                      readOnly={(formData.surgicalCategories && formData.surgicalCategories.length > 0) || (() => {
                         const selectedProcedure = filteredSurgicalProcedures.find(proc => proc._id === formData.surgicalProcedure);
                         const procedureHasLimit = selectedProcedure && selectedProcedure.totalLimit && selectedProcedure.totalLimit > 0;
                         return formData.surgicalProcedure && procedureHasLimit;

@@ -314,6 +314,7 @@ const Inquiry = () => {
                     <th>Hospital</th>
                     <th>Date</th>
                     <th>Surgical Procedure</th>
+                    <th>Surgical Categories</th>
                     <th>Payment Method</th>
                     <th>Total Amount</th>
                     <th>Status</th>
@@ -329,6 +330,19 @@ const Inquiry = () => {
                       <td>{inquiry.hospital?.shortName || inquiry.hospital?.legalName}</td>
                       <td>{formatDate(inquiry.inquiryDate)}</td>
                       <td>{inquiry.surgicalProcedure?.name || '-'}</td>
+                      <td>
+                        {inquiry.surgicalProcedure?.items && inquiry.surgicalProcedure.items.length > 0 ? (
+                          <div className="categories-list">
+                            {inquiry.surgicalProcedure.items.map((item, index) => (
+                              <span key={index} className="unified-tag">
+                                {item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || item.surgicalCategoryId || 'Unknown'}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="unified-text-muted">-</span>
+                        )}
+                      </td>
                       <td>{inquiry.paymentMethod?.description}</td>
                       <td>
                         {inquiry.totalInquiryAmount ? (
@@ -385,6 +399,12 @@ const Inquiry = () => {
                     { label: 'Patient', value: inquiry.patientName || 'Unknown Patient' },
                     { label: 'Hospital', value: inquiry.hospital?.shortName || inquiry.hospital?.legalName || '-' },
                     { label: 'Procedure', value: inquiry.surgicalProcedure?.name || '-' },
+                    { 
+                      label: 'Categories', 
+                      value: inquiry.surgicalProcedure?.items && inquiry.surgicalProcedure.items.length > 0
+                        ? inquiry.surgicalProcedure.items.map(item => item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || item.surgicalCategoryId || 'Unknown').join(', ')
+                        : '-'
+                    },
                     { label: 'Payment', value: inquiry.paymentMethod?.description || '-' },
                     { 
                       label: 'Status', 
