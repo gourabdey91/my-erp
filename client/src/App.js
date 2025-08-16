@@ -22,6 +22,7 @@ import MaterialMasterUpload from './features/file-upload/MaterialMasterUpload';
 import MaterialMasterValidation from './features/file-upload/MaterialMasterValidation';
 import MaterialAssignmentUpload from './features/material-assignment-upload/MaterialAssignmentUpload';
 import Inquiry from './features/inquiry/Inquiry';
+import Template from './features/templates/Template';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -92,6 +93,8 @@ function AppContent() {
         return <MaterialAssignmentUpload onBack={() => setCurrentView('dashboard')} />;
       case 'inquiry':
         return <Inquiry />;
+      case 'templates':
+        return <Template />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':

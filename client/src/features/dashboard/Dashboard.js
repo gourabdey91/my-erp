@@ -178,11 +178,11 @@ const Dashboard = ({ onViewChange }) => {
           {
             id: 'templates',
             title: 'Templates',
-            subtitle: 'Document Templates',
-            icon: '📄',
+            subtitle: 'Material Combination Templates',
+            icon: '�',
             count: stats?.templates?.count || '...',
             onClick: () => onViewChange('templates'),
-            enabled: false
+            enabled: true
           },
           {
             id: 'sales-order',
