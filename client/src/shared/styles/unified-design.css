@@ -1747,24 +1747,28 @@ select.unified-input {
 }
 
 .material-selector-btn {
-  background: var(--primary-color);
-  color: white;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  border-radius: var(--border-radius);
-  padding: 0.5rem;
+  color: #6b7280;
   cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
+  min-width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .material-selector-btn:hover:not(:disabled) {
-  background: #0056b3;
-  transform: translateY(-1px);
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .material-selector-btn:disabled {
@@ -2295,27 +2299,28 @@ select.unified-input {
 }
 
 .material-selector-btn {
-  padding: 0.5rem;
-  background: var(--primary-600);
-  color: var(--white);
-  border: 1px solid var(--primary-600);
-  border-radius: var(--border-radius-sm);
-  font-size: 1rem;
-  font-weight: 500;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  white-space: nowrap;
+  padding: 4px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
+  transition: background-color 0.2s, color 0.2s;
+  min-width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .material-selector-btn:hover:not(:disabled) {
-  background: var(--primary-700);
-  border-color: var(--primary-700);
-  transform: translateY(-1px);
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .material-selector-btn:disabled {
@@ -2472,26 +2477,28 @@ select.unified-input {
 }
 
 .material-selector-btn {
-  background: var(--accent-color);
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  border-radius: var(--border-radius);
-  color: var(--white);
+  color: #6b7280;
   cursor: pointer;
-  font-size: 14px;
-  padding: 0.4rem;
-  line-height: 1;
+  padding: 4px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
+  min-width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .material-selector-btn:hover:not(:disabled) {
-  background: #0056b3;
-  transform: translateY(-1px);
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .material-selector-btn:disabled {
@@ -2567,23 +2574,28 @@ select.unified-input {
 }
 
 .mobile-field-group .material-selector-btn {
-  background: #007bff;
-  color: white;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  border-radius: 4px;
-  padding: 8px;
+  color: #6b7280;
   cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
+  min-width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .mobile-field-group .material-selector-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .mobile-field-group .material-selector-btn:disabled {

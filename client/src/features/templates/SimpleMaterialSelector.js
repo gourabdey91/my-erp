@@ -278,14 +278,20 @@ const SimpleMaterialSelector = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content material-selector-modal">
-        <div className="modal-header">
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container material-selector-modal">
+        <div className="unified-modal-header">
           <h2>Select Material - Cascading Filter</h2>
-          <button onClick={onClose} className="close-button">&times;</button>
+          <button 
+            onClick={onClose} 
+            className="unified-modal-close"
+            aria-label="Close"
+          >
+            &times;
+          </button>
         </div>
 
-        <div className="modal-body">
+        <div className="unified-modal-body">
           {/* Progress Indicator */}
           <div className="filter-progress">
             <div className="progress-steps">
