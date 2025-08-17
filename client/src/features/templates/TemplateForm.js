@@ -471,9 +471,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                         {formData.hospitalDependent ? 'Yes' : 'No'}
                       </span>
                     </label>
-                    <div className="unified-help-text">
-                      Enable if template is specific to a hospital
-                    </div>
+
                   </div>
                 </div>
               </div>
@@ -497,9 +495,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                         {formData.discountApplicable ? 'Yes' : 'No'}
                       </span>
                     </label>
-                    <div className="unified-help-text">
-                      Enable discount columns in items section
-                    </div>
+
                   </div>
                 </div>
               </div>
@@ -537,19 +533,19 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
             {/* Form Actions */}
             <div className="unified-form-actions">
               <button
+                type="submit"
+                className="unified-btn unified-btn-primary"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : (template ? 'Save Template' : 'Create Template')}
+              </button>
+              <button
                 type="button"
                 className="unified-btn unified-btn-secondary"
                 onClick={onCancel}
                 disabled={loading}
               >
                 Cancel
-              </button>
-              <button
-                type="submit"
-                className="unified-btn unified-btn-primary"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : (template ? 'Update Template' : 'Create Template')}
               </button>
             </div>
           </form>

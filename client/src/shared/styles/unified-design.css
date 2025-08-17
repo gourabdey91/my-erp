@@ -2124,6 +2124,13 @@ select.unified-input {
   width: 90vw;
   max-width: 800px;
   max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.material-selector-modal .unified-modal-body {
+  overflow-y: auto;
+  flex: 1;
 }
 
 .material-selector-context {
@@ -2370,7 +2377,12 @@ select.unified-input {
 @media (max-width: 768px) {
   .material-selector-modal {
     width: 95vw;
-    max-height: 85vh;
+    max-height: 90vh;
+    margin: 1rem;
+  }
+  
+  .material-selector-modal .unified-modal-body {
+    padding: 1rem;
   }
   
   .material-selector-context {
