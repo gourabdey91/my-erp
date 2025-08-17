@@ -62,10 +62,11 @@ const SimpleMaterialSelector = ({
     }
   }, [selectedSurgicalCategory]);
 
-  // When implant type changes, fetch subcategories
+  // When implant type changes, fetch subcategories and materials
   useEffect(() => {
     if (selectedSurgicalCategory && selectedImplantType) {
       fetchSubcategories(selectedSurgicalCategory, selectedImplantType);
+      fetchMaterials(); // Fetch materials immediately with just category + implant type
     } else {
       setSubcategories([]);
       resetFromSubcategory();
@@ -74,9 +75,11 @@ const SimpleMaterialSelector = ({
 
   // When subcategory changes, fetch lengths and materials
   useEffect(() => {
-    if (selectedSurgicalCategory && selectedImplantType && selectedSubcategory) {
-      fetchLengths(selectedSurgicalCategory, selectedImplantType, selectedSubcategory);
-      fetchMaterials(); // Fetch materials when we have category + type + subcategory
+    if (selectedSurgicalCategory && selectedImplantType) {
+      if (selectedSubcategory) {
+        fetchLengths(selectedSurgicalCategory, selectedImplantType, selectedSubcategory);
+      }
+      fetchMaterials(); // Fetch materials when we have category + type (subcategory is optional)
     } else {
       setLengths([]);
       setMaterials([]);
@@ -209,7 +212,7 @@ const SimpleMaterialSelector = ({
   };
 
   const fetchMaterials = async () => {
-    if (!selectedSurgicalCategory || !selectedImplantType || !selectedSubcategory) {
+    if (!selectedSurgicalCategory || !selectedImplantType) {
       return;
     }
 
@@ -220,7 +223,7 @@ const SimpleMaterialSelector = ({
       console.log('🔍 Fetching materials with filters:', {
         surgicalCategory: selectedSurgicalCategory,
         implantType: selectedImplantType,
-        subcategory: selectedSubcategory,
+        subcategory: selectedSubcategory || '(optional)',
         length: selectedLength,
         hospital: hospital
       });
@@ -234,7 +237,7 @@ const SimpleMaterialSelector = ({
         const filters = {
           surgicalCategory: selectedSurgicalCategory,
           implantType: selectedImplantType,
-          subCategory: selectedSubcategory,
+          ...(selectedSubcategory && { subCategory: selectedSubcategory }),
           ...(selectedLength && { lengthMm: selectedLength })
         };
 
@@ -247,7 +250,7 @@ const SimpleMaterialSelector = ({
         const filters = {
           surgicalCategory: selectedSurgicalCategory,
           implantType: selectedImplantType,
-          subcategory: selectedSubcategory,
+          ...(selectedSubcategory && { subcategory: selectedSubcategory }),
           ...(selectedLength && { length: selectedLength })
         };
 
@@ -289,7 +292,7 @@ const SimpleMaterialSelector = ({
       case 1: return selectedSurgicalCategory ? 'completed' : 'active';
       case 2: return selectedImplantType ? 'completed' : selectedSurgicalCategory ? 'active' : 'pending';
       case 3: return selectedSubcategory ? 'completed' : selectedImplantType ? 'active' : 'pending';
-      case 4: return materials.length > 0 ? 'completed' : selectedSubcategory ? 'active' : 'pending';
+      case 4: return materials.length > 0 ? 'completed' : selectedImplantType ? 'active' : 'pending';
       default: return 'pending';
     }
   };
@@ -391,7 +394,7 @@ const SimpleMaterialSelector = ({
           {selectedImplantType && (
             <div className="filter-group">
               <label>
-                Step 3 - Select Subcategory:
+                Step 3 - Select Subcategory (Optional):
                 {loadingSubcategories && <span className="loading-text"> (Loading...)</span>}
               </label>
               <select 
@@ -401,7 +404,7 @@ const SimpleMaterialSelector = ({
                 disabled={loadingSubcategories}
               >
                 <option value="">
-                  {loadingSubcategories ? 'Loading subcategories...' : 'Choose Subcategory'}
+                  {loadingSubcategories ? 'Loading subcategories...' : 'Choose Subcategory (Optional)'}
                 </option>
                 {subcategories.map(sub => (
                   <option key={sub} value={sub}>
@@ -487,7 +490,7 @@ const SimpleMaterialSelector = ({
           )}
 
           {/* No Results */}
-          {!loadingMaterials && selectedSubcategory && materials.length === 0 && !error && (
+          {!loadingMaterials && selectedImplantType && materials.length === 0 && !error && (
             <div className="no-results">
               No materials found for the selected criteria.
             </div>
