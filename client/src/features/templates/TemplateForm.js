@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { materialAPI } from '../../services/materialAPI';
 import TemplateItems from './TemplateItems';
 import '../../shared/styles/unified-design.css';
 import '../inquiry/Inquiry.css'; // Import inquiry styles for categories
@@ -26,7 +27,13 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
 
   // Initialize form data when template changes
   useEffect(() => {
+    console.log('TemplateForm: Template data changed:', template);
+    
     if (template) {
+      console.log('TemplateForm: Initializing form with template data');
+      console.log('TemplateForm: template.hospitalDependent =', template.hospitalDependent);
+      console.log('TemplateForm: template.hospital =', template.hospital);
+      
       // Set form data
       const newFormData = {
         templateNumber: template.templateNumber || '',
@@ -43,6 +50,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
         totalTemplateAmount: template.totalTemplateAmount || 0
       };
       
+      console.log('TemplateForm: Setting form data to:', newFormData);
       setFormData(newFormData);
     } else {
       // New template
@@ -62,6 +70,17 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       });
     }
   }, [template]);
+
+  // Debug formData changes
+  useEffect(() => {
+    console.log('TemplateForm: Form data updated:', formData);
+  }, [formData]);
+
+  // Debug dropdown data changes
+  useEffect(() => {
+    console.log('TemplateForm: Dropdown data updated:', dropdownData);
+    console.log('TemplateForm: Hospitals count:', dropdownData?.hospitals?.length || 0);
+  }, [dropdownData]);
 
   // Handle input changes
   const handleChange = (field, value) => {
@@ -107,7 +126,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
   };
 
   // Validate form
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors = {};
 
     if (!formData.description?.trim()) {
@@ -142,6 +161,38 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       }
     }
 
+    // Validate hospital-dependent template materials
+    if (formData.hospitalDependent && formData.hospital && formData.items.length > 0) {
+      console.log('🔍 Validating hospital-dependent template materials...');
+      try {
+        // Get hospital's assigned materials for the surgical category
+        const response = await materialAPI.getAssignedMaterialsForInquiry(formData.hospital, {
+          surgicalCategory: formData.surgicalCategory
+        });
+
+        if (response.success && response.data) {
+          const hospitalMaterials = response.data;
+          const hospitalMaterialNumbers = hospitalMaterials.map(material => material.materialNumber);
+          
+          // Check if any template items are not available in the hospital
+          const unavailableMaterials = formData.items.filter(item => 
+            !hospitalMaterialNumbers.includes(item.materialNumber)
+          );
+
+          if (unavailableMaterials.length > 0) {
+            const materialList = unavailableMaterials
+              .map(material => `${material.materialNumber} (${material.description || 'Unknown'})`)
+              .join(', ');
+            
+            newErrors.hospitalMaterials = `The following materials are not available in the selected hospital: ${materialList}. Please remove them or change to a non-hospital-dependent template.`;
+          }
+        }
+      } catch (error) {
+        console.error('Error validating hospital materials:', error);
+        newErrors.hospitalMaterials = 'Unable to validate hospital materials. Please try again.';
+      }
+    }
+
     if (formData.items.length === 0) {
       newErrors.items = 'At least one item is required';
     }
@@ -164,13 +215,15 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
     setLoading(true);
-
+    
     try {
+      const isValid = await validateForm();
+      if (!isValid) {
+        setLoading(false);
+        return;
+      }
+
       // Prepare submission data
       const submissionData = {
         ...formData,
@@ -182,7 +235,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       await onSubmit(submissionData);
     } catch (error) {
       console.error('Form submission error:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -218,6 +270,11 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
               {errors.totalAmount && (
                 <div className="unified-error-text" style={{ marginTop: '4px', fontSize: '12px' }}>
                   {errors.totalAmount}
+                </div>
+              )}
+              {errors.hospitalMaterials && (
+                <div className="unified-error-text" style={{ marginTop: '4px', fontSize: '12px' }}>
+                  ⚠️ {errors.hospitalMaterials}
                 </div>
               )}
             </div>

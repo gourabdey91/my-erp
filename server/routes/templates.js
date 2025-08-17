@@ -4,7 +4,68 @@ const Template = require('../models/Template');
 const Category = require('../models/Category');
 const Procedure = require('../models/Procedure');
 
-// Get all templates with pagination and search
+const express = require('express');
+const Template = require('../models/Template');
+const Hospital = require('../models/Hospital');
+
+const router = express.Router();
+
+// Helper function to validate hospital materials
+const validateHospitalMaterials = async (templateData) => {
+  // Only validate if template is hospital-dependent and has items
+  if (!templateData.hospitalDependent || !templateData.hospital || !templateData.items || templateData.items.length === 0) {
+    return { isValid: true };
+  }
+
+  try {
+    console.log('🔍 Validating hospital materials for template...');
+    
+    // Get hospital's assigned materials
+    const hospital = await Hospital.findById(templateData.hospital).populate('assignedMaterials');
+    
+    if (!hospital) {
+      return {
+        isValid: false,
+        error: 'Selected hospital not found'
+      };
+    }
+
+    if (!hospital.assignedMaterials || hospital.assignedMaterials.length === 0) {
+      return {
+        isValid: false,
+        error: 'Selected hospital has no assigned materials'
+      };
+    }
+
+    // Get list of hospital's material numbers
+    const hospitalMaterialNumbers = hospital.assignedMaterials.map(material => material.materialNumber);
+    
+    // Check if all template materials exist in hospital's assigned materials
+    const unavailableMaterials = templateData.items.filter(item => 
+      !hospitalMaterialNumbers.includes(item.materialNumber)
+    );
+
+    if (unavailableMaterials.length > 0) {
+      const materialList = unavailableMaterials.map(m => m.materialNumber).join(', ');
+      return {
+        isValid: false,
+        error: `The following materials are not available in the selected hospital: ${materialList}`
+      };
+    }
+
+    console.log('✅ All materials are available in the selected hospital');
+    return { isValid: true };
+
+  } catch (error) {
+    console.error('Error validating hospital materials:', error);
+    return {
+      isValid: false,
+      error: 'Unable to validate hospital materials'
+    };
+  }
+};
+
+// Get all templates with pagination, filters, and search
 router.get('/', async (req, res) => {
   try {
     const {
@@ -138,6 +199,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validate hospital materials if hospital-dependent
+    const materialValidation = await validateHospitalMaterials(templateData);
+    if (!materialValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hospital material validation failed',
+        error: materialValidation.error
+      });
+    }
+
     const template = new Template(templateData);
     await template.save();
 
@@ -185,6 +256,16 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'updatedBy is required'
+      });
+    }
+
+    // Validate hospital materials if hospital-dependent
+    const materialValidation = await validateHospitalMaterials(templateData);
+    if (!materialValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hospital material validation failed',
+        error: materialValidation.error
       });
     }
 
