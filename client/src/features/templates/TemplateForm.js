@@ -151,6 +151,12 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
     }
 
     setErrors(newErrors);
+    
+    // Auto-scroll to top if there are errors so user can see them
+    if (Object.keys(newErrors).length > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
