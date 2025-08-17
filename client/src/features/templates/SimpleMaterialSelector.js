@@ -287,16 +287,6 @@ const SimpleMaterialSelector = ({
     setFilteredMaterials(filtered);
   };
 
-  const getStepStatus = (step) => {
-    switch (step) {
-      case 1: return selectedSurgicalCategory ? 'completed' : 'active';
-      case 2: return selectedImplantType ? 'completed' : selectedSurgicalCategory ? 'active' : 'pending';
-      case 3: return selectedSubcategory ? 'completed' : selectedImplantType ? 'active' : 'pending';
-      case 4: return materials.length > 0 ? 'completed' : selectedImplantType ? 'active' : 'pending';
-      default: return 'pending';
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -330,6 +320,8 @@ const SimpleMaterialSelector = ({
                 ))}
               </select>
             </div>
+          )}
+
           {/* Step 2: Implant Type */}
           {selectedSurgicalCategory && (
             <div className="filter-group">
