@@ -45,7 +45,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
         },
         discountApplicable: template.discountApplicable || false,
         hospitalDependent: template.hospitalDependent || false,
-        hospital: template.hospital?._id || template.hospital || '',
+        hospital: template.hospital?._id || template.hospital || undefined,
         items: template.items || [],
         totalTemplateAmount: template.totalTemplateAmount || 0
       };
@@ -64,7 +64,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
         },
         discountApplicable: false,
         hospitalDependent: false,
-        hospital: '',
+        hospital: undefined,
         items: [],
         totalTemplateAmount: 0
       });
@@ -98,19 +98,19 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       setFormData(prev => ({
         ...prev,
         hospitalDependent: value,
-        hospital: value ? prev.hospital : '' // Clear hospital if hospitalDependent is false
+        hospital: value ? prev.hospital : undefined // Clear hospital if hospitalDependent is false
       }));
     } else if (field === 'surgicalCategory') {
       // Surgical category changed - clear hospital field since hospital list will be filtered
       setFormData(prev => ({
         ...prev,
         surgicalCategory: value,
-        hospital: '' // Clear hospital when surgical category changes
+        hospital: undefined // Clear hospital when surgical category changes
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [field]: value
+        [field]: field === 'hospital' && value === '' ? undefined : value
       }));
     }
   };
@@ -275,6 +275,8 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       // Prepare submission data
       const submissionData = {
         ...formData,
+        // Only include hospital field if hospitalDependent is true
+        hospital: formData.hospitalDependent ? formData.hospital : undefined,
         createdBy: !template ? currentUser._id : undefined,
         updatedBy: template ? currentUser._id : undefined
       };
@@ -443,7 +445,7 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                   </label>
                   <select
                     className={`unified-input ${errors.hospital ? 'unified-input-error' : ''}`}
-                    value={formData.hospitalDependent ? formData.hospital : ''}
+                    value={formData.hospitalDependent ? (formData.hospital || '') : ''}
                     onChange={(e) => handleChange('hospital', e.target.value)}
                     disabled={loading || !formData.hospitalDependent}
                   >
