@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import TemplateItems from './TemplateItems';
 import '../../shared/styles/unified-design.css';
 import '../inquiry/Inquiry.css'; // Import inquiry styles for categories
 import './Template.css';
 
 const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     templateNumber: template?.templateNumber || '',
     description: template?.description || '',
@@ -124,8 +126,28 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       newErrors.limit = 'Limit amount must be greater than 0';
     }
 
+    // Validate total template amount doesn't exceed limit
+    if (formData.totalTemplateAmount && formData.limit?.amount) {
+      const totalAmount = parseFloat(formData.totalTemplateAmount);
+      const limitAmount = parseFloat(formData.limit.amount);
+      
+      if (totalAmount > limitAmount) {
+        newErrors.totalAmount = `Total amount (₹${totalAmount.toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}) exceeds the limit (₹${limitAmount.toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })})`;
+      }
+    }
+
     if (formData.items.length === 0) {
       newErrors.items = 'At least one item is required';
+    }
+
+    if (!currentUser || !currentUser._id) {
+      newErrors.user = 'User authentication required. Please log in again.';
     }
 
     setErrors(newErrors);
@@ -146,8 +168,8 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       // Prepare submission data
       const submissionData = {
         ...formData,
-        createdBy: !template ? JSON.parse(localStorage.getItem('user') || '{}')._id : undefined,
-        updatedBy: template ? JSON.parse(localStorage.getItem('user') || '{}')._id : undefined
+        createdBy: !template ? currentUser._id : undefined,
+        updatedBy: template ? currentUser._id : undefined
       };
 
       console.log('Submitting template data:', submissionData);
@@ -181,12 +203,17 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
           <div className="unified-header-actions">
             <div className="header-total-amount">
               <span className="header-total-label">Total Amount:</span>
-              <span className="header-total-value">
+              <span className={`header-total-value ${errors.totalAmount ? 'error' : ''}`}>
                 ₹{parseFloat(formData.totalTemplateAmount || 0).toLocaleString('en-IN', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
               </span>
+              {errors.totalAmount && (
+                <div className="unified-error-text" style={{ marginTop: '4px', fontSize: '12px' }}>
+                  {errors.totalAmount}
+                </div>
+              )}
             </div>
             <button
               className="unified-btn unified-btn-secondary"
@@ -203,6 +230,13 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       {/* Form Card */}
       <div className="unified-card">
         <div className="unified-card-content">
+          {/* General Error Display */}
+          {errors.user && (
+            <div className="unified-alert unified-alert-danger" style={{ marginBottom: '20px' }}>
+              {errors.user}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <div className="form-section">
               <div className="form-section-title">

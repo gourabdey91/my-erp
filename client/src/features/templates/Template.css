@@ -465,3 +465,14 @@
 .toggle-checkbox:checked + .toggle-slider + .toggle-text {
   color: #3b82f6;
 }
+
+/* Error styling for header total amount */
+.header-total-value.error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.header-total-amount .unified-error-text {
+  color: #dc2626;
+  font-weight: 400;
+}
