@@ -313,16 +313,6 @@ const SimpleMaterialSelector = ({
         </div>
 
         <div className="unified-modal-body">
-          {/* Progress Indicator */}
-          <div className="filter-progress">
-            <div className="progress-steps">
-              <span className={`step ${getStepStatus(1)}`}>1. Category</span>
-              <span className={`step ${getStepStatus(2)}`}>2. Type</span>
-              <span className={`step ${getStepStatus(3)}`}>3. Subcategory</span>
-              <span className={`step ${getStepStatus(4)}`}>4. Materials</span>
-            </div>
-          </div>
-
           {/* Step 1: Surgical Category */}
           {!surgicalCategory && (
             <div className="filter-group">
@@ -340,14 +330,6 @@ const SimpleMaterialSelector = ({
                 ))}
               </select>
             </div>
-          )}
-
-          {surgicalCategory && (
-            <div className="filter-info">
-              <strong>Surgical Category:</strong> {surgicalCategories.find(c => c._id === surgicalCategory)?.description || surgicalCategory}
-            </div>
-          )}
-
           {/* Step 2: Implant Type */}
           {selectedSurgicalCategory && (
             <div className="filter-group">
@@ -446,39 +428,43 @@ const SimpleMaterialSelector = ({
           {/* Error Messages */}
           {error && <div className="error-message">{error}</div>}
 
-          {/* Materials Grid */}
+          {/* Materials List - Match inquiry style */}
           {!loadingMaterials && filteredMaterials.length > 0 && (
             <div className="materials-list">
-              <div className="materials-header">
-                <span>Found {filteredMaterials.length} material(s)</span>
-                <small>Click to select</small>
-              </div>
-              <div className="materials-grid">
-                {filteredMaterials.map(material => (
-                  <div key={material._id} className="material-card" onClick={() => onSelect(material)}>
-                    <div className="material-info">
-                      <div className="material-number">{material.materialNumber}</div>
-                      <div className="material-description">{material.description}</div>
-                      <div className="material-details">
-                        <span className="detail-badge">{material.subCategory}</span>
-                        {(material.lengthMm || material.length) && (
-                          <span className="detail-badge">{material.lengthMm || material.length}mm</span>
-                        )}
-                      </div>
-                      <div className="material-price">
-                        ₹{material.institutionalPrice || material.mrp || 0}
-                      </div>
+              {filteredMaterials.map(material => (
+                <div
+                  key={material._id}
+                  className={`material-item clickable`}
+                  onClick={() => onSelect(material)}
+                >
+                  <div className="material-main-row">
+                    <div className="material-left">
+                      <span className="material-number">{material.materialNumber}</span>
+                      <span className="material-description">{material.description}</span>
+                      {material.subCategory && (
+                        <span className="material-subcategory">{material.subCategory}</span>
+                      )}
+                      {(material.lengthMm || material.length) && (
+                        <span className="material-length">{material.lengthMm || material.length}mm</span>
+                      )}
+                    </div>
+                    <div className="material-right">
+                      <span className="material-unit-rate">₹{material.institutionalPrice || material.mrp || 0}</span>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* No Results */}
+          {/* No Results - Match inquiry style */}
           {!loadingMaterials && selectedImplantType && materials.length === 0 && !error && (
-            <div className="no-results">
-              No materials found for the selected criteria.
+            <div className="unified-empty-state">
+              <div className="unified-empty-icon">📦</div>
+              <div className="unified-empty-title">No Materials Found</div>
+              <div className="unified-empty-subtitle">
+                No materials available for the selected criteria.
+              </div>
             </div>
           )}
 

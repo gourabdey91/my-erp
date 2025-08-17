@@ -2148,12 +2148,10 @@ select.unified-input {
   width: 90vw;
   max-width: 800px;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
 }
 
 .material-selector-modal .unified-modal-body {
-  overflow-y: auto;
   flex: 1;
 }
 
@@ -2306,6 +2304,18 @@ select.unified-input {
   color: var(--gray-700);
   font-weight: 400;
   line-height: 1.4;
+}
+
+.material-subcategory,
+.material-length {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  background: var(--gray-100);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+  margin-top: 0.25rem;
+  margin-right: 0.25rem;
 }
 
 .material-unit-rate {
