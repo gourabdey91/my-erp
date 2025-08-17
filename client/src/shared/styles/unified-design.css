@@ -2202,8 +2202,13 @@ select.unified-input {
 
 .filter-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-md);
+}
+
+/* For material selector with 3 columns */
+.material-selector-modal .filter-row {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 .filter-group {
@@ -2237,6 +2242,15 @@ select.unified-input {
   background: var(--color-light);
   color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
 }
 
 .materials-list-container {
