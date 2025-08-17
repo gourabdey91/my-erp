@@ -225,19 +225,38 @@ const SimpleMaterialSelector = ({
         hospital: hospital
       });
 
-      const filters = {
-        surgicalCategory: selectedSurgicalCategory,
-        implantType: selectedImplantType,
-        subcategory: selectedSubcategory,
-        ...(selectedLength && { length: selectedLength }),
-        ...(hospital && { hospital: hospital })
-      };
+      let response;
 
-      const response = await materialAPI.getMaterialsBySurgicalCategory(filters);
+      if (hospital) {
+        // Hospital-specific materials: Use hospital's assigned materials API
+        console.log('🏥 Fetching hospital-specific materials via assigned materials API');
+        
+        const filters = {
+          surgicalCategory: selectedSurgicalCategory,
+          implantType: selectedImplantType,
+          subCategory: selectedSubcategory,
+          ...(selectedLength && { lengthMm: selectedLength })
+        };
+
+        response = await materialAPI.getAssignedMaterialsForInquiry(hospital, filters);
+        
+      } else {
+        // Template mode: Use general material master API
+        console.log('🔍 Fetching template-mode materials via material master API');
+        
+        const filters = {
+          surgicalCategory: selectedSurgicalCategory,
+          implantType: selectedImplantType,
+          subcategory: selectedSubcategory,
+          ...(selectedLength && { length: selectedLength })
+        };
+
+        response = await materialAPI.getMaterialsBySurgicalCategory(filters);
+      }
       
       if (response && response.success && response.data) {
         setMaterials(response.data);
-        console.log(`✅ Loaded ${response.data.length} materials`);
+        console.log(`✅ Loaded ${response.data.length} materials (${hospital ? 'hospital-specific' : 'template-mode'})`);
       } else {
         setMaterials([]);
         setError('No materials found for the selected criteria');
@@ -281,7 +300,20 @@ const SimpleMaterialSelector = ({
     <div className="unified-modal-overlay">
       <div className="unified-modal-container material-selector-modal">
         <div className="unified-modal-header">
-          <h2>Select Material - Cascading Filter</h2>
+          <div>
+            <h2>Select Material - Cascading Filter</h2>
+            <div className="material-selector-mode">
+              {hospital ? (
+                <span style={{ color: '#059669', fontSize: '0.875rem', fontWeight: '500' }}>
+                  🏥 Hospital-Specific Materials
+                </span>
+              ) : (
+                <span style={{ color: '#6366f1', fontSize: '0.875rem', fontWeight: '500' }}>
+                  📋 Template Materials (All Available)
+                </span>
+              )}
+            </div>
+          </div>
           <button 
             onClick={onClose} 
             className="unified-modal-close"

@@ -420,7 +420,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Get subcategories filtered by surgical category and implant type (from MaterialMaster)
+// Get subcategories filtered by surgical category and implant type (with optional hospital filtering)
 router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res) => {
   try {
     const { surgicalCategoryId, implantTypeId } = req.params;
@@ -428,44 +428,85 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
     
     console.log('🎯 Getting distinct subcategories for:', {surgicalCategoryId, implantTypeId, hospitalId});
 
-    // Build match query
-    const matchQuery = {
-      surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
-      implantType: new mongoose.Types.ObjectId(implantTypeId),
-      isActive: true,
-      subCategory: { $exists: true, $ne: null, $ne: '' }
-    };
+    let subcategories = [];
 
-    // Add hospital filter if provided
     if (hospitalId) {
-      // This would require a hospital assignment relationship - for templates, we skip this
-      // For now, templates work without hospital filtering
-    }
+      // Hospital-specific subcategories: Get from hospital's assigned materials
+      console.log('🏥 Fetching hospital-specific subcategories via assigned materials');
+      
+      const Hospital = require('../models/Hospital');
+      const hospital = await Hospital.findById(hospitalId)
+        .populate({
+          path: 'materialAssignments.material',
+          populate: [
+            { path: 'surgicalCategory', select: '_id' },
+            { path: 'implantType', select: '_id' }
+          ]
+        });
 
-    const subcategories = await MaterialMaster.aggregate([
-      { $match: matchQuery },
-      {
-        $group: {
-          _id: '$subCategory'
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          subcategory: '$_id'
-        }
-      },
-      {
-        $sort: { subcategory: 1 }
+      if (!hospital) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hospital not found'
+        });
       }
-    ]);
 
-    const result = subcategories.map(item => item.subcategory);
-    console.log(`✅ Found ${result.length} distinct subcategories:`, result);
+      // Extract distinct subcategories from hospital's assigned materials
+      const subcategorySet = new Set();
+      
+      hospital.materialAssignments
+        .filter(assignment => 
+          assignment.isActive && 
+          assignment.material &&
+          assignment.material.surgicalCategory &&
+          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.implantType &&
+          assignment.material.implantType._id.toString() === implantTypeId &&
+          assignment.material.subCategory
+        )
+        .forEach(assignment => {
+          subcategorySet.add(assignment.material.subCategory);
+        });
+
+      subcategories = Array.from(subcategorySet).sort();
+      console.log(`✅ Found ${subcategories.length} hospital-specific subcategories`);
+      
+    } else {
+      // Template mode: Get all distinct subcategories from MaterialMaster
+      console.log('🔍 Fetching template-mode subcategories from MaterialMaster');
+      
+      const matchQuery = {
+        surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+        implantType: new mongoose.Types.ObjectId(implantTypeId),
+        isActive: true,
+        subCategory: { $exists: true, $ne: null, $ne: '' }
+      };
+
+      const result = await MaterialMaster.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$subCategory'
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            subcategory: '$_id'
+          }
+        },
+        {
+          $sort: { subcategory: 1 }
+        }
+      ]);
+
+      subcategories = result.map(item => item.subcategory);
+      console.log(`✅ Found ${subcategories.length} template-mode subcategories`);
+    }
 
     res.json({
       success: true,
-      data: result
+      data: subcategories
     });
   } catch (error) {
     console.error('Error fetching filtered subcategories:', error);
@@ -477,7 +518,7 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
   }
 });
 
-// Get unique lengths filtered by surgical category, implant type, and subcategory (from MaterialMaster)
+// Get unique lengths filtered by surgical category, implant type, and subcategory (with optional hospital filtering)
 router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (req, res) => {
   try {
     const { surgicalCategoryId, implantTypeId, subCategory } = req.params;
@@ -485,45 +526,89 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
     
     console.log('🎯 Getting distinct lengths for:', {surgicalCategoryId, implantTypeId, subCategory, hospitalId});
 
-    // Build match query
-    const matchQuery = {
-      surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
-      implantType: new mongoose.Types.ObjectId(implantTypeId),
-      subCategory: decodeURIComponent(subCategory),
-      isActive: true,
-      lengthMm: { $exists: true, $ne: null }
-    };
+    let lengths = [];
 
-    // Add hospital filter if provided
     if (hospitalId) {
-      // This would require a hospital assignment relationship - for templates, we skip this
-      // For now, templates work without hospital filtering
-    }
+      // Hospital-specific lengths: Get from hospital's assigned materials
+      console.log('🏥 Fetching hospital-specific lengths via assigned materials');
+      
+      const Hospital = require('../models/Hospital');
+      const hospital = await Hospital.findById(hospitalId)
+        .populate({
+          path: 'materialAssignments.material',
+          populate: [
+            { path: 'surgicalCategory', select: '_id' },
+            { path: 'implantType', select: '_id' }
+          ]
+        });
 
-    const lengths = await MaterialMaster.aggregate([
-      { $match: matchQuery },
-      {
-        $group: {
-          _id: '$lengthMm'
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          length: '$_id'
-        }
-      },
-      {
-        $sort: { length: 1 }
+      if (!hospital) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hospital not found'
+        });
       }
-    ]);
 
-    const result = lengths.map(item => item.length).filter(length => typeof length === 'number');
-    console.log(`✅ Found ${result.length} distinct lengths:`, result);
+      // Extract distinct lengths from hospital's assigned materials
+      const lengthSet = new Set();
+      
+      hospital.materialAssignments
+        .filter(assignment => 
+          assignment.isActive && 
+          assignment.material &&
+          assignment.material.surgicalCategory &&
+          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.implantType &&
+          assignment.material.implantType._id.toString() === implantTypeId &&
+          assignment.material.subCategory === decodeURIComponent(subCategory) &&
+          assignment.material.lengthMm !== null &&
+          assignment.material.lengthMm !== undefined &&
+          typeof assignment.material.lengthMm === 'number'
+        )
+        .forEach(assignment => {
+          lengthSet.add(assignment.material.lengthMm);
+        });
+
+      lengths = Array.from(lengthSet).sort((a, b) => a - b);
+      console.log(`✅ Found ${lengths.length} hospital-specific lengths`);
+      
+    } else {
+      // Template mode: Get all distinct lengths from MaterialMaster
+      console.log('🔍 Fetching template-mode lengths from MaterialMaster');
+      
+      const matchQuery = {
+        surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+        implantType: new mongoose.Types.ObjectId(implantTypeId),
+        subCategory: decodeURIComponent(subCategory),
+        isActive: true,
+        lengthMm: { $exists: true, $ne: null }
+      };
+
+      const result = await MaterialMaster.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$lengthMm'
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            length: '$_id'
+          }
+        },
+        {
+          $sort: { length: 1 }
+        }
+      ]);
+
+      lengths = result.map(item => item.length).filter(length => typeof length === 'number');
+      console.log(`✅ Found ${lengths.length} template-mode lengths`);
+    }
 
     res.json({
       success: true,
-      data: result
+      data: lengths
     });
   } catch (error) {
     console.error('Error fetching filtered lengths:', error);
@@ -535,49 +620,100 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
   }
 });
 
-// Get distinct implant types for a surgical category
+// Get distinct implant types for a surgical category (with optional hospital filtering)
 router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
   try {
     const { surgicalCategoryId } = req.params;
-    console.log('🎯 Getting distinct implant types for surgical category:', surgicalCategoryId);
+    const hospitalId = req.query.hospital; // Optional hospital filter
+    
+    console.log('🎯 Getting distinct implant types for surgical category:', surgicalCategoryId, 'hospital:', hospitalId);
 
-    // Get distinct implant types for the surgical category
-    const implantTypes = await MaterialMaster.aggregate([
-      {
-        $match: {
-          surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
-          isActive: true,
-          implantType: { $exists: true, $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: '$implantType'
-        }
-      },
-      {
-        $lookup: {
-          from: 'implanttypes',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'implantTypeData'
-        }
-      },
-      {
-        $unwind: '$implantTypeData'
-      },
-      {
-        $project: {
-          _id: '$implantTypeData._id',
-          name: '$implantTypeData.name'
-        }
-      },
-      {
-        $sort: { name: 1 }
+    let implantTypes = [];
+
+    if (hospitalId) {
+      // Hospital-specific implant types: Get from hospital's assigned materials
+      console.log('🏥 Fetching hospital-specific implant types via assigned materials');
+      
+      const Hospital = require('../models/Hospital');
+      const hospital = await Hospital.findById(hospitalId)
+        .populate({
+          path: 'materialAssignments.material',
+          populate: [
+            { path: 'surgicalCategory', select: '_id' },
+            { path: 'implantType', select: '_id name' }
+          ]
+        });
+
+      if (!hospital) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hospital not found'
+        });
       }
-    ]);
 
-    console.log(`✅ Found ${implantTypes.length} distinct implant types for category ${surgicalCategoryId}:`, implantTypes.map(t => t.name));
+      // Extract distinct implant types from hospital's assigned materials for this surgical category
+      const implantTypeMap = new Map();
+      
+      hospital.materialAssignments
+        .filter(assignment => 
+          assignment.isActive && 
+          assignment.material &&
+          assignment.material.surgicalCategory &&
+          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.implantType
+        )
+        .forEach(assignment => {
+          const implantType = assignment.material.implantType;
+          implantTypeMap.set(implantType._id.toString(), {
+            _id: implantType._id,
+            name: implantType.name
+          });
+        });
+
+      implantTypes = Array.from(implantTypeMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+      console.log(`✅ Found ${implantTypes.length} hospital-specific implant types`);
+      
+    } else {
+      // Template mode: Get all distinct implant types from MaterialMaster
+      console.log('🔍 Fetching template-mode implant types from MaterialMaster');
+      
+      implantTypes = await MaterialMaster.aggregate([
+        {
+          $match: {
+            surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+            isActive: true,
+            implantType: { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: '$implantType'
+          }
+        },
+        {
+          $lookup: {
+            from: 'implanttypes',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'implantTypeData'
+          }
+        },
+        {
+          $unwind: '$implantTypeData'
+        },
+        {
+          $project: {
+            _id: '$implantTypeData._id',
+            name: '$implantTypeData.name'
+          }
+        },
+        {
+          $sort: { name: 1 }
+        }
+      ]);
+      
+      console.log(`✅ Found ${implantTypes.length} template-mode implant types`);
+    }
 
     // Add cache control headers to prevent 304 responses
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
