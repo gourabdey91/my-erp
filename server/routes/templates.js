@@ -3,12 +3,7 @@ const router = express.Router();
 const Template = require('../models/Template');
 const Category = require('../models/Category');
 const Procedure = require('../models/Procedure');
-
-const express = require('express');
-const Template = require('../models/Template');
 const Hospital = require('../models/Hospital');
-
-const router = express.Router();
 
 // Helper function to validate hospital materials
 const validateHospitalMaterials = async (templateData) => {

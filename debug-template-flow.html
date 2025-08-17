@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Template Form Data Flow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Debug Template Form Data Flow</h1>
+    
+    <div class="section">
+        <h3>1. Create Test Template with Hospital Data</h3>
+        <button class="btn" onclick="createTestTemplate()">Create Hospital-Dependent Template</button>
+        <div id="createResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>2. Test Template Retrieval</h3>
+        <input type="text" id="templateId" placeholder="Enter template ID" style="width: 300px; padding: 8px; margin-right: 10px;">
+        <button class="btn" onclick="testTemplateRetrieval()">Fetch Template</button>
+        <div id="fetchResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function createTestTemplate() {
+            try {
+                const result = document.getElementById('createResult');
+                result.textContent = 'Creating test template...';
+                
+                // First, get real hospital and category IDs
+                const [hospitalsResponse, categoriesResponse] = await Promise.all([
+                    fetch(`${API_BASE}/hospitals`),
+                    fetch(`${API_BASE}/categories`)
+                ]);
+                
+                const hospitalsData = await hospitalsResponse.json();
+                const categoriesData = await categoriesResponse.json();
+                
+                if (!hospitalsData.success || hospitalsData.data.length === 0) {
+                    result.textContent = 'No hospitals found in database';
+                    result.className = 'result error';
+                    return;
+                }
+                
+                if (!categoriesData.success || categoriesData.data.length === 0) {
+                    result.textContent = 'No categories found in database';
+                    result.className = 'result error';
+                    return;
+                }
+                
+                const hospital = hospitalsData.data[0];
+                const category = categoriesData.data[0];
+                
+                const templateData = {
+                    templateNumber: 'DEBUG-HD-' + Date.now(),
+                    description: 'Debug Hospital Dependent Template',
+                    surgicalCategory: category._id,
+                    limit: {
+                        amount: 50000,
+                        currency: 'INR'
+                    },
+                    hospitalDependent: true,
+                    hospital: hospital._id,
+                    items: [],
+                    totalTemplateAmount: 0,
+                    createdBy: '507f1f77bcf86cd799439013' // Dummy user ID
+                };
+
+                const response = await fetch(`${API_BASE}/templates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(templateData)
+                });
+
+                const resultData = await response.json();
+
+                if (response.ok && resultData.success) {
+                    result.textContent = `✅ Template created successfully!\nID: ${resultData.data._id}\nTemplate Number: ${resultData.data.templateNumber}\nHospital Dependent: ${resultData.data.hospitalDependent}\nHospital: ${resultData.data.hospital ? JSON.stringify(resultData.data.hospital, null, 2) : 'None'}\n\nFull Data:\n${JSON.stringify(resultData.data, null, 2)}`;
+                    result.className = 'result success';
+                    
+                    // Auto-fill the template ID field
+                    document.getElementById('templateId').value = resultData.data._id;
+                } else {
+                    result.textContent = `❌ Error creating template:\n${resultData.message}\n\nFull Response:\n${JSON.stringify(resultData, null, 2)}`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                const result = document.getElementById('createResult');
+                result.textContent = `❌ Network error: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testTemplateRetrieval() {
+            try {
+                const templateId = document.getElementById('templateId').value.trim();
+                const result = document.getElementById('fetchResult');
+                
+                if (!templateId) {
+                    result.textContent = 'Please enter a template ID';
+                    result.className = 'result error';
+                    return;
+                }
+                
+                result.textContent = 'Fetching template...';
+                result.className = 'result';
+                
+                const response = await fetch(`${API_BASE}/templates/${templateId}`);
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const template = data.data;
+                    result.textContent = `✅ Template fetched successfully!\n\n🏥 Hospital Data Analysis:\n- hospitalDependent: ${template.hospitalDependent}\n- hospital field: ${template.hospital ? 'Present' : 'Missing'}\n- hospital._id: ${template.hospital?._id || 'N/A'}\n- hospital.shortName: ${template.hospital?.shortName || 'N/A'}\n- hospital.legalName: ${template.hospital?.legalName || 'N/A'}\n\n📋 Form Data Mapping:\n- formData.hospitalDependent should be: ${template.hospitalDependent}\n- formData.hospital should be: ${template.hospital?._id || template.hospital || ''}\n\n🔍 Full Template Data:\n${JSON.stringify(template, null, 2)}`;
+                    result.className = 'result success';
+                } else {
+                    result.textContent = `❌ Error fetching template:\n${data.message}\n\nResponse:\n${JSON.stringify(data, null, 2)}`;
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                const result = document.getElementById('fetchResult');
+                result.textContent = `❌ Network error: ${error.message}`;
+                result.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>

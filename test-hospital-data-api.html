@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hospital Data API</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background-color: #0056b3; }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .hospital-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: white;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Hospital Data API</h1>
+        
+        <div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+            <h3>Load All Hospitals</h3>
+            <button class="btn" onclick="loadHospitals()">Load Hospitals</button>
+            <div id="hospitalsResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+            <h3>Load Surgical Categories</h3>
+            <button class="btn" onclick="loadCategories()">Load Categories</button>
+            <div id="categoriesResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function loadHospitals() {
+            try {
+                showResult('hospitalsResult', 'Loading hospitals...', 'info');
+                
+                const response = await fetch(`${API_BASE}/hospitals`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    let html = `<h4>Found ${result.data.length} hospitals:</h4>`;
+                    
+                    result.data.forEach(hospital => {
+                        html += `
+                            <div class="hospital-card">
+                                <h5>${hospital.shortName || hospital.legalName || 'Unknown'}</h5>
+                                <p><strong>ID:</strong> ${hospital._id}</p>
+                                <p><strong>Legal Name:</strong> ${hospital.legalName || 'N/A'}</p>
+                                <p><strong>Short Name:</strong> ${hospital.shortName || 'N/A'}</p>
+                                <p><strong>GST Number:</strong> ${hospital.gstNumber || 'N/A'}</p>
+                                <p><strong>State Code:</strong> ${hospital.stateCode || 'N/A'}</p>
+                                <p><strong>Surgical Categories:</strong> ${hospital.surgicalCategories ? hospital.surgicalCategories.length : 0}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '<h5>Raw Data:</h5><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+                    
+                    showResult('hospitalsResult', html, 'success');
+                } else {
+                    showResult('hospitalsResult', `<strong>Error:</strong> ${result.message || 'Failed to load hospitals'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('hospitalsResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                showResult('categoriesResult', 'Loading surgical categories...', 'info');
+                
+                const response = await fetch(`${API_BASE}/categories`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    let html = `<h4>Found ${result.data.length} surgical categories:</h4>`;
+                    
+                    result.data.forEach(category => {
+                        html += `
+                            <div class="hospital-card">
+                                <h5>${category.description || 'Unknown'}</h5>
+                                <p><strong>ID:</strong> ${category._id}</p>
+                                <p><strong>Code:</strong> ${category.code || 'N/A'}</p>
+                                <p><strong>Description:</strong> ${category.description || 'N/A'}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '<h5>Raw Data:</h5><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+                    
+                    showResult('categoriesResult', html, 'success');
+                } else {
+                    showResult('categoriesResult', `<strong>Error:</strong> ${result.message || 'Failed to load categories'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('categoriesResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load data on page load
+        window.onload = function() {
+            loadHospitals();
+            loadCategories();
+        };
+    </script>
+</body>
+</html>

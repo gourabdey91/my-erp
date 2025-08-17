@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hospital-Dependent Template Loading</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background-color: #0056b3; }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .template-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .template-card h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .hospital-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .hospital-dependent-true {
+            border-left: 4px solid #28a745;
+        }
+        .hospital-dependent-false {
+            border-left: 4px solid #dc3545;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Hospital-Dependent Template Loading</h1>
+        
+        <div class="test-section">
+            <h3>1. List All Templates</h3>
+            <button class="btn" onclick="loadAllTemplates()">Load All Templates</button>
+            <div id="templatesResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Specific Template</h3>
+            <input type="text" id="specificTemplateId" placeholder="Enter template ID" style="width: 300px;" />
+            <button class="btn" onclick="loadSpecificTemplate()">Load Template</button>
+            <div id="specificResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Create Test Hospital-Dependent Template</h3>
+            <button class="btn" onclick="createTestTemplate()">Create Test Template</button>
+            <div id="createResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Update Template</h3>
+            <input type="text" id="updateTemplateId" placeholder="Template ID to update" style="width: 200px;" />
+            <label>
+                <input type="checkbox" id="hospitalDependentUpdate" /> Hospital Dependent
+            </label>
+            <input type="text" id="hospitalIdUpdate" placeholder="Hospital ID" style="width: 200px;" />
+            <button class="btn" onclick="updateTestTemplate()">Update Template</button>
+            <div id="updateResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function loadAllTemplates() {
+            try {
+                showResult('templatesResult', 'Loading templates...', 'info');
+                
+                const response = await fetch(`${API_BASE}/templates`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    let html = `<h4>Found ${result.data.length} templates:</h4>`;
+                    
+                    result.data.forEach(template => {
+                        const hospitalInfo = template.hospital ? 
+                            `<strong>Hospital:</strong> ${template.hospital.name || template.hospital.shortName || template.hospital.legalName || 'Unknown Name'} (ID: ${template.hospital._id})` :
+                            '<strong>Hospital:</strong> Not set';
+                            
+                        html += `
+                            <div class="template-card hospital-dependent-${template.hospitalDependent}">
+                                <h4>${template.templateNumber} - ${template.description}</h4>
+                                <div class="hospital-info">
+                                    <strong>Hospital Dependent:</strong> ${template.hospitalDependent ? '✅ YES' : '❌ NO'}<br>
+                                    ${hospitalInfo}
+                                </div>
+                                <small>
+                                    <strong>ID:</strong> ${template._id}<br>
+                                    <strong>Created:</strong> ${new Date(template.createdAt).toLocaleString()}<br>
+                                    <strong>Updated:</strong> ${new Date(template.updatedAt).toLocaleString()}
+                                </small>
+                            </div>
+                        `;
+                    });
+                    
+                    showResult('templatesResult', html, 'success');
+                } else {
+                    showResult('templatesResult', `<strong>Error:</strong> ${result.message || 'Failed to load templates'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('templatesResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        async function loadSpecificTemplate() {
+            const templateId = document.getElementById('specificTemplateId').value.trim();
+            
+            if (!templateId) {
+                showResult('specificResult', 'Please enter a template ID', 'error');
+                return;
+            }
+
+            try {
+                showResult('specificResult', 'Loading template...', 'info');
+                
+                const response = await fetch(`${API_BASE}/templates/${templateId}`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const template = result.data;
+                    const hospitalInfo = template.hospital ? 
+                        `<strong>Hospital Object:</strong><br><pre>${JSON.stringify(template.hospital, null, 2)}</pre>` :
+                        '<strong>Hospital:</strong> Not set';
+                        
+                    const html = `
+                        <div class="template-card hospital-dependent-${template.hospitalDependent}">
+                            <h4>${template.templateNumber} - ${template.description}</h4>
+                            <div class="hospital-info">
+                                <strong>Hospital Dependent:</strong> ${template.hospitalDependent ? '✅ YES' : '❌ NO'}<br>
+                                ${hospitalInfo}
+                            </div>
+                            <h5>Full Template Data:</h5>
+                            <pre>${JSON.stringify(template, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    showResult('specificResult', html, 'success');
+                } else {
+                    showResult('specificResult', `<strong>Error:</strong> ${result.message || 'Template not found'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('specificResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestTemplate() {
+            try {
+                showResult('createResult', 'Creating test template...', 'info');
+                
+                const templateData = {
+                    templateNumber: 'TEST-HD-' + Date.now(),
+                    description: 'Test Hospital Dependent Template',
+                    surgicalCategory: '507f1f77bcf86cd799439011', // Dummy ID for testing
+                    limit: {
+                        amount: 10000,
+                        currency: 'INR'
+                    },
+                    hospitalDependent: true,
+                    hospital: '507f1f77bcf86cd799439012', // Dummy hospital ID
+                    items: [],
+                    totalTemplateAmount: 0,
+                    createdBy: '507f1f77bcf86cd799439013' // Dummy user ID
+                };
+
+                const response = await fetch(`${API_BASE}/templates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(templateData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const template = result.data;
+                    const html = `
+                        <div class="template-card hospital-dependent-${template.hospitalDependent}">
+                            <h4>✅ Template Created Successfully!</h4>
+                            <p><strong>Template ID:</strong> ${template._id}</p>
+                            <p><strong>Template Number:</strong> ${template.templateNumber}</p>
+                            <p><strong>Hospital Dependent:</strong> ${template.hospitalDependent}</p>
+                            <p><strong>Hospital:</strong> ${template.hospital ? 'Set' : 'Not set'}</p>
+                            <pre>${JSON.stringify(template, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    // Auto-fill the update form
+                    document.getElementById('updateTemplateId').value = template._id;
+                    document.getElementById('specificTemplateId').value = template._id;
+                    
+                    showResult('createResult', html, 'success');
+                } else {
+                    showResult('createResult', `<strong>Error:</strong> ${result.message || 'Failed to create template'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('createResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        async function updateTestTemplate() {
+            const templateId = document.getElementById('updateTemplateId').value.trim();
+            const hospitalDependent = document.getElementById('hospitalDependentUpdate').checked;
+            const hospitalId = document.getElementById('hospitalIdUpdate').value.trim();
+            
+            if (!templateId) {
+                showResult('updateResult', 'Please enter a template ID', 'error');
+                return;
+            }
+
+            try {
+                showResult('updateResult', 'Updating template...', 'info');
+                
+                const updateData = {
+                    hospitalDependent: hospitalDependent,
+                    hospital: hospitalId || null,
+                    updatedBy: '507f1f77bcf86cd799439013' // Dummy user ID
+                };
+
+                const response = await fetch(`${API_BASE}/templates/${templateId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const template = result.data;
+                    const html = `
+                        <div class="template-card hospital-dependent-${template.hospitalDependent}">
+                            <h4>✅ Template Updated Successfully!</h4>
+                            <p><strong>Template ID:</strong> ${template._id}</p>
+                            <p><strong>Hospital Dependent:</strong> ${template.hospitalDependent}</p>
+                            <p><strong>Hospital:</strong> ${template.hospital ? JSON.stringify(template.hospital) : 'Not set'}</p>
+                            <pre>${JSON.stringify(template, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    showResult('updateResult', html, 'success');
+                } else {
+                    showResult('updateResult', `<strong>Error:</strong> ${result.message || 'Failed to update template'}<br><pre>${JSON.stringify(result, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                showResult('updateResult', `<strong>Network Error:</strong> ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load templates on page load
+        window.onload = function() {
+            console.log('Page loaded, auto-loading templates...');
+            loadAllTemplates();
+        };
+    </script>
+</body>
+</html>

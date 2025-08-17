@@ -199,10 +199,19 @@ app.use('/api/templates', templateRoutes);
 // MongoDB connection with environment awareness
 mongoose.connect(decodedMongoUri);
 
-mongoose.connection.once('open', () => {
+mongoose.connection.once('open', async () => {
   console.log(`Connected to MongoDB (${NODE_ENV} environment)`);
   const dbName = mongoose.connection.db.databaseName;
   console.log(`Database: ${dbName}`);
+  
+  // Run migrations
+  try {
+    const runTemplateMigration = require('./migrations/templateMigration');
+    await runTemplateMigration();
+  } catch (error) {
+    console.error('⚠️  Migration error:', error.message);
+    // Continue startup even if migration fails
+  }
 });
 
 mongoose.connection.on('error', (error) => {

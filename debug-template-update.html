@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Template Update Error</title>
+</head>
+<body>
+    <h2>Debug Template Update Error</h2>
+    <div id="result"></div>
+    
+    <script>
+        async function testUpdate() {
+            const templateId = '68a19aa295a76621eac306ef';
+            
+            try {
+                // First, let's fetch the template to see its current state
+                console.log('Fetching template...');
+                const getResponse = await fetch(`http://localhost:5000/api/templates/${templateId}`);
+                const getResult = await getResponse.json();
+                console.log('Current template:', getResult);
+                
+                // Now try to update it
+                console.log('Updating template...');
+                const updateData = {
+                    hospitalDependent: true,
+                    hospital: '507f1f77bcf86cd799439011', // Example hospital ID
+                    updatedBy: '507f1f77bcf86cd799439012'   // Example user ID
+                };
+                
+                const response = await fetch(`http://localhost:5000/api/templates/${templateId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const result = await response.json();
+                console.log('Update response:', result);
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>GET Response:</h3>
+                    <pre>${JSON.stringify(getResult, null, 2)}</pre>
+                    <h3>PUT Response:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                    <h3>Status: ${response.status}</h3>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        // Run the test when page loads
+        window.onload = testUpdate;
+    </script>
+</body>
+</html>
