@@ -161,6 +161,54 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
       }
     }
 
+    // Validate materials belong to selected surgical category
+    if (formData.surgicalCategory && formData.items.length > 0) {
+      console.log('🔍 Validating materials belong to surgical category...');
+      try {
+        // Get all materials for the surgical category
+        const response = await materialAPI.getImplantTypes(formData.surgicalCategory);
+        
+        if (response.success && response.data) {
+          // Get all material numbers for this surgical category by fetching materials
+          // We need to get materials for all implant types in this category
+          const allCategoryMaterials = [];
+          
+          for (const implantType of response.data) {
+            try {
+              const materialsResponse = await materialAPI.getMaterials({
+                surgicalCategory: formData.surgicalCategory,
+                implantType: implantType._id
+              });
+              
+              if (materialsResponse.success && materialsResponse.data) {
+                allCategoryMaterials.push(...materialsResponse.data);
+              }
+            } catch (error) {
+              console.error(`Error fetching materials for implant type ${implantType._id}:`, error);
+            }
+          }
+
+          const categoryMaterialNumbers = allCategoryMaterials.map(material => material.materialNumber);
+          
+          // Check if any template items don't belong to the surgical category
+          const wrongCategoryMaterials = formData.items.filter(item => 
+            !categoryMaterialNumbers.includes(item.materialNumber)
+          );
+
+          if (wrongCategoryMaterials.length > 0) {
+            const materialList = wrongCategoryMaterials
+              .map(material => `${material.materialNumber} (${material.description || 'Unknown'})`)
+              .join(', ');
+            
+            newErrors.categoryMaterials = `The following materials do not belong to the selected surgical category: ${materialList}. Please remove them or change the surgical category.`;
+          }
+        }
+      } catch (error) {
+        console.error('Error validating surgical category materials:', error);
+        newErrors.categoryMaterials = 'Unable to validate surgical category materials. Please try again.';
+      }
+    }
+
     // Validate hospital-dependent template materials
     if (formData.hospitalDependent && formData.hospital && formData.items.length > 0) {
       console.log('🔍 Validating hospital-dependent template materials...');
@@ -270,6 +318,11 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
               {errors.totalAmount && (
                 <div className="unified-error-text" style={{ marginTop: '4px', fontSize: '12px' }}>
                   {errors.totalAmount}
+                </div>
+              )}
+              {errors.categoryMaterials && (
+                <div className="unified-error-text" style={{ marginTop: '4px', fontSize: '12px' }}>
+                  ⚠️ {errors.categoryMaterials}
                 </div>
               )}
               {errors.hospitalMaterials && (

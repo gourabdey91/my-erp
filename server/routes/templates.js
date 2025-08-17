@@ -4,6 +4,58 @@ const Template = require('../models/Template');
 const Category = require('../models/Category');
 const Procedure = require('../models/Procedure');
 const Hospital = require('../models/Hospital');
+const MaterialMaster = require('../models/MaterialMaster');
+
+// Helper function to validate surgical category materials
+const validateSurgicalCategoryMaterials = async (templateData) => {
+  // Only validate if template has surgical category and items
+  if (!templateData.surgicalCategory || !templateData.items || templateData.items.length === 0) {
+    return { isValid: true };
+  }
+
+  try {
+    console.log('🔍 Validating surgical category materials for template...');
+    
+    // Get all materials for the surgical category
+    const categoryMaterials = await MaterialMaster.find({
+      surgicalCategory: templateData.surgicalCategory,
+      isActive: true
+    });
+
+    if (categoryMaterials.length === 0) {
+      return {
+        isValid: false,
+        error: 'No materials found for the selected surgical category'
+      };
+    }
+
+    // Get list of category's material numbers
+    const categoryMaterialNumbers = categoryMaterials.map(material => material.materialNumber);
+    
+    // Check if all template materials belong to the surgical category
+    const wrongCategoryMaterials = templateData.items.filter(item => 
+      !categoryMaterialNumbers.includes(item.materialNumber)
+    );
+
+    if (wrongCategoryMaterials.length > 0) {
+      const materialList = wrongCategoryMaterials.map(m => m.materialNumber).join(', ');
+      return {
+        isValid: false,
+        error: `The following materials do not belong to the selected surgical category: ${materialList}`
+      };
+    }
+
+    console.log('✅ All materials belong to the selected surgical category');
+    return { isValid: true };
+
+  } catch (error) {
+    console.error('Error validating surgical category materials:', error);
+    return {
+      isValid: false,
+      error: 'Unable to validate surgical category materials'
+    };
+  }
+};
 
 // Helper function to validate hospital materials
 const validateHospitalMaterials = async (templateData) => {
@@ -194,6 +246,16 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Validate surgical category materials
+    const categoryValidation = await validateSurgicalCategoryMaterials(templateData);
+    if (!categoryValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Surgical category material validation failed',
+        error: categoryValidation.error
+      });
+    }
+
     // Validate hospital materials if hospital-dependent
     const materialValidation = await validateHospitalMaterials(templateData);
     if (!materialValidation.isValid) {
@@ -251,6 +313,16 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'updatedBy is required'
+      });
+    }
+
+    // Validate surgical category materials
+    const categoryValidation = await validateSurgicalCategoryMaterials(templateData);
+    if (!categoryValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Surgical category material validation failed',
+        error: categoryValidation.error
       });
     }
 
