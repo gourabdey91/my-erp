@@ -135,6 +135,17 @@ const templateSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  hospitalDependent: {
+    type: Boolean,
+    default: false
+  },
+  hospital: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hospital',
+    required: function() {
+      return this.hospitalDependent;
+    }
+  },
   items: [templateItemSchema],
   totalTemplateAmount: {
     type: Number,

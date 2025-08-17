@@ -81,6 +81,7 @@ router.get('/:id', async (req, res) => {
   try {
     const template = await Template.findById(req.params.id)
       .populate('surgicalCategory', 'description code')
+      .populate('hospital', 'shortName legalName gstNumber stateCode')
       .populate({
         path: 'surgicalProcedure',
         select: 'name code totalLimit currency items',
@@ -143,6 +144,7 @@ router.post('/', async (req, res) => {
     // Populate the saved template for response
     const populatedTemplate = await Template.findById(template._id)
       .populate('surgicalCategory', 'description code')
+      .populate('hospital', 'shortName legalName gstNumber stateCode')
       .populate('surgicalProcedure', 'name code totalLimit currency')
       .populate('createdBy', 'name email')
       .populate('businessUnit', 'name code');
@@ -195,7 +197,8 @@ router.put('/:id', async (req, res) => {
     .populate('surgicalProcedure', 'name code totalLimit currency')
     .populate('createdBy', 'name email')
     .populate('updatedBy', 'name email')
-    .populate('businessUnit', 'name code');
+    .populate('businessUnit', 'name code')
+    .populate('hospital', 'name code');
 
     if (!template) {
       return res.status(404).json({
