@@ -600,6 +600,12 @@ select.unified-input {
   align-items: center;
 }
 
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .unified-card-title {
   font-size: 1.1rem;
   font-weight: 600;

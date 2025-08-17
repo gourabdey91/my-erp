@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MaterialSelector from './MaterialSelector';
+import CopyFromTemplateModal from './CopyFromTemplateModal';
 import { materialAPI } from '../../services/materialAPI';
 import '../../shared/styles/unified-design.css';
 
@@ -11,6 +12,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [companyDetails, setCompanyDetails] = useState(null);
+  const [copyTemplateModalOpen, setCopyTemplateModalOpen] = useState(false);
 
   // Dropdown management
   const toggleDropdown = (dropdownId) => {
@@ -380,6 +382,38 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
     onItemsChange(updatedItems);
   };
 
+  // Copy items from template
+  const handleCopyFromTemplate = (template) => {
+    if (!template.items || template.items.length === 0) {
+      console.warn('Template has no items to copy');
+      return;
+    }
+
+    // Convert template items to inquiry items
+    const templateItems = template.items.map((templateItem, index) => {
+      const newSerialNumber = inquiryItems.length + index + 1;
+      return {
+        serialNumber: newSerialNumber,
+        materialNumber: templateItem.materialNumber || '',
+        materialDescription: templateItem.materialDescription || '',
+        hsnCode: templateItem.hsnCode || '',
+        unitRate: templateItem.unitRate || '',
+        gstPercentage: templateItem.gstPercentage || '',
+        quantity: templateItem.quantity || '',
+        unit: templateItem.unit || '',
+        discountPercentage: templateItem.discountPercentage || 0,
+        discountAmount: templateItem.discountAmount || 0,
+        totalAmount: templateItem.totalAmount || 0,
+        gstAmount: templateItem.gstAmount || 0,
+        currency: templateItem.currency || 'INR'
+      };
+    });
+
+    const updatedItems = [...inquiryItems, ...templateItems];
+    setInquiryItems(updatedItems);
+    onItemsChange(updatedItems);
+  };
+
   // Remove item
   const removeItem = (index) => {
     if (inquiryItems.length <= 1) return;
@@ -498,13 +532,23 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
     <div className="unified-card">
       <div className="unified-card-header">
         <h3>Item Details</h3>
-        <button
-          type="button"
-          className="unified-btn unified-btn-sm unified-btn-primary"
-          onClick={addItem}
-        >
-          + Add Item
-        </button>
+        <div className="card-header-actions">
+          <button
+            type="button"
+            className="unified-btn unified-btn-sm unified-btn-secondary"
+            onClick={() => setCopyTemplateModalOpen(true)}
+            style={{ marginRight: '0.5rem' }}
+          >
+            Copy from Template
+          </button>
+          <button
+            type="button"
+            className="unified-btn unified-btn-sm unified-btn-primary"
+            onClick={addItem}
+          >
+            + Add Item
+          </button>
+        </div>
       </div>
       
       <div className="unified-card-content">
@@ -1044,6 +1088,15 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
         onClose={closeMaterialSelector}
         onSelect={handleMaterialSelect}
         hospital={hospital}
+        procedure={procedure}
+        dropdownData={dropdownData}
+      />
+
+      {/* Copy from Template Modal */}
+      <CopyFromTemplateModal
+        isOpen={copyTemplateModalOpen}
+        onClose={() => setCopyTemplateModalOpen(false)}
+        onCopyTemplate={handleCopyFromTemplate}
         procedure={procedure}
         dropdownData={dropdownData}
       />
