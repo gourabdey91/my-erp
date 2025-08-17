@@ -79,25 +79,6 @@ const TemplateItems = ({
     }
   };
 
-  // Calculate GST amounts
-  const calculateGSTAmounts = (baseAmount, gstPercentage, customerStateCode, companyStateCode) => {
-    const gstAmount = (baseAmount * gstPercentage) / 100;
-    const cgstAmount = gstAmount * 0.5; // Always 50%
-    
-    // Same state: SGST = 50%, IGST = 0
-    // Different state: SGST = 0, IGST = 50%
-    const isSameState = customerStateCode === companyStateCode;
-    const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
-    const igstAmount = isSameState ? 0 : gstAmount * 0.5;
-    
-    return {
-      gstAmount: Math.round(gstAmount * 100) / 100,
-      cgstAmount: Math.round(cgstAmount * 100) / 100,
-      sgstAmount: Math.round(sgstAmount * 100) / 100,
-      igstAmount: Math.round(igstAmount * 100) / 100
-    };
-  };
-
   // Handle input change with GST recalculation
   const handleInputChange = (index, field, value) => {
     if (disabled) return;
