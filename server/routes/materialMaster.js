@@ -420,76 +420,118 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Get implant types filtered by surgical category
-router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
-  try {
-    const surgicalCategoryId = req.params.surgicalCategoryId;
-    
-    // Find implant types that have subcategories linked to the surgical category
-    const implantTypes = await ImplantType.find({
-      isActive: true,
-      'subcategories.surgicalCategory': surgicalCategoryId
-    }).select('_id name').sort({ name: 1 });
-
-    res.json(implantTypes);
-  } catch (error) {
-    console.error('Error fetching filtered implant types:', error);
-    res.status(500).json({ message: 'Server error while fetching implant types' });
-  }
-});
-
-// Get subcategories filtered by surgical category and implant type
+// Get subcategories filtered by surgical category and implant type (from MaterialMaster)
 router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res) => {
   try {
     const { surgicalCategoryId, implantTypeId } = req.params;
+    const hospitalId = req.query.hospital; // Optional hospital filter
     
-    const implantType = await ImplantType.findById(implantTypeId)
-      .populate('subcategories.surgicalCategory', 'code description');
-    
-    if (!implantType) {
-      return res.status(404).json({ message: 'Implant type not found' });
+    console.log('🎯 Getting distinct subcategories for:', {surgicalCategoryId, implantTypeId, hospitalId});
+
+    // Build match query
+    const matchQuery = {
+      surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+      implantType: new mongoose.Types.ObjectId(implantTypeId),
+      isActive: true,
+      subCategory: { $exists: true, $ne: null, $ne: '' }
+    };
+
+    // Add hospital filter if provided
+    if (hospitalId) {
+      // This would require a hospital assignment relationship - for templates, we skip this
+      // For now, templates work without hospital filtering
     }
 
-    // Filter subcategories by surgical category
-    const filteredSubcategories = implantType.subcategories.filter(
-      subcat => subcat.surgicalCategory._id.toString() === surgicalCategoryId
-    );
+    const subcategories = await MaterialMaster.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$subCategory'
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          subcategory: '$_id'
+        }
+      },
+      {
+        $sort: { subcategory: 1 }
+      }
+    ]);
 
-    res.json(filteredSubcategories);
+    const result = subcategories.map(item => item.subcategory);
+    console.log(`✅ Found ${result.length} distinct subcategories:`, result);
+
+    res.json({
+      success: true,
+      data: result
+    });
   } catch (error) {
     console.error('Error fetching filtered subcategories:', error);
-    res.status(500).json({ message: 'Server error while fetching subcategories' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while fetching subcategories',
+      error: error.message 
+    });
   }
 });
 
-// Get unique lengths filtered by surgical category, implant type, and subcategory
+// Get unique lengths filtered by surgical category, implant type, and subcategory (from MaterialMaster)
 router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (req, res) => {
   try {
     const { surgicalCategoryId, implantTypeId, subCategory } = req.params;
+    const hospitalId = req.query.hospital; // Optional hospital filter
     
-    const implantType = await ImplantType.findById(implantTypeId);
-    
-    if (!implantType) {
-      return res.status(404).json({ message: 'Implant type not found' });
+    console.log('🎯 Getting distinct lengths for:', {surgicalCategoryId, implantTypeId, subCategory, hospitalId});
+
+    // Build match query
+    const matchQuery = {
+      surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+      implantType: new mongoose.Types.ObjectId(implantTypeId),
+      subCategory: decodeURIComponent(subCategory),
+      isActive: true,
+      lengthMm: { $exists: true, $ne: null }
+    };
+
+    // Add hospital filter if provided
+    if (hospitalId) {
+      // This would require a hospital assignment relationship - for templates, we skip this
+      // For now, templates work without hospital filtering
     }
 
-    // Filter subcategories and get unique lengths
-    const matchingSubcategories = implantType.subcategories.filter(
-      subcat => 
-        subcat.surgicalCategory.toString() === surgicalCategoryId && 
-        subcat.subCategory === subCategory
-    );
+    const lengths = await MaterialMaster.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$lengthMm'
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          length: '$_id'
+        }
+      },
+      {
+        $sort: { length: 1 }
+      }
+    ]);
 
-    const lengths = [...new Set(
-      matchingSubcategories
-        .map(subcat => subcat.length)
-        .filter(length => length != null)
-    )].sort((a, b) => a - b);
+    const result = lengths.map(item => item.length).filter(length => typeof length === 'number');
+    console.log(`✅ Found ${result.length} distinct lengths:`, result);
 
-    res.json(lengths);
+    res.json({
+      success: true,
+      data: result
+    });
   } catch (error) {
     console.error('Error fetching filtered lengths:', error);
-    res.status(500).json({ message: 'Server error while fetching lengths' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while fetching lengths',
+      error: error.message 
+    });
   }
 });
 

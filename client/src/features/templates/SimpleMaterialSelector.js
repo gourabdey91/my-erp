@@ -7,25 +7,96 @@ const SimpleMaterialSelector = ({
   isOpen, 
   onClose, 
   onSelect, 
-  surgicalCategory
+  surgicalCategory,
+  hospital // Optional hospital for filtering
 }) => {
-  const [materials, setMaterials] = useState([]);
-  const [filteredMaterials, setFilteredMaterials] = useState([]);
-  const [surgicalCategories, setSurgicalCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  // Filters
+  // Step 1: Surgical Category (may be pre-selected)
   const [selectedSurgicalCategory, setSelectedSurgicalCategory] = useState('');
+  const [surgicalCategories, setSurgicalCategories] = useState([]);
+
+  // Step 2: Implant Types (from ImplantType master collection)
   const [implantTypes, setImplantTypes] = useState([]);
   const [selectedImplantType, setSelectedImplantType] = useState('');
+  const [loadingImplantTypes, setLoadingImplantTypes] = useState(false);
+
+  // Step 3: Subcategories (distinct from materials)
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
+
+  // Step 4: Lengths (optional, distinct from materials)
   const [lengths, setLengths] = useState([]);
   const [selectedLength, setSelectedLength] = useState('');
+  const [loadingLengths, setLoadingLengths] = useState(false);
 
-  const resetFilters = () => {
+  // Step 5: Final Materials List
+  const [materials, setMaterials] = useState([]);
+  const [filteredMaterials, setFilteredMaterials] = useState([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // General states
+  const [error, setError] = useState('');
+
+  // Initialize when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      resetAllFilters();
+      fetchSurgicalCategories();
+      
+      // If surgical category is provided from template, set it
+      if (surgicalCategory) {
+        console.log('🎯 Pre-selecting surgical category:', surgicalCategory);
+        setSelectedSurgicalCategory(surgicalCategory);
+      }
+    }
+  }, [isOpen, surgicalCategory]);
+
+  // When surgical category changes, fetch implant types
+  useEffect(() => {
+    if (selectedSurgicalCategory) {
+      fetchImplantTypes(selectedSurgicalCategory);
+    } else {
+      setImplantTypes([]);
+      resetDependentFilters();
+    }
+  }, [selectedSurgicalCategory]);
+
+  // When implant type changes, fetch subcategories
+  useEffect(() => {
+    if (selectedSurgicalCategory && selectedImplantType) {
+      fetchSubcategories(selectedSurgicalCategory, selectedImplantType);
+    } else {
+      setSubcategories([]);
+      resetFromSubcategory();
+    }
+  }, [selectedImplantType]);
+
+  // When subcategory changes, fetch lengths and materials
+  useEffect(() => {
+    if (selectedSurgicalCategory && selectedImplantType && selectedSubcategory) {
+      fetchLengths(selectedSurgicalCategory, selectedImplantType, selectedSubcategory);
+      fetchMaterials(); // Fetch materials when we have category + type + subcategory
+    } else {
+      setLengths([]);
+      setMaterials([]);
+      setFilteredMaterials([]);
+    }
+  }, [selectedSubcategory]);
+
+  // When length changes, re-filter materials
+  useEffect(() => {
+    if (selectedLength) {
+      fetchMaterials(); // Re-fetch with length filter
+    }
+  }, [selectedLength]);
+
+  // Apply search filter
+  useEffect(() => {
+    applySearchFilter();
+  }, [searchTerm, materials]);
+
+  const resetAllFilters = () => {
     if (!surgicalCategory) {
       setSelectedSurgicalCategory('');
     }
@@ -38,6 +109,21 @@ const SimpleMaterialSelector = ({
     setMaterials([]);
     setFilteredMaterials([]);
     setSearchTerm('');
+    setError('');
+  };
+
+  const resetDependentFilters = () => {
+    setSelectedImplantType('');
+    resetFromSubcategory();
+  };
+
+  const resetFromSubcategory = () => {
+    setSelectedSubcategory('');
+    setSelectedLength('');
+    setSubcategories([]);
+    setLengths([]);
+    setMaterials([]);
+    setFilteredMaterials([]);
   };
 
   const fetchSurgicalCategories = async () => {
@@ -48,154 +134,145 @@ const SimpleMaterialSelector = ({
       }
     } catch (error) {
       console.error('Error fetching surgical categories:', error);
-      setSurgicalCategories([]);
+      setError('Failed to fetch surgical categories');
     }
   };
 
-  const extractFilterOptions = (materials) => {
-    // Extract unique implant types
-    const uniqueImplantTypes = [...new Set(
-      materials
-        .map(material => {
-          if (typeof material.implantType === 'object' && material.implantType?.name) {
-            return material.implantType.name;
-          } else if (typeof material.implantType === 'string') {
-            return material.implantType;
-          }
-          return null;
-        })
-        .filter(Boolean)
-    )].sort();
-    setImplantTypes(uniqueImplantTypes);
+  const fetchImplantTypes = async (categoryId) => {
+    try {
+      setLoadingImplantTypes(true);
+      setError('');
+      console.log('🔍 Fetching implant types for category:', categoryId, 'hospital:', hospital);
 
-    // Extract unique subcategories
-    const uniqueSubcategories = [...new Set(
-      materials
-        .map(material => material.subCategory)
-        .filter(Boolean)
-    )].sort();
-    setSubcategories(uniqueSubcategories);
-
-    // Extract unique lengths
-    const uniqueLengths = [...new Set(
-      materials
-        .map(material => material.lengthMm || material.length)
-        .filter(val => val != null)
-    )].sort((a, b) => {
-      const aNum = parseFloat(a);
-      const bNum = parseFloat(b);
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return aNum - bNum;
+      // Use the new distinct implant types API
+      const response = await materialAPI.getImplantTypesBySurgicalCategory(categoryId, hospital);
+      
+      if (response && response.success) {
+        setImplantTypes(response.data || []);
+        console.log(`✅ Loaded ${response.data?.length || 0} implant types`);
+      } else {
+        setImplantTypes([]);
+        console.log('No implant types found');
       }
-      return String(a).localeCompare(String(b));
-    });
-    setLengths(uniqueLengths);
+    } catch (error) {
+      console.error('Error fetching implant types:', error);
+      setError('Failed to fetch implant types');
+      setImplantTypes([]);
+    } finally {
+      setLoadingImplantTypes(false);
+    }
+  };
+
+  const fetchSubcategories = async (categoryId, implantTypeId) => {
+    try {
+      setLoadingSubcategories(true);
+      setError('');
+      console.log('🔍 Fetching subcategories for:', categoryId, implantTypeId, 'hospital:', hospital);
+
+      const response = await materialAPI.getDistinctSubcategories(categoryId, implantTypeId, hospital);
+      
+      if (response && response.success) {
+        setSubcategories(response.data || []);
+        console.log(`✅ Loaded ${response.data?.length || 0} subcategories`);
+      } else {
+        setSubcategories([]);
+      }
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      setError('Failed to fetch subcategories');
+      setSubcategories([]);
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  };
+
+  const fetchLengths = async (categoryId, implantTypeId, subcategory) => {
+    try {
+      setLoadingLengths(true);
+      console.log('🔍 Fetching lengths for:', categoryId, implantTypeId, subcategory, 'hospital:', hospital);
+
+      const response = await materialAPI.getDistinctLengths(categoryId, implantTypeId, subcategory, hospital);
+      
+      if (response && response.success) {
+        setLengths(response.data || []);
+        console.log(`✅ Loaded ${response.data?.length || 0} lengths`);
+      } else {
+        setLengths([]);
+      }
+    } catch (error) {
+      console.error('Error fetching lengths:', error);
+      // Don't set error for lengths as it's optional
+      setLengths([]);
+    } finally {
+      setLoadingLengths(false);
+    }
   };
 
   const fetchMaterials = async () => {
+    if (!selectedSurgicalCategory || !selectedImplantType || !selectedSubcategory) {
+      return;
+    }
+
     try {
-      setLoading(true);
+      setLoadingMaterials(true);
       setError('');
       
-      if (!selectedSurgicalCategory) {
-        setMaterials([]);
-        setFilteredMaterials([]);
-        return;
-      }
+      console.log('🔍 Fetching materials with filters:', {
+        surgicalCategory: selectedSurgicalCategory,
+        implantType: selectedImplantType,
+        subcategory: selectedSubcategory,
+        length: selectedLength,
+        hospital: hospital
+      });
 
-      console.log('Fetching materials for surgical category:', selectedSurgicalCategory);
-
-      // Build filters
       const filters = {
         surgicalCategory: selectedSurgicalCategory,
-        ...(selectedImplantType && { implantType: selectedImplantType }),
-        ...(selectedSubcategory && { subcategory: selectedSubcategory }),
-        ...(selectedLength && { length: selectedLength })
+        implantType: selectedImplantType,
+        subcategory: selectedSubcategory,
+        ...(selectedLength && { length: selectedLength }),
+        ...(hospital && { hospital: hospital })
       };
 
       const response = await materialAPI.getMaterialsBySurgicalCategory(filters);
       
       if (response && response.success && response.data) {
-        const materials = response.data;
-        setMaterials(materials);
-        
-        // Extract unique filter options from loaded materials
-        extractFilterOptions(materials);
-        
-        // Apply search filter
-        applySearch(materials);
+        setMaterials(response.data);
+        console.log(`✅ Loaded ${response.data.length} materials`);
       } else {
         setMaterials([]);
-        setFilteredMaterials([]);
-        setError('No materials found for the selected filters');
+        setError('No materials found for the selected criteria');
       }
     } catch (error) {
       console.error('Error fetching materials:', error);
-      setError('Failed to load materials');
+      setError('Failed to fetch materials');
       setMaterials([]);
-      setFilteredMaterials([]);
     } finally {
-      setLoading(false);
+      setLoadingMaterials(false);
     }
   };
 
-  const applySearch = (materialsToFilter = materials) => {
+  const applySearchFilter = () => {
     if (!searchTerm) {
-      setFilteredMaterials(materialsToFilter);
+      setFilteredMaterials(materials);
       return;
     }
 
-    const filtered = materialsToFilter.filter(material =>
+    const filtered = materials.filter(material =>
       material.materialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       material.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (material.hsnCode && material.hsnCode.includes(searchTerm))
+      (material.hsnCode && material.hsnCode.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredMaterials(filtered);
   };
 
-  // Reset state when modal opens
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (isOpen) {
-      resetFilters();
-      setError('');
-      fetchSurgicalCategories();
-      
-      // Set surgical category from template if provided
-      if (surgicalCategory) {
-        console.log('Setting surgical category from template:', surgicalCategory);
-        setSelectedSurgicalCategory(surgicalCategory);
-      }
+  const getStepStatus = (step) => {
+    switch (step) {
+      case 1: return selectedSurgicalCategory ? 'completed' : 'active';
+      case 2: return selectedImplantType ? 'completed' : selectedSurgicalCategory ? 'active' : 'pending';
+      case 3: return selectedSubcategory ? 'completed' : selectedImplantType ? 'active' : 'pending';
+      case 4: return materials.length > 0 ? 'completed' : selectedSubcategory ? 'active' : 'pending';
+      default: return 'pending';
     }
-  }, [isOpen, surgicalCategory]);
-
-  // Fetch materials when surgical category or filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (isOpen && selectedSurgicalCategory) {
-      fetchMaterials();
-    }
-  }, [isOpen, selectedSurgicalCategory, selectedImplantType, selectedSubcategory, selectedLength]);
-
-  // Apply search when search term changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    applySearch();
-  }, [searchTerm, materials]);
-
-  const handleImplantTypeChange = (value) => {
-    setSelectedImplantType(value);
-    setSelectedSubcategory('');
-    setSelectedLength('');
-  };
-
-  const handleSubcategoryChange = (value) => {
-    setSelectedSubcategory(value);
-    setSelectedLength('');
-  };
-
-  const handleLengthChange = (value) => {
-    setSelectedLength(value);
   };
 
   if (!isOpen) return null;
@@ -204,21 +281,31 @@ const SimpleMaterialSelector = ({
     <div className="modal-overlay">
       <div className="modal-content material-selector-modal">
         <div className="modal-header">
-          <h2>Select Material</h2>
+          <h2>Select Material - Cascading Filter</h2>
           <button onClick={onClose} className="close-button">&times;</button>
         </div>
 
         <div className="modal-body">
-          {/* Surgical Category Selection */}
+          {/* Progress Indicator */}
+          <div className="filter-progress">
+            <div className="progress-steps">
+              <span className={`step ${getStepStatus(1)}`}>1. Category</span>
+              <span className={`step ${getStepStatus(2)}`}>2. Type</span>
+              <span className={`step ${getStepStatus(3)}`}>3. Subcategory</span>
+              <span className={`step ${getStepStatus(4)}`}>4. Materials</span>
+            </div>
+          </div>
+
+          {/* Step 1: Surgical Category */}
           {!surgicalCategory && (
             <div className="filter-group">
-              <label>Surgical Category:</label>
+              <label>Step 1 - Select Surgical Category:</label>
               <select 
                 value={selectedSurgicalCategory} 
                 onChange={(e) => setSelectedSurgicalCategory(e.target.value)}
                 className="filter-select"
               >
-                <option value="">Select Surgical Category</option>
+                <option value="">Choose Surgical Category</option>
                 {surgicalCategories.map(category => (
                   <option key={category._id} value={category._id}>
                     {category.description}
@@ -228,81 +315,116 @@ const SimpleMaterialSelector = ({
             </div>
           )}
 
-          {/* Filter Controls */}
-          {selectedSurgicalCategory && (
-            <div className="filters-section">
-              <div className="filters-row">
-                <div className="filter-group">
-                  <label>Implant Type:</label>
-                  <select 
-                    value={selectedImplantType} 
-                    onChange={(e) => handleImplantTypeChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Types</option>
-                    {implantTypes.map(type => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="filter-group">
-                  <label>Subcategory:</label>
-                  <select 
-                    value={selectedSubcategory} 
-                    onChange={(e) => handleSubcategoryChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Subcategories</option>
-                    {subcategories.map(subcategory => (
-                      <option key={subcategory} value={subcategory}>
-                        {subcategory}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label>Length:</label>
-                  <select 
-                    value={selectedLength} 
-                    onChange={(e) => handleLengthChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Lengths</option>
-                    {lengths.map(length => (
-                      <option key={length} value={length}>
-                        {length}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="search-section">
-                <input
-                  type="text"
-                  placeholder="Search by material number, description, or HSN code..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
-              </div>
+          {surgicalCategory && (
+            <div className="filter-info">
+              <strong>Surgical Category:</strong> {surgicalCategories.find(c => c._id === surgicalCategory)?.description || surgicalCategory}
             </div>
           )}
 
-          {/* Loading and Error States */}
-          {loading && <div className="loading">Loading materials...</div>}
+          {/* Step 2: Implant Type */}
+          {selectedSurgicalCategory && (
+            <div className="filter-group">
+              <label>
+                Step 2 - Select Implant Type:
+                {loadingImplantTypes && <span className="loading-text"> (Loading...)</span>}
+              </label>
+              <select 
+                value={selectedImplantType} 
+                onChange={(e) => setSelectedImplantType(e.target.value)}
+                className="filter-select"
+                disabled={loadingImplantTypes}
+              >
+                <option value="">
+                  {loadingImplantTypes ? 'Loading implant types...' : 'Choose Implant Type'}
+                </option>
+                {implantTypes.map(type => (
+                  <option key={type._id} value={type._id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+              <small className="filter-info">
+                {implantTypes.length > 0 ? `${implantTypes.length} types available` : 'No implant types found'}
+              </small>
+            </div>
+          )}
+
+          {/* Step 3: Subcategory */}
+          {selectedImplantType && (
+            <div className="filter-group">
+              <label>
+                Step 3 - Select Subcategory:
+                {loadingSubcategories && <span className="loading-text"> (Loading...)</span>}
+              </label>
+              <select 
+                value={selectedSubcategory} 
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                className="filter-select"
+                disabled={loadingSubcategories}
+              >
+                <option value="">
+                  {loadingSubcategories ? 'Loading subcategories...' : 'Choose Subcategory'}
+                </option>
+                {subcategories.map(sub => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
+              </select>
+              <small className="filter-info">
+                {subcategories.length > 0 ? `${subcategories.length} subcategories available` : 'No subcategories found'}
+              </small>
+            </div>
+          )}
+
+          {/* Step 4: Length (Optional) */}
+          {selectedSubcategory && (
+            <div className="filter-group">
+              <label>
+                Step 4 - Select Length (Optional):
+                {loadingLengths && <span className="loading-text"> (Loading...)</span>}
+              </label>
+              <select 
+                value={selectedLength} 
+                onChange={(e) => setSelectedLength(e.target.value)}
+                className="filter-select"
+                disabled={loadingLengths}
+              >
+                <option value="">All Lengths</option>
+                {lengths.map(length => (
+                  <option key={length} value={length}>
+                    {length}mm
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Search */}
+          {materials.length > 0 && (
+            <div className="search-section">
+              <input
+                type="text"
+                placeholder="Search materials by number, description, or HSN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          )}
+
+          {/* Loading States */}
+          {loadingMaterials && <div className="loading">Loading materials...</div>}
+          
+          {/* Error Messages */}
           {error && <div className="error-message">{error}</div>}
 
-          {/* Materials List */}
-          {!loading && filteredMaterials.length > 0 && (
+          {/* Materials Grid */}
+          {!loadingMaterials && filteredMaterials.length > 0 && (
             <div className="materials-list">
               <div className="materials-header">
                 <span>Found {filteredMaterials.length} material(s)</span>
+                <small>Click to select</small>
               </div>
               <div className="materials-grid">
                 {filteredMaterials.map(material => (
@@ -311,14 +433,7 @@ const SimpleMaterialSelector = ({
                       <div className="material-number">{material.materialNumber}</div>
                       <div className="material-description">{material.description}</div>
                       <div className="material-details">
-                        {material.implantType && (
-                          <span className="detail-badge">
-                            {typeof material.implantType === 'object' ? material.implantType.name : material.implantType}
-                          </span>
-                        )}
-                        {material.subCategory && (
-                          <span className="detail-badge">{material.subCategory}</span>
-                        )}
+                        <span className="detail-badge">{material.subCategory}</span>
                         {(material.lengthMm || material.length) && (
                           <span className="detail-badge">{material.lengthMm || material.length}mm</span>
                         )}
@@ -334,9 +449,16 @@ const SimpleMaterialSelector = ({
           )}
 
           {/* No Results */}
-          {!loading && selectedSurgicalCategory && filteredMaterials.length === 0 && !error && (
+          {!loadingMaterials && selectedSubcategory && materials.length === 0 && !error && (
             <div className="no-results">
-              No materials found matching your criteria. Try adjusting your filters.
+              No materials found for the selected criteria.
+            </div>
+          )}
+
+          {/* Instructions */}
+          {selectedSurgicalCategory && !selectedImplantType && !loadingImplantTypes && implantTypes.length === 0 && (
+            <div className="instruction-text">
+              No implant types found for this surgical category. Please check your data or try a different category.
             </div>
           )}
         </div>

@@ -291,17 +291,21 @@ export const materialAPI = {
     }
   },
 
-  // Get distinct implant types for a surgical category
-  getImplantTypesBySurgicalCategory: async (surgicalCategoryId) => {
+  // Get distinct implant types for a surgical category (with optional hospital filtering)
+  getImplantTypesBySurgicalCategory: async (surgicalCategoryId, hospitalId = null) => {
     try {
       const timestamp = new Date().toISOString();
-      console.log(`🔧 [${timestamp}] Fetching distinct implant types for surgical category:`, surgicalCategoryId);
+      console.log(`🔧 [${timestamp}] Fetching distinct implant types for surgical category:`, surgicalCategoryId, 'hospital:', hospitalId);
       
       if (!surgicalCategoryId) {
         return { success: false, data: [] };
       }
 
-      const url = `/material-master/implant-types/${surgicalCategoryId}`;
+      let url = `/material-master/implant-types/${surgicalCategoryId}`;
+      if (hospitalId) {
+        url += `?hospital=${hospitalId}`;
+      }
+      
       const response = await api.get(url);
       
       console.log(`📦 [${timestamp}] Implant types API response:`, response);
@@ -320,6 +324,82 @@ export const materialAPI = {
       return {
         success: false,
         error: error.message || 'Failed to fetch implant types',
+        data: []
+      };
+    }
+  },
+
+  // Get distinct subcategories for a surgical category and implant type (with optional hospital filtering)
+  getDistinctSubcategories: async (surgicalCategoryId, implantTypeId, hospitalId = null) => {
+    try {
+      const timestamp = new Date().toISOString();
+      console.log(`🔧 [${timestamp}] Fetching distinct subcategories for:`, {surgicalCategoryId, implantTypeId, hospitalId});
+      
+      if (!surgicalCategoryId || !implantTypeId) {
+        return { success: false, data: [] };
+      }
+
+      let url = `/material-master/subcategories/${surgicalCategoryId}/${implantTypeId}`;
+      if (hospitalId) {
+        url += `?hospital=${hospitalId}`;
+      }
+      
+      const response = await api.get(url);
+      
+      console.log(`📦 [${timestamp}] Subcategories API response:`, response);
+      
+      if (response && response.success) {
+        return response;
+      } else {
+        return {
+          success: false,
+          data: []
+        };
+      }
+    } catch (error) {
+      const timestamp = new Date().toISOString();
+      console.error(`❌ [${timestamp}] Error fetching subcategories:`, error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch subcategories',
+        data: []
+      };
+    }
+  },
+
+  // Get distinct lengths for a surgical category, implant type, and subcategory (with optional hospital filtering)
+  getDistinctLengths: async (surgicalCategoryId, implantTypeId, subcategory, hospitalId = null) => {
+    try {
+      const timestamp = new Date().toISOString();
+      console.log(`🔧 [${timestamp}] Fetching distinct lengths for:`, {surgicalCategoryId, implantTypeId, subcategory, hospitalId});
+      
+      if (!surgicalCategoryId || !implantTypeId || !subcategory) {
+        return { success: false, data: [] };
+      }
+
+      let url = `/material-master/lengths/${surgicalCategoryId}/${implantTypeId}/${encodeURIComponent(subcategory)}`;
+      if (hospitalId) {
+        url += `?hospital=${hospitalId}`;
+      }
+      
+      const response = await api.get(url);
+      
+      console.log(`📦 [${timestamp}] Lengths API response:`, response);
+      
+      if (response && response.success) {
+        return response;
+      } else {
+        return {
+          success: false,
+          data: []
+        };
+      }
+    } catch (error) {
+      const timestamp = new Date().toISOString();
+      console.error(`❌ [${timestamp}] Error fetching lengths:`, error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch lengths',
         data: []
       };
     }
