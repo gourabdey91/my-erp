@@ -256,7 +256,17 @@ const TemplateItems = ({
     <div className="unified-card">
       <div className="unified-card-content">
         <div className="inquiry-items-container">
-          <div className="form-section-title">Template Items</div>
+          <div className="items-header">
+            <div className="form-section-title">Template Items</div>
+            <button
+              type="button"
+              className="unified-btn unified-btn-primary"
+              onClick={handleAddItem}
+              disabled={disabled}
+            >
+              Add Item
+            </button>
+          </div>
 
           {errors && <div className="unified-error-text">{errors}</div>}
 
@@ -664,18 +674,6 @@ const TemplateItems = ({
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Add Item Button */}
-          <div className="unified-form-actions" style={{ marginTop: '16px' }}>
-            <button
-              type="button"
-              className="unified-btn unified-btn-primary"
-              onClick={handleAddItem}
-              disabled={disabled}
-            >
-              Add Item
-            </button>
           </div>
 
           {/* Material Selector Modal */}

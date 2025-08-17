@@ -414,8 +414,29 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                 </div>
               </div>
 
-              {/* Hospital field and Hospital Dependent - Always present but disabled when not hospital dependent */}
+              {/* Second row with Hospital Dependent and Hospital */}
               <div className="unified-form-grid">
+                {/* Hospital Dependent Switch - 3rd field */}
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Hospital Dependent</label>
+                  <div className="toggle-container">
+                    <label className="toggle-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.hospitalDependent}
+                        onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
+                        className="toggle-checkbox"
+                        disabled={loading}
+                      />
+                      <span className="toggle-slider"></span>
+                      <span className="toggle-text">
+                        {formData.hospitalDependent ? 'Yes' : 'No'}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Hospital field - 4th field */}
                 <div className="unified-form-field">
                   <label className="unified-form-label">
                     Hospital {formData.hospitalDependent ? '*' : ''}
@@ -453,30 +474,9 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                     <span className="unified-error-text">{errors.hospital}</span>
                   )}
                 </div>
-
-                {/* Hospital Dependent Switch - Moved here */}
-                <div className="unified-form-field">
-                  <label className="unified-form-label">Hospital Dependent</label>
-                  <div className="toggle-container">
-                    <label className="toggle-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.hospitalDependent}
-                        onChange={(e) => handleChange('hospitalDependent', e.target.checked)}
-                        className="toggle-checkbox"
-                        disabled={loading}
-                      />
-                      <span className="toggle-slider"></span>
-                      <span className="toggle-text">
-                        {formData.hospitalDependent ? 'Yes' : 'No'}
-                      </span>
-                    </label>
-
-                  </div>
-                </div>
               </div>
 
-              {/* Second row with Discount Applicable and Description */}
+              {/* Third row with Discount Applicable */}
               <div className="unified-form-grid">
                 {/* Discount Applicable Switch */}
                 <div className="unified-form-field">
@@ -495,7 +495,6 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
                         {formData.discountApplicable ? 'Yes' : 'No'}
                       </span>
                     </label>
-
                   </div>
                 </div>
               </div>

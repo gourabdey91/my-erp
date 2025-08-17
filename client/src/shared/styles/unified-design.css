@@ -1185,6 +1185,20 @@ select.unified-input {
   border-radius: 2px;
 }
 
+/* Items header with title and Add Item button */
+.items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.items-header .form-section-title {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1200,6 +1214,16 @@ select.unified-input {
   .form-section-title {
     font-size: 1rem;
     margin-bottom: 1rem;
+  }
+  
+  .items-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .items-header .form-section-title {
+    text-align: center;
   }
   
   .form-grid {

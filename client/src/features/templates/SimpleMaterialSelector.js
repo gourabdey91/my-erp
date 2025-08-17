@@ -303,24 +303,10 @@ const SimpleMaterialSelector = ({
     <div className="unified-modal-overlay">
       <div className="unified-modal-container material-selector-modal">
         <div className="unified-modal-header">
-          <div>
-            <h2>Select Material - Cascading Filter</h2>
-            <div className="material-selector-mode">
-              {hospital ? (
-                <span style={{ color: '#059669', fontSize: '0.875rem', fontWeight: '500' }}>
-                  🏥 Hospital-Specific Materials
-                </span>
-              ) : (
-                <span style={{ color: '#6366f1', fontSize: '0.875rem', fontWeight: '500' }}>
-                  📋 Template Materials (All Available)
-                </span>
-              )}
-            </div>
-          </div>
           <button 
             onClick={onClose} 
             className="unified-modal-close"
-            aria-label="Close"
+            type="button"
           >
             &times;
           </button>
