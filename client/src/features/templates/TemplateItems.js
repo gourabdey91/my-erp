@@ -98,75 +98,38 @@ const TemplateItems = ({
     };
   };
 
-  // Calculate item total
-  const calculateItemTotal = (item) => {
-    const unitRate = parseFloat(item.unitRate) || 0;
-    const quantity = parseFloat(item.quantity) || 0;
-    const gstPercentage = parseFloat(item.gstPercentage) || 0;
-    const discountPercentage = parseFloat(item.discountPercentage) || 0;
-    const discountAmount = parseFloat(item.discountAmount) || 0;
-
-    const baseAmount = unitRate * quantity;
-    
-    // Calculate discount
-    const calculatedDiscountAmount = discountAmount || ((baseAmount * discountPercentage) / 100);
-    
-    // Calculate GST
-    const gstAmounts = calculateGSTAmounts(
-      baseAmount, 
-      gstPercentage, 
-      'DEFAULT', // Customer state code - you might want to make this configurable
-      companyDetails?.stateCode || 'DEFAULT'
-    );
-    
-    const totalAmount = baseAmount + gstAmounts.gstAmount - calculatedDiscountAmount;
-    
-    return {
-      ...gstAmounts,
-      discountAmount: Math.round(calculatedDiscountAmount * 100) / 100,
-      totalAmount: Math.round(totalAmount * 100) / 100
-    };
-  };
-
-  // Handle input change
-  const handleInputChange = async (index, field, value) => {
+  // Handle input change with GST recalculation
+  const handleInputChange = (index, field, value) => {
     if (disabled) return;
 
     const updatedItems = [...templateItems];
-    const item = { ...updatedItems[index] };
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
 
-    // Handle material number change
-    if (field === 'materialNumber') {
-      item.materialNumber = value;
-      
-      if (value && value.length >= 3) {
-        const materialData = await fetchMaterialByNumber(value);
-        if (materialData) {
-          item.materialDescription = materialData.description;
-          item.hsnCode = materialData.hsnCode;
-          item.unitRate = materialData.assignedInstitutionalPrice || materialData.mrp || '';
-          item.gstPercentage = materialData.gstPercentage || '';
-          item.unit = materialData.unit || '';
-        }
-      } else if (!value) {
-        // Clear material-related fields when material number is cleared
-        item.materialDescription = '';
-        item.hsnCode = '';
-        item.unitRate = '';
-        item.gstPercentage = '';
-        item.unit = '';
-      }
-    } else {
-      item[field] = value;
-    }
-
-    // Recalculate totals if relevant fields changed
+    // Recalculate totals for fields that affect calculations
     if (['unitRate', 'quantity', 'gstPercentage', 'discountPercentage', 'discountAmount'].includes(field)) {
-      const calculations = calculateItemTotal(item);
-      Object.assign(item, calculations);
+      const customerStateCode = hospitalDependent && hospital ? (hospital.stateCode || '') : '';
+      const companyStateCode = companyDetails?.compliance?.stateCode || '';
+      
+      console.log('Input change - recalculating GST with state codes:', { customerStateCode, companyStateCode, field, value });
+      
+      const calculations = calculateItemTotal(updatedItems[index], customerStateCode, companyStateCode);
+      
+      // Update all calculated fields
+      updatedItems[index].gstAmount = calculations.gstAmount;
+      updatedItems[index].cgstAmount = calculations.cgstAmount;
+      updatedItems[index].sgstAmount = calculations.sgstAmount;
+      updatedItems[index].igstAmount = calculations.igstAmount;
+      updatedItems[index].totalAmount = calculations.totalAmount;
+      
+      if (field === 'discountPercentage' && parseFloat(value) > 0) {
+        // Clear discount amount when percentage is set
+        updatedItems[index].discountAmount = 0;
+      } else if (field === 'discountAmount' && parseFloat(value) > 0) {
+        // Clear discount percentage when amount is set
+        updatedItems[index].discountPercentage = 0;
+      }
     }
 
-    updatedItems[index] = item;
     setTemplateItems(updatedItems);
     onChange(updatedItems);
   };
@@ -201,6 +164,74 @@ const TemplateItems = ({
     onChange(renumberedItems);
   };
 
+  // Calculate GST amounts based on state codes
+  // This function handles GST calculation as per Indian tax regulations:
+  // - Same State (Intrastate): CGST + SGST (50% each of total GST)
+  // - Different State (Interstate): IGST only (100% of total GST)
+  const calculateGSTAmounts = (gstAmount, customerStateCode, companyStateCode) => {
+    const isSameState = customerStateCode === companyStateCode;
+    
+    let cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
+    
+    if (isSameState) {
+      // Same state: CGST + SGST (each is 50% of total GST)
+      cgstAmount = gstAmount * 0.5;
+      sgstAmount = gstAmount * 0.5;
+      igstAmount = 0;
+    } else {
+      // Different state: IGST only (100% of total GST)
+      cgstAmount = 0;
+      sgstAmount = 0;
+      igstAmount = gstAmount;
+    }
+    
+    return {
+      cgstAmount: Math.round(cgstAmount * 100) / 100,
+      sgstAmount: Math.round(sgstAmount * 100) / 100,
+      igstAmount: Math.round(igstAmount * 100) / 100
+    };
+  };
+
+  // Calculate item totals
+  const calculateItemTotal = (item, customerStateCode = '', companyStateCode = '') => {
+    const unitRate = parseFloat(item.unitRate) || 0;
+    const quantity = parseFloat(item.quantity) || 0;
+    const gstPercentage = parseFloat(item.gstPercentage) || 0;
+    const discountPercentage = parseFloat(item.discountPercentage) || 0;
+    const discountAmount = parseFloat(item.discountAmount) || 0;
+
+    const baseAmount = unitRate * quantity;
+    const gstAmount = (baseAmount * gstPercentage) / 100;
+    
+    // Calculate GST breakdown based on state codes
+    const gstBreakdown = calculateGSTAmounts(gstAmount, customerStateCode, companyStateCode);
+    
+    // Use discount amount if provided, otherwise calculate from percentage
+    const finalDiscountAmount = discountAmount > 0 ? discountAmount : (baseAmount * discountPercentage) / 100;
+    
+    const totalAmount = baseAmount + gstAmount - finalDiscountAmount;
+    
+    return {
+      baseAmount: Math.round(baseAmount * 100) / 100,
+      gstAmount: Math.round(gstAmount * 100) / 100,        // Total GST amount - will be stored in DB
+      cgstAmount: gstBreakdown.cgstAmount,                 // Central GST component
+      sgstAmount: gstBreakdown.sgstAmount,                 // State GST component
+      igstAmount: gstBreakdown.igstAmount,                 // Integrated GST component
+      discountAmount: Math.round(finalDiscountAmount * 100) / 100,
+      totalAmount: Math.round(totalAmount * 100) / 100
+    };
+  };
+
+  // Check if same state for GST calculations
+  const isSameState = () => {
+    if (!hospitalDependent || !hospital) return false;
+    
+    // For hospital-dependent templates, get state codes from hospital and company
+    const customerStateCode = hospital?.stateCode || '';
+    const companyStateCode = companyDetails?.compliance?.stateCode || '';
+    return customerStateCode === companyStateCode;
+  };
+
   // Open material selector
   const handleMaterialSelector = (index) => {
     if (disabled) return;
@@ -209,13 +240,78 @@ const TemplateItems = ({
     setMaterialSelectorOpen(true);
   };
 
-  // Handle material selection
+  // Handle material selection with auto-population
   const handleMaterialSelect = (material) => {
     if (selectedItemIndex !== null) {
-      handleInputChange(selectedItemIndex, 'materialNumber', material.materialNumber);
+      const updatedItems = [...templateItems];
+      
+      // Auto-populate all fields from material data
+      updatedItems[selectedItemIndex] = {
+        ...updatedItems[selectedItemIndex],
+        materialNumber: material.materialNumber,
+        materialDescription: material.description,
+        hsnCode: material.hsnCode,
+        unitRate: hospitalDependent && hospital 
+          ? (material.assignedInstitutionalPrice || material.institutionalPrice || material.mrp || 0)
+          : (material.institutionalPrice || material.mrp || 0),
+        gstPercentage: material.gstPercentage || 0,
+        unit: material.unit,
+        isFromMaster: true // Flag to indicate this is from material master
+      };
+      
+      // If quantity exists, recalculate GST amounts
+      if (parseFloat(updatedItems[selectedItemIndex].quantity) > 0) {
+        const customerStateCode = hospitalDependent && hospital ? (hospital.stateCode || '') : '';
+        const companyStateCode = companyDetails?.compliance?.stateCode || '';
+        
+        console.log('Material select - calculating GST with state codes:', { customerStateCode, companyStateCode });
+        
+        const calculations = calculateItemTotal(updatedItems[selectedItemIndex], customerStateCode, companyStateCode);
+        
+        // Update all calculated fields
+        updatedItems[selectedItemIndex].gstAmount = calculations.gstAmount;
+        updatedItems[selectedItemIndex].cgstAmount = calculations.cgstAmount;
+        updatedItems[selectedItemIndex].sgstAmount = calculations.sgstAmount;
+        updatedItems[selectedItemIndex].igstAmount = calculations.igstAmount;
+        updatedItems[selectedItemIndex].totalAmount = calculations.totalAmount;
+      }
+      
+      setTemplateItems(updatedItems);
+      onChange(updatedItems);
     }
     setMaterialSelectorOpen(false);
     setSelectedItemIndex(null);
+  };
+
+  // Calculate dynamic colspan for description row
+  const getDescriptionColspan = () => {
+    // Base columns: Material No. + Unit Rate + Quantity + Unit = 4
+    let colspan = 4;
+    
+    // Add discount columns if applicable (Disc % and Disc Amt)
+    if (discountApplicable) {
+      colspan += 2;
+    }
+    
+    return colspan;
+  };
+
+  // Calculate dynamic colspan for GST row
+  const getGstColspan = () => {
+    // Base: (Disc % + Disc Amt if applicable) + CGST + (SGST/IGST) + GST Amount + Total Amount + Actions
+    let colspan = 5; // CGST + (SGST/IGST) + GST Amount + Total Amount + Actions
+    
+    // Add discount columns if applicable
+    if (discountApplicable) {
+      colspan += 2;
+    }
+    
+    // Add extra column if showing both SGST and IGST (template mode)
+    if (!hospitalDependent || !hospital) {
+      colspan += 1; // Extra column for both SGST and IGST
+    }
+    
+    return colspan;
   };
 
   return (
@@ -238,6 +334,18 @@ const TemplateItems = ({
                   <th>Unit</th>
                   {discountApplicable && <th>Disc %</th>}
                   {discountApplicable && <th>Disc Amt</th>}
+                  <th>CGST Amt</th>
+                  {hospitalDependent && hospital ? (
+                    // Hospital-specific: Show SGST or IGST based on state
+                    isSameState() ? <th>SGST Amt</th> : <th>IGST Amt</th>
+                  ) : (
+                    // Template mode: Show both SGST and IGST
+                    <>
+                      <th>SGST Amt</th>
+                      <th>IGST Amt</th>
+                    </>
+                  )}
+                  <th>GST Amount</th>
                   <th>Total Amount</th>
                   <th>Actions</th>
                 </tr>
@@ -354,6 +462,94 @@ const TemplateItems = ({
                         </td>
                       )}
                       
+                      {/* CGST Amount */}
+                      <td data-label="CGST Amt">
+                        <input
+                          type="text"
+                          className="unified-input text-center"
+                          value={`₹${parseFloat(item.cgstAmount || 0).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}`}
+                          readOnly
+                          disabled
+                        />
+                      </td>
+                      
+                      {/* SGST/IGST Amount - Hospital specific or both for templates */}
+                      {hospitalDependent && hospital ? (
+                        // Hospital-specific: Show SGST or IGST based on state
+                        isSameState() ? (
+                          <td data-label="SGST Amt">
+                            <input
+                              type="text"
+                              className="unified-input text-center"
+                              value={`₹${parseFloat(item.sgstAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}`}
+                              readOnly
+                              disabled
+                            />
+                          </td>
+                        ) : (
+                          <td data-label="IGST Amt">
+                            <input
+                              type="text"
+                              className="unified-input text-center"
+                              value={`₹${parseFloat(item.igstAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}`}
+                              readOnly
+                              disabled
+                            />
+                          </td>
+                        )
+                      ) : (
+                        // Template mode: Show both SGST and IGST
+                        <>
+                          <td data-label="SGST Amt">
+                            <input
+                              type="text"
+                              className="unified-input text-center"
+                              value={`₹${parseFloat(item.sgstAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}`}
+                              readOnly
+                              disabled
+                            />
+                          </td>
+                          <td data-label="IGST Amt">
+                            <input
+                              type="text"
+                              className="unified-input text-center"
+                              value={`₹${parseFloat(item.igstAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              })}`}
+                              readOnly
+                              disabled
+                            />
+                          </td>
+                        </>
+                      )}
+                      
+                      {/* Total GST Amount */}
+                      <td data-label="GST Amount">
+                        <input
+                          type="text"
+                          className="unified-input text-center"
+                          value={`₹${parseFloat(item.gstAmount || 0).toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}`}
+                          readOnly
+                          disabled
+                        />
+                      </td>
+                      
                       <td data-label="Total Amount">
                         <input
                           type="text"
@@ -390,7 +586,7 @@ const TemplateItems = ({
                     {/* Description row */}
                     <tr className="inquiry-description-row">
                       <td className="description-spacer"></td>
-                      <td colSpan={discountApplicable ? 6 : 4} className="material-description-cell">
+                      <td colSpan={getDescriptionColspan()} className="material-description-cell">
                         <div className="material-description-container">
                           <span className="description-label">Desc:</span>
                           <div className="description-content">
@@ -425,7 +621,7 @@ const TemplateItems = ({
                           </div>
                         </div>
                       </td>
-                      <td colSpan={discountApplicable ? 3 : 1} className="hsn-code-cell">
+                      <td colSpan={getGstColspan()} className="hsn-code-cell">
                         <div className="gst-code-container">
                           <span className="gst-label">GST%:</span>
                           <div className="gst-content">
