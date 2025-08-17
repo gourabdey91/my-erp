@@ -165,34 +165,17 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
     if (formData.surgicalCategory && formData.items.length > 0) {
       console.log('🔍 Validating materials belong to surgical category...');
       try {
-        // Get all materials for the surgical category
-        const response = await materialAPI.getImplantTypes(formData.surgicalCategory);
+        // Use a single API call to get all materials for the surgical category
+        const response = await materialAPI.getMaterials({
+          surgicalCategory: formData.surgicalCategory
+        });
         
         if (response.success && response.data) {
-          // Get all material numbers for this surgical category by fetching materials
-          // We need to get materials for all implant types in this category
-          const allCategoryMaterials = [];
-          
-          for (const implantType of response.data) {
-            try {
-              const materialsResponse = await materialAPI.getMaterials({
-                surgicalCategory: formData.surgicalCategory,
-                implantType: implantType._id
-              });
-              
-              if (materialsResponse.success && materialsResponse.data) {
-                allCategoryMaterials.push(...materialsResponse.data);
-              }
-            } catch (error) {
-              console.error(`Error fetching materials for implant type ${implantType._id}:`, error);
-            }
-          }
-
-          const categoryMaterialNumbers = allCategoryMaterials.map(material => material.materialNumber);
+          const categoryMaterialNumbers = response.data.map(material => material.materialNumber);
           
           // Check if any template items don't belong to the surgical category
           const wrongCategoryMaterials = formData.items.filter(item => 
-            !categoryMaterialNumbers.includes(item.materialNumber)
+            item.materialNumber && !categoryMaterialNumbers.includes(item.materialNumber)
           );
 
           if (wrongCategoryMaterials.length > 0) {
