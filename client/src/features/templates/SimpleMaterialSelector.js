@@ -25,6 +25,13 @@ const SimpleMaterialSelector = ({
   const [lengths, setLengths] = useState([]);
   const [selectedLength, setSelectedLength] = useState('');
 
+  // Format currency helper function
+  const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined || amount === '') return '0.00';
+    const numAmount = parseFloat(amount);
+    return isNaN(numAmount) ? '0.00' : numAmount.toFixed(2);
+  };
+
   const resetFilters = () => {
     if (!surgicalCategory) {
       setSelectedSurgicalCategory('');
@@ -231,144 +238,185 @@ const SimpleMaterialSelector = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content material-selector-modal">
-        <div className="modal-header">
-          <h2>Select Material</h2>
-          <button onClick={onClose} className="close-button">&times;</button>
+    <div className="unified-modal-overlay">
+      <div className="unified-modal-container material-selector-modal">
+        <div className="unified-modal-header">
+          <button 
+            className="unified-modal-close"
+            onClick={onClose}
+            type="button"
+          >
+            &times;
+          </button>
         </div>
 
-        <div className="modal-body">
-          {/* Surgical Category Selection */}
-          {!surgicalCategory && (
-            <div className="filter-group">
-              <label>Surgical Category:</label>
-              <select 
-                value={selectedSurgicalCategory} 
-                onChange={(e) => setSelectedSurgicalCategory(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">Select Surgical Category</option>
-                {surgicalCategories.map(category => (
-                  <option key={category._id} value={category._id}>
-                    {category.description}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
+        <div className="unified-modal-body">
           {/* Filter Controls */}
-          {selectedSurgicalCategory && (
-            <div className="filters-section">
-              <div className="filters-row">
-                <div className="filter-group">
-                  <label>Implant Type:</label>
-                  <select 
-                    value={selectedImplantType} 
-                    onChange={(e) => handleImplantTypeChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Types</option>
-                    {implantTypes.map(type => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="filter-group">
-                  <label>Subcategory:</label>
-                  <select 
-                    value={selectedSubcategory} 
-                    onChange={(e) => handleSubcategoryChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Subcategories</option>
-                    {subcategories.map(subcategory => (
-                      <option key={subcategory} value={subcategory}>
-                        {subcategory}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label>Length:</label>
-                  <select 
-                    value={selectedLength} 
-                    onChange={(e) => handleLengthChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="">All Lengths</option>
-                    {lengths.map(length => (
-                      <option key={length} value={length}>
-                        {length}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div className="filter-section">
+            {/* Error Display */}
+            {error && (
+              <div className="error-message" style={{
+                background: '#ffe6e6',
+                color: '#d32f2f',
+                padding: '10px',
+                borderRadius: '4px',
+                marginBottom: '15px',
+                border: '1px solid #ffcdd2'
+              }}>
+                ⚠️ {error}
               </div>
+            )}
 
-              {/* Search */}
-              <div className="search-section">
+            <div className="filter-row">
+              {/* Surgical Category Selection */}
+              {!surgicalCategory && (
+                <div className="filter-group">
+                  <label>Surgical Category:</label>
+                  <select 
+                    value={selectedSurgicalCategory} 
+                    onChange={(e) => setSelectedSurgicalCategory(e.target.value)}
+                    className="filter-select"
+                    disabled={loading}
+                  >
+                    <option value="">Select Surgical Category</option>
+                    {surgicalCategories.map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Filter Controls */}
+              {selectedSurgicalCategory && (
+                <>
+                  <div className="filter-group">
+                    <label>Implant Type:</label>
+                    <select 
+                      value={selectedImplantType} 
+                      onChange={(e) => handleImplantTypeChange(e.target.value)}
+                      className="filter-select"
+                      disabled={loading}
+                    >
+                      <option value="">All Types</option>
+                      {implantTypes.map(type => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="filter-group">
+                    <label>Subcategory:</label>
+                    <select 
+                      value={selectedSubcategory} 
+                      onChange={(e) => handleSubcategoryChange(e.target.value)}
+                      className="filter-select"
+                      disabled={!selectedImplantType}
+                    >
+                      <option value="">All Subcategories</option>
+                      {subcategories.map(subcategory => (
+                        <option key={subcategory} value={subcategory}>
+                          {subcategory}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="filter-group">
+                    <label>Length:</label>
+                    <select 
+                      value={selectedLength} 
+                      onChange={(e) => handleLengthChange(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="">All Lengths</option>
+                      {lengths.map(length => (
+                        <option key={length} value={length}>
+                          {length}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Search */}
+            {selectedSurgicalCategory && (
+              <div className="unified-form-field">
+                <label className="unified-form-label">Search Materials</label>
                 <input
                   type="text"
+                  className="unified-search-input"
                   placeholder="Search by material number, description, or HSN code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
                 />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Loading and Error States */}
-          {loading && <div className="loading">Loading materials...</div>}
-          {error && <div className="error-message">{error}</div>}
-
-          {/* Materials List */}
-          {!loading && filteredMaterials.length > 0 && (
-            <div className="materials-list">
-              <div className="materials-header">
-                <span>Found {filteredMaterials.length} material(s)</span>
+          <div className="materials-list-container">
+            {loading ? (
+              <div className="unified-loading">
+                <div className="unified-loading-spinner"></div>
+                <span>Loading materials...</span>
               </div>
-              <div className="materials-grid">
+            ) : filteredMaterials.length === 0 ? (
+              selectedSurgicalCategory && (
+                <div className="unified-empty-state">
+                  <div className="unified-empty-icon">📦</div>
+                  <div className="unified-empty-title">No Materials Found</div>
+                  <div className="unified-empty-subtitle">
+                    {searchTerm 
+                      ? 'Try adjusting your search criteria'
+                      : 'No materials available for this category combination'
+                    }
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="materials-list">
                 {filteredMaterials.map(material => (
-                  <div key={material._id} className="material-card" onClick={() => onSelect(material)}>
-                    <div className="material-info">
-                      <div className="material-number">{material.materialNumber}</div>
-                      <div className="material-description">{material.description}</div>
-                      <div className="material-details">
-                        {material.implantType && (
-                          <span className="detail-badge">
-                            {typeof material.implantType === 'object' ? material.implantType.name : material.implantType}
-                          </span>
-                        )}
-                        {material.subCategory && (
-                          <span className="detail-badge">{material.subCategory}</span>
-                        )}
-                        {(material.lengthMm || material.length) && (
-                          <span className="detail-badge">{material.lengthMm || material.length}mm</span>
-                        )}
+                  <div
+                    key={material._id}
+                    className={`material-item clickable`}
+                    onClick={() => {
+                      onSelect(material);
+                      onClose();
+                    }}
+                  >
+                    <div className="material-main-row">
+                      <div className="material-left">
+                        <span className="material-number">{material.materialNumber}</span>
+                        <span className="material-description">{material.description}</span>
+                        <div className="material-details">
+                          {material.implantType && (
+                            <span className="detail-badge">
+                              {typeof material.implantType === 'object' ? material.implantType.name : material.implantType}
+                            </span>
+                          )}
+                          {material.subCategory && (
+                            <span className="detail-badge">{material.subCategory}</span>
+                          )}
+                          {(material.lengthMm || material.length) && (
+                            <span className="detail-badge">{material.lengthMm || material.length}mm</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="material-price">
-                        ₹{material.institutionalPrice || material.mrp || 0}
+                      <div className="material-right">
+                        <span className="material-unit-rate">₹{formatCurrency(material.institutionalPrice || material.mrp || 0)}</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* No Results */}
-          {!loading && selectedSurgicalCategory && filteredMaterials.length === 0 && !error && (
-            <div className="no-results">
-              No materials found matching your criteria. Try adjusting your filters.
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
