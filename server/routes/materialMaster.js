@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
     }
 
     if (surgicalCategory) {
-      filter.surgicalCategory = surgicalCategory;
+      filter.surgicalCategories = { $in: [surgicalCategory] };
     }
 
     if (implantType) {
@@ -72,7 +72,7 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
 
     const materials = await MaterialMaster.find(filter)
-      .populate('surgicalCategory', 'code description')
+      .populate('surgicalCategories', 'code description')
       .populate('implantType', 'name')
       .populate('businessUnitId', 'code name')
       .populate('createdBy', 'firstName lastName')
@@ -151,7 +151,7 @@ router.post('/', async (req, res) => {
       mrp,
       institutionalPrice,
       distributionPrice,
-      surgicalCategory,
+      surgicalCategories,  // Changed to array
       implantType,
       subCategory,
       lengthMm
@@ -190,8 +190,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Valid distribution price is required' });
     }
 
-    if (!surgicalCategory) {
-      return res.status(400).json({ message: 'Surgical category is required' });
+    if (!surgicalCategories || !Array.isArray(surgicalCategories) || surgicalCategories.length === 0) {
+      return res.status(400).json({ message: 'At least one surgical category is required' });
     }
 
     // ImplantType and subCategory are optional

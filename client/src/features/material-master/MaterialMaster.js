@@ -48,7 +48,7 @@ const MaterialMaster = () => {
     mrp: '',
     institutionalPrice: '',
     distributionPrice: '',
-    surgicalCategory: '',
+    surgicalCategories: [],  // Changed from singular to array
     implantType: '',
     subCategory: '',
     lengthMm: '',
@@ -109,12 +109,12 @@ const MaterialMaster = () => {
     }));
   };
 
-  // Handle Surgical Category change - first in the flow
-  const handleSurgicalCategoryChange = async (e) => {
-    const surgicalCategoryId = e.target.value;
+  // Handle Surgical Category change - now handles multiple selections
+  const handleSurgicalCategoryChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
     setFormData(prev => ({
       ...prev,
-      surgicalCategory: surgicalCategoryId,
+      surgicalCategories: selectedOptions,  // Store as array
       implantType: '',
       subCategory: '',
       lengthMm: ''
@@ -124,16 +124,6 @@ const MaterialMaster = () => {
     setFilteredImplantTypes([]);
     setSubcategories([]);
     setLengths([]);
-    
-    if (surgicalCategoryId) {
-      try {
-        const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(surgicalCategoryId);
-        setFilteredImplantTypes(filteredTypes);
-      } catch (err) {
-        console.error('Error fetching filtered implant types:', err);
-        setFilteredImplantTypes([]);
-      }
-    }
   };
 
   // Handle Implant Type change - second in the flow
@@ -150,9 +140,10 @@ const MaterialMaster = () => {
     setSubcategories([]);
     setLengths([]);
     
-    if (implantTypeId && formData.surgicalCategory) {
+    if (implantTypeId && formData.surgicalCategories && formData.surgicalCategories.length > 0) {
       try {
-        const filteredSubs = await materialMasterAPI.getFilteredSubcategories(formData.surgicalCategory, implantTypeId);
+        // Use the first selected surgical category for filtering
+        const filteredSubs = await materialMasterAPI.getFilteredSubcategories(formData.surgicalCategories[0], implantTypeId);
         setSubcategories(filteredSubs);
       } catch (err) {
         console.error('Error fetching filtered subcategories:', err);
@@ -173,10 +164,10 @@ const MaterialMaster = () => {
     // Reset lengths
     setLengths([]);
     
-    if (subCategoryValue && formData.surgicalCategory && formData.implantType) {
+    if (subCategoryValue && formData.surgicalCategories && formData.surgicalCategories.length > 0 && formData.implantType) {
       try {
         const filteredLengths = await materialMasterAPI.getFilteredLengths(
-          formData.surgicalCategory, 
+          formData.surgicalCategories[0], 
           formData.implantType, 
           subCategoryValue
         );
@@ -343,7 +334,7 @@ const MaterialMaster = () => {
       mrp: material.mrp,
       institutionalPrice: material.institutionalPrice,
       distributionPrice: material.distributionPrice,
-      surgicalCategory: material.surgicalCategory._id,
+      surgicalCategories: Array.isArray(material.surgicalCategories) ? material.surgicalCategories.map(cat => cat._id || cat) : (material.surgicalCategories ? [material.surgicalCategories._id || material.surgicalCategories] : []),
       implantType: material.implantType?._id || '',
       subCategory: material.subCategory || '',
       lengthMm: material.lengthMm || '', // Ensure empty string for null/undefined values
@@ -352,24 +343,26 @@ const MaterialMaster = () => {
     
     // Fetch filtered data for editing
     try {
-      // Get filtered implant types for the surgical category
-      const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(material.surgicalCategory._id);
-      setFilteredImplantTypes(filteredTypes);
-      
-      // Get filtered subcategories for the surgical category and implant type
-      const filteredSubs = await materialMasterAPI.getFilteredSubcategories(material.surgicalCategory._id, material.implantType._id);
-      setSubcategories(filteredSubs);
+      // Get filtered implant types for the first surgical category
+      if (material.surgicalCategories && material.surgicalCategories.length > 0) {
+        const categoryId = material.surgicalCategories[0]._id || material.surgicalCategories[0];
+        const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(categoryId);
+        setFilteredImplantTypes(filteredTypes);
+        
+        // Get filtered subcategories for the surgical category and implant type
+        const filteredSubs = await materialMasterAPI.getFilteredSubcategories(categoryId, material.implantType._id);
+        setSubcategories(filteredSubs);
       
       // Get filtered lengths if subcategory exists
       if (material.subCategory) {
         const filteredLengths = await materialMasterAPI.getFilteredLengths(
-          material.surgicalCategory._id, 
+          categoryId, 
           material.implantType._id, 
           material.subCategory
         );
         setLengths(filteredLengths);
       }
-    } catch (err) {
+    }
       console.error('Error fetching filtered data for editing:', err);
     }
     
@@ -393,6 +386,7 @@ const MaterialMaster = () => {
 
   const resetForm = () => {
     setFormData({
+      businessUnitId: '',
       materialNumber: '',
       description: '',
       hsnCode: '',
@@ -401,7 +395,7 @@ const MaterialMaster = () => {
       mrp: '',
       institutionalPrice: '',
       distributionPrice: '',
-      surgicalCategory: '',
+      surgicalCategories: [],  // Changed from single surgicalCategory to array
       implantType: '',
       subCategory: '',
       lengthMm: '',
@@ -762,19 +756,22 @@ const MaterialMaster = () => {
                   Surgical Category *
                 </label>
                 <select
-                  name="surgicalCategory"
-                  value={formData.surgicalCategory}
+                  name="surgicalCategories"
+                  value={formData.surgicalCategories}
                   onChange={handleSurgicalCategoryChange}
                   required
+                  multiple
                   className="unified-search-input"
+                  style={{ minHeight: '120px' }}
+                  title="Hold Ctrl/Cmd to select multiple categories"
                 >
-                  <option value="">Select Surgical Category</option>
                   {categories.map(category => (
                     <option key={category._id} value={category._id}>
                       {category.code} - {category.description}
                     </option>
                   ))}
                 </select>
+                <small style={{marginTop: '5px', display: 'block', color: '#666'}}>Hold Ctrl/Cmd to select multiple surgical categories</small>
               </div>
 
               <div className="unified-form-field">
@@ -786,7 +783,7 @@ const MaterialMaster = () => {
                   value={formData.implantType}
                   onChange={handleImplantTypeChange}
                   required
-                  disabled={!formData.surgicalCategory}
+                  disabled={!formData.surgicalCategories || formData.surgicalCategories.length === 0}
                   className="unified-search-input"
                 >
                   <option value="">Select Implant Type</option>
@@ -919,6 +916,7 @@ const MaterialMaster = () => {
                     <th>MRP</th>
                     <th>Inst. Price</th>
                     <th>Dist. Price</th>
+                    <th>Surgical Categories</th>
                     <th>Implant Type</th>
                     <th>Sub Category</th>
                     <th>Length</th>
@@ -937,6 +935,12 @@ const MaterialMaster = () => {
                       <td>{formatCurrency(material.mrp)}</td>
                       <td>{formatCurrency(material.institutionalPrice)}</td>
                       <td>{formatCurrency(material.distributionPrice)}</td>
+                      <td>
+                        {Array.isArray(material.surgicalCategories) && material.surgicalCategories.length > 0
+                          ? material.surgicalCategories.map(cat => `${cat.code}`).join(', ')
+                          : '-'
+                        }
+                      </td>
                       <td>{material.implantType.name}</td>
                       <td>{material.subCategory}</td>
                       <td>{material.lengthMm}mm</td>
@@ -992,6 +996,7 @@ const MaterialMaster = () => {
                     {
                       title: 'Specifications',
                       items: [
+                        { label: 'Surgical Categories', value: Array.isArray(material.surgicalCategories) && material.surgicalCategories.length > 0 ? material.surgicalCategories.map(cat => cat.code || cat.description).join(', ') : 'N/A' },
                         { label: 'Implant Type', value: material.implantType?.name || 'N/A' },
                         { label: 'Sub Category', value: material.subCategory || 'N/A' },
                         { label: 'Length', value: material.lengthMm ? `${material.lengthMm} mm` : 'N/A' },
