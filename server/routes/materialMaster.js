@@ -458,8 +458,9 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
         .filter(assignment => 
           assignment.isActive && 
           assignment.material &&
-          assignment.material.surgicalCategory &&
-          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.surgicalCategories &&
+          Array.isArray(assignment.material.surgicalCategories) &&
+          assignment.material.surgicalCategories.some(cat => cat._id.toString() === surgicalCategoryId) &&
           assignment.material.implantType &&
           assignment.material.implantType._id.toString() === implantTypeId &&
           assignment.material.subCategory
@@ -476,7 +477,7 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
       console.log('🔍 Fetching template-mode subcategories from MaterialMaster');
       
       const matchQuery = {
-        surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
         implantType: new mongoose.Types.ObjectId(implantTypeId),
         isActive: true,
         subCategory: { $exists: true, $ne: null, $ne: '' }
@@ -658,8 +659,9 @@ router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
         .filter(assignment => 
           assignment.isActive && 
           assignment.material &&
-          assignment.material.surgicalCategory &&
-          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.surgicalCategories &&
+          Array.isArray(assignment.material.surgicalCategories) &&
+          assignment.material.surgicalCategories.some(cat => cat._id.toString() === surgicalCategoryId) &&
           assignment.material.implantType
         )
         .forEach(assignment => {
@@ -680,7 +682,7 @@ router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
       implantTypes = await MaterialMaster.aggregate([
         {
           $match: {
-            surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+            surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
             isActive: true,
             implantType: { $exists: true, $ne: null }
           }
