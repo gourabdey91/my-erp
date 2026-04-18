@@ -473,35 +473,30 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
       console.log(`✅ Found ${subcategories.length} hospital-specific subcategories`);
       
     } else {
-      // Template mode: Get all distinct subcategories from MaterialMaster
-      console.log('🔍 Fetching template-mode subcategories from MaterialMaster');
+      // Template mode: Get subcategories from ImplantType master
+      // that match the selected implant type and have the surgical category
+      console.log('🔍 Fetching template-mode subcategories from ImplantType master');
       
-      const matchQuery = {
-        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
-        implantType: new mongoose.Types.ObjectId(implantTypeId),
-        isActive: true,
-        subCategory: { $exists: true, $ne: null, $ne: '' }
-      };
-
-      const result = await MaterialMaster.aggregate([
-        { $match: matchQuery },
-        {
-          $group: {
-            _id: '$subCategory'
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            subcategory: '$_id'
-          }
-        },
-        {
-          $sort: { subcategory: 1 }
-        }
-      ]);
-
-      subcategories = result.map(item => item.subcategory);
+      const categoryObjectId = new mongoose.Types.ObjectId(surgicalCategoryId);
+      const implantTypeObjectId = new mongoose.Types.ObjectId(implantTypeId);
+      
+      // Query ImplantType document and filter subcategories by surgical category
+      const implantType = await ImplantType.findOne({
+        _id: implantTypeObjectId,
+        isActive: true
+      });
+      
+      if (implantType && implantType.subcategories) {
+        // Filter subcategories to only those containing the selected surgical category
+        subcategories = implantType.subcategories
+          .filter(sub => 
+            sub.surgicalCategories && 
+            sub.surgicalCategories.some(catId => catId.toString() === surgicalCategoryId)
+          )
+          .map(sub => sub.subCategory)
+          .sort();
+      }
+      
       console.log(`✅ Found ${subcategories.length} template-mode subcategories`);
     }
 
@@ -575,36 +570,38 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
       console.log(`✅ Found ${lengths.length} hospital-specific lengths`);
       
     } else {
-      // Template mode: Get all distinct lengths from MaterialMaster
-      console.log('🔍 Fetching template-mode lengths from MaterialMaster');
+      // Template mode: Get lengths from ImplantType master
+      // Filter by surgical category, implant type, and subcategory
+      console.log('🔍 Fetching template-mode lengths from ImplantType master');
       
-      const matchQuery = {
-        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
-        implantType: new mongoose.Types.ObjectId(implantTypeId),
-        subCategory: decodeURIComponent(subCategory),
-        isActive: true,
-        lengthMm: { $exists: true, $ne: null }
-      };
-
-      const result = await MaterialMaster.aggregate([
-        { $match: matchQuery },
-        {
-          $group: {
-            _id: '$lengthMm'
+      const implantTypeObjectId = new mongoose.Types.ObjectId(implantTypeId);
+      const decodedSubCategory = decodeURIComponent(subCategory);
+      
+      // Query ImplantType document and filter subcategories
+      const implantType = await ImplantType.findOne({
+        _id: implantTypeObjectId,
+        isActive: true
+      });
+      
+      if (implantType && implantType.subcategories) {
+        // Find the specific subcategory and get lengths for the selected surgical category
+        const matchedSubcategories = implantType.subcategories.filter(sub =>
+          sub.subCategory === decodedSubCategory &&
+          sub.surgicalCategories &&
+          sub.surgicalCategories.some(catId => catId.toString() === surgicalCategoryId)
+        );
+        
+        // Collect unique lengths
+        const lengthSet = new Set();
+        matchedSubcategories.forEach(sub => {
+          if (sub.length && typeof sub.length === 'number') {
+            lengthSet.add(sub.length);
           }
-        },
-        {
-          $project: {
-            _id: 0,
-            length: '$_id'
-          }
-        },
-        {
-          $sort: { length: 1 }
-        }
-      ]);
-
-      lengths = result.map(item => item.length).filter(length => typeof length === 'number');
+        });
+        
+        lengths = Array.from(lengthSet).sort((a, b) => a - b);
+      }
+      
       console.log(`✅ Found ${lengths.length} template-mode lengths`);
     }
 
@@ -677,49 +674,23 @@ router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
       console.log(`✅ Found ${implantTypes.length} hospital-specific implant types`);
       
     } else {
-      // Template mode: Get all distinct implant types from MaterialMaster
-      console.log('🔍 Fetching template-mode implant types from MaterialMaster');
+      // Template mode: Get all distinct implant types from ImplantType master
+      // that have the selected surgical category in their subcategories
+      console.log('🔍 Fetching template-mode implant types from ImplantType master');
       
-      implantTypes = await MaterialMaster.aggregate([
-        {
-          $match: {
-            surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
-            isActive: true,
-            implantType: { $exists: true, $ne: null }
-          }
-        },
-        {
-          $group: {
-            _id: '$implantType'
-          }
-        },
-        {
-          $lookup: {
-            from: 'implanttypes',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'implantTypeData'
-          }
-        },
-        {
-          $unwind: '$implantTypeData'
-        },
-        {
-          $project: {
-            _id: '$implantTypeData._id',
-            name: '$implantTypeData.name'
-          }
-        },
-        {
-          $sort: { name: 1 }
-        }
-      ]);
+      const categoryObjectId = new mongoose.Types.ObjectId(surgicalCategoryId);
       
-      console.log(`✅ Found ${implantTypes.length} template-mode implant types`);
+      // Query ImplantType collection to find types that have this surgical category in their subcategories
+      implantTypes = await ImplantType.find({
+        isActive: true,
+        'subcategories.surgicalCategories': categoryObjectId
+      }).select('_id name').sort({ name: 1 });
       
-      // Debug: Check count of materials
+      console.log(`✅ Found ${implantTypes.length} implant types with this surgical category`);
+      
+      // Debug: Check count of materials with this category
       const countWithCategory = await MaterialMaster.countDocuments({
-        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
+        surgicalCategories: categoryObjectId,
         isActive: true
       });
       console.log(`📊 DEBUG: Total materials with this surgicalCategory: ${countWithCategory}`);
