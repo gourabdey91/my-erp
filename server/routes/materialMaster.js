@@ -223,7 +223,7 @@ router.post('/', async (req, res) => {
         existingMaterial.mrp = mrp;
         existingMaterial.institutionalPrice = institutionalPrice;
         existingMaterial.distributionPrice = distributionPrice;
-        existingMaterial.surgicalCategory = surgicalCategory;
+        existingMaterial.surgicalCategories = surgicalCategories;  // Array of IDs
         existingMaterial.implantType = implantType;
         existingMaterial.subCategory = subCategory.trim();
         existingMaterial.lengthMm = lengthMm;
@@ -233,7 +233,7 @@ router.post('/', async (req, res) => {
         await existingMaterial.save();
         
         const populatedMaterial = await MaterialMaster.findById(existingMaterial._id)
-          .populate('surgicalCategory', 'code description')
+          .populate('surgicalCategories', 'code description')
           .populate('implantType', 'name')
           .populate('businessUnitId', 'code name')
           .populate('createdBy', 'firstName lastName')
@@ -267,7 +267,7 @@ router.post('/', async (req, res) => {
       mrp,
       institutionalPrice,
       distributionPrice,
-      surgicalCategory,
+      surgicalCategories,  // Array of category IDs
       implantType: implantType || null,
       subCategory: subCategory ? subCategory.trim() : null,
       lengthMm,
@@ -277,7 +277,7 @@ router.post('/', async (req, res) => {
 
     const savedMaterial = await material.save();
     const populatedMaterial = await MaterialMaster.findById(savedMaterial._id)
-      .populate('surgicalCategory', 'code description')
+      .populate('surgicalCategories', 'code description')
       .populate('implantType', 'name')
       .populate('businessUnitId', 'code name')
       .populate('createdBy', 'firstName lastName')
@@ -308,7 +308,7 @@ router.put('/:id', async (req, res) => {
       mrp,
       institutionalPrice,
       distributionPrice,
-      surgicalCategory,
+      surgicalCategories,  // Array of category IDs
       implantType,
       subCategory,
       lengthMm
@@ -347,8 +347,8 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ message: 'Valid distribution price is required' });
     }
 
-    if (!surgicalCategory) {
-      return res.status(400).json({ message: 'Surgical category is required' });
+    if (!surgicalCategories || !Array.isArray(surgicalCategories) || surgicalCategories.length === 0) {
+      return res.status(400).json({ message: 'At least one surgical category is required' });
     }
 
     // ImplantType and subCategory are optional
@@ -395,7 +395,7 @@ router.put('/:id', async (req, res) => {
         mrp,
         institutionalPrice,
         distributionPrice,
-        surgicalCategory,
+        surgicalCategories,  // Array of category IDs
         implantType: implantType || null,
         subCategory: subCategory ? subCategory.trim() : null,
         lengthMm,
@@ -403,7 +403,7 @@ router.put('/:id', async (req, res) => {
       },
       { new: true }
     )
-    .populate('surgicalCategory', 'code description')
+    .populate('surgicalCategories', 'code description')
     .populate('implantType', 'name')
     .populate('businessUnitId', 'code name')
     .populate('createdBy', 'firstName lastName')
