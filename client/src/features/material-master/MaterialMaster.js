@@ -545,8 +545,8 @@ const MaterialMaster = () => {
             >
               <option value="">All Sub Categories</option>
               {filterSubcategories.map((subcat, index) => (
-                <option key={index} value={subcat.subCategory}>
-                  {subcat.subCategory}
+                <option key={index} value={typeof subcat === 'string' ? subcat : subcat.subCategory}>
+                  {typeof subcat === 'string' ? subcat : subcat.subCategory}
                 </option>
               ))}
             </select>
@@ -812,8 +812,8 @@ const MaterialMaster = () => {
                 >
                   <option value="">Select Sub Category</option>
                   {subcategories.map((subcat, index) => (
-                    <option key={index} value={subcat.subCategory}>
-                      {subcat.subCategory}
+                    <option key={index} value={typeof subcat === 'string' ? subcat : subcat.subCategory}>
+                      {typeof subcat === 'string' ? subcat : subcat.subCategory}
                     </option>
                   ))}
                 </select>
