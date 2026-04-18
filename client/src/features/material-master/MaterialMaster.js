@@ -110,7 +110,7 @@ const MaterialMaster = () => {
   };
 
   // Handle Surgical Category change - now handles multiple selections
-  const handleSurgicalCategoryChange = (e) => {
+  const handleSurgicalCategoryChange = async (e) => {
     const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
     setFormData(prev => ({
       ...prev,
@@ -124,6 +124,33 @@ const MaterialMaster = () => {
     setFilteredImplantTypes([]);
     setSubcategories([]);
     setLengths([]);
+    
+    // Fetch implant types for all selected categories
+    if (selectedOptions && selectedOptions.length > 0) {
+      try {
+        // Fetch implant types for each category and combine them
+        const allImplantTypes = [];
+        const typeIds = new Set();
+        
+        for (const categoryId of selectedOptions) {
+          const filteredTypes = await materialMasterAPI.getImplantTypesBySurgicalCategory(categoryId);
+          if (Array.isArray(filteredTypes)) {
+            filteredTypes.forEach(type => {
+              // Avoid duplicates using a Set to track IDs
+              if (!typeIds.has(type._id)) {
+                typeIds.add(type._id);
+                allImplantTypes.push(type);
+              }
+            });
+          }
+        }
+        
+        setFilteredImplantTypes(allImplantTypes);
+      } catch (err) {
+        console.error('Error fetching filtered implant types:', err);
+        setFilteredImplantTypes([]);
+      }
+    }
   };
 
   // Handle Implant Type change - second in the flow
