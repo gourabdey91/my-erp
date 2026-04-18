@@ -376,41 +376,46 @@ router.delete('/:id', async (req, res) => {
     const { updatedBy } = req.body;
 
     if (!updatedBy && !req.user) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'updatedBy is required' 
+        message: 'updatedBy is required'
       });
     }
 
     const template = await Template.findById(req.params.id);
     if (!template) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Template not found' 
+        message: 'Template not found'
       });
     }
+
+    // Convert updatedBy to ObjectId if it's a string
+    const updatedByValue = updatedBy ?
+      (typeof updatedBy === 'string' ? require('mongoose').Types.ObjectId(updatedBy) : updatedBy) :
+      req.user._id;
 
     // Use findByIdAndUpdate to avoid validation issues during soft delete
     const updatedTemplate = await Template.findByIdAndUpdate(
       req.params.id,
-      { 
+      {
         isActive: false,
-        updatedBy: updatedBy || req.user._id,
+        updatedBy: updatedByValue,
         updatedAt: new Date()
       },
       { new: true, runValidators: false }
     );
 
-    res.json({ 
+    res.json({
       success: true,
-      message: 'Template deleted successfully' 
+      message: 'Template deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting template:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Server error while deleting template',
-      error: error.message 
+      error: error.message
     });
   }
 });
