@@ -52,11 +52,10 @@ const materialMasterSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  surgicalCategory: {
+  surgicalCategories: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
-  },
+    ref: 'Category'
+  }],
   implantType: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ImplantType',

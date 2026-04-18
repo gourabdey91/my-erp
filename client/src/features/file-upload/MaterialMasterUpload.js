@@ -29,7 +29,7 @@ const MaterialMasterUpload = () => {
         'MRP': '1000',
         'Institutional Price': '800', 
         'Distribution Price': '600',
-        'Surgical Category': 'General',
+        'Surgical Category': 'General, Orthopedic',
         'Implant Type': 'Screw',
         'Sub Category': 'Bone Screw',
         'Length (mm)': '25',
@@ -201,7 +201,8 @@ const MaterialMasterUpload = () => {
               <ul>
                 <li><strong>Business Unit</strong>, <strong>Material Number</strong>, and <strong>Description</strong> are required</li>
                 <li><strong>HSN Code</strong>, <strong>GST %</strong>, and pricing information are required</li>
-                <li><strong>Category</strong>, <strong>Implant Type</strong> must exist in the system</li>
+                <li><strong>Surgical Category</strong> - must exist in system, can specify multiple separated by comma (e.g., "General, Orthopedic")</li>
+                <li><strong>Implant Type</strong> must exist in the system (optional)</li>
                 <li>Supported formats: Excel (.xlsx, .xls)</li>
               </ul>
             </div>
@@ -346,7 +347,9 @@ const MaterialMasterUpload = () => {
                         <td>{row.mrp !== null && row.mrp !== undefined ? `₹${row.mrp}` : 'N/A'}</td>
                         <td>{row.institutionalPrice !== null && row.institutionalPrice !== undefined ? `₹${row.institutionalPrice}` : 'N/A'}</td>
                         <td>{row.distributionPrice !== null && row.distributionPrice !== undefined ? `₹${row.distributionPrice}` : 'N/A'}</td>
-                        <td>{row.surgicalCategory}</td>
+                        <td>
+                          {Array.isArray(row.surgicalCategories) ? row.surgicalCategories.join(', ') : row.surgicalCategories || 'N/A'}
+                        </td>
                         <td>
                           <span className={`unified-badge ${row.isValid ? 'unified-badge-success' : 'unified-badge-danger'}`}>
                             {row.isValid ? '✓ Valid' : '✗ Invalid'}
@@ -421,7 +424,9 @@ const MaterialMasterUpload = () => {
                       </div>
                       <div className="mobile-card-row">
                         <div className="mobile-card-label">Category</div>
-                        <div className="mobile-card-value">{row.surgicalCategory}</div>
+                        <div className="mobile-card-value">
+                          {Array.isArray(row.surgicalCategories) ? row.surgicalCategories.join(', ') : row.surgicalCategories || 'N/A'}
+                        </div>
                       </div>
                       {(row.validationErrors || []).length > 0 && (
                         <div className="mobile-card-row full-width">

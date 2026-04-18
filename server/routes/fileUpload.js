@@ -385,9 +385,6 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       if (!hsnCode.toString().trim()) {
         validationErrors.push('HSN Code is required');
       }
-      if (!surgicalCategory.toString().trim()) {
-        validationErrors.push('Surgical Category is required');
-      }
       
       // Validate that required pricing fields are present
       if (!mrp.toString().trim()) {
@@ -420,13 +417,32 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         }
       }
 
-      // Validate surgical category exists
-      if (surgicalCategory.toString().trim()) {
-        categoryObj = categoryMap.get(surgicalCategory.toString().toLowerCase().trim());
-        if (!categoryObj) {
-          validationErrors.push(`Surgical category "${surgicalCategory}" not found`);
+      // Parse and validate multiple surgical categories (comma-separated)
+      const surgicalCategories = surgicalCategory
+        .toString()
+        .split(',')
+        .map(cat => cat.trim())
+        .filter(cat => cat.length > 0);
+
+      const surgicalCategoryIds = [];
+      const surgicalCategoryNames = [];
+      const categoryValidationErrors = [];
+
+      if (surgicalCategories.length === 0) {
+        validationErrors.push('Surgical Category is required');
+      }
+
+      for (const cat of surgicalCategories) {
+        const foundCategoryObj = categoryMap.get(cat.toLowerCase().trim());
+        if (!foundCategoryObj) {
+          categoryValidationErrors.push(`Surgical category "${cat}" not found`);
+        } else {
+          surgicalCategoryIds.push(foundCategoryObj._id);
+          surgicalCategoryNames.push(foundCategoryObj.description || cat);
         }
       }
+
+      validationErrors.push(...categoryValidationErrors);
 
       // Validate implant type exists (if provided)
       if (implantType.toString().trim()) {
@@ -519,12 +535,12 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         mrp: mrpValue,
         institutionalPrice: institutionalPriceValue,
         distributionPrice: distributionPriceValue,
-        surgicalCategory: surgicalCategory.toString().trim(),
+        surgicalCategories: surgicalCategoryNames,     // Display names for UI
+        surgicalCategoryIds: surgicalCategoryIds,       // IDs for database (array)
         implantType: implantType.toString().trim(),
         subCategory: subCategory.toString().trim(),
         lengthMm: lengthValue,
         unit: unit.toString().trim() || 'NOS',
-        surgicalCategoryId: categoryObj?._id,
         implantTypeId: implantTypeObj?._id,
         validationErrors,
         isValid: validationErrors.length === 0
@@ -566,8 +582,8 @@ router.post('/save-material-master', async (req, res) => {
       return res.status(400).json({ message: 'Updated by user is required' });
     }
 
-    // Filter only valid rows
-    const validRows = data.filter(row => row.isValid);
+    // Filter only valid rows that have surgical categories
+    const validRows = data.filter(row => row.isValid && row.surgicalCategoryIds && row.surgicalCategoryIds.length > 0);
 
     if (validRows.length === 0) {
       return res.status(400).json({ message: 'No valid rows to save' });
@@ -588,7 +604,7 @@ router.post('/save-material-master', async (req, res) => {
           mrp: row.mrp || 0,
           institutionalPrice: row.institutionalPrice || 0,
           distributionPrice: row.distributionPrice || 0,
-          surgicalCategory: row.surgicalCategoryId,
+          surgicalCategories: row.surgicalCategoryIds || [],  // Array of category IDs
           implantType: row.implantTypeId || null,
           subCategory: row.subCategory || null,
           lengthMm: row.lengthMm || null,
