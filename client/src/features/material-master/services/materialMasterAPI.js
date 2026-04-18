@@ -48,7 +48,8 @@ export const materialMasterAPI = {
   getImplantTypesBySurgicalCategory: async (surgicalCategoryId) => {
     try {
       const response = await apiRequest(`/api/material-master/implant-types/${surgicalCategoryId}`);
-      return response;
+      // Return the data array directly (API returns { success: true, data: [...] })
+      return Array.isArray(response) ? response : (response.data || []);
     } catch (error) {
       console.error('Error fetching filtered implant types:', error);
       throw error;
@@ -59,7 +60,8 @@ export const materialMasterAPI = {
   getFilteredSubcategories: async (surgicalCategoryId, implantTypeId) => {
     try {
       const response = await apiRequest(`/api/material-master/subcategories/${surgicalCategoryId}/${implantTypeId}`);
-      return response;
+      // Return the data array directly (API returns { success: true, data: [...] })
+      return Array.isArray(response) ? response : (response.data || []);
     } catch (error) {
       console.error('Error fetching filtered subcategories:', error);
       throw error;
@@ -70,7 +72,8 @@ export const materialMasterAPI = {
   getFilteredLengths: async (surgicalCategoryId, implantTypeId, subCategory) => {
     try {
       const response = await apiRequest(`/api/material-master/lengths/${surgicalCategoryId}/${implantTypeId}/${encodeURIComponent(subCategory)}`);
-      return response;
+      // Return the data array directly (API returns { success: true, data: [...] })
+      return Array.isArray(response) ? response : (response.data || []);
     } catch (error) {
       console.error('Error fetching filtered lengths:', error);
       throw error;
