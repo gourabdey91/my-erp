@@ -538,7 +538,7 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
         .populate({
           path: 'materialAssignments.material',
           populate: [
-            { path: 'surgicalCategory', select: '_id' },
+            { path: 'surgicalCategories', select: '_id' },
             { path: 'implantType', select: '_id' }
           ]
         });
@@ -557,8 +557,9 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
         .filter(assignment => 
           assignment.isActive && 
           assignment.material &&
-          assignment.material.surgicalCategory &&
-          assignment.material.surgicalCategory._id.toString() === surgicalCategoryId &&
+          assignment.material.surgicalCategories &&
+          Array.isArray(assignment.material.surgicalCategories) &&
+          assignment.material.surgicalCategories.some(cat => cat._id.toString() === surgicalCategoryId) &&
           assignment.material.implantType &&
           assignment.material.implantType._id.toString() === implantTypeId &&
           assignment.material.subCategory === decodeURIComponent(subCategory) &&
@@ -578,7 +579,7 @@ router.get('/lengths/:surgicalCategoryId/:implantTypeId/:subCategory', async (re
       console.log('🔍 Fetching template-mode lengths from MaterialMaster');
       
       const matchQuery = {
-        surgicalCategory: new mongoose.Types.ObjectId(surgicalCategoryId),
+        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
         implantType: new mongoose.Types.ObjectId(implantTypeId),
         subCategory: decodeURIComponent(subCategory),
         isActive: true,
