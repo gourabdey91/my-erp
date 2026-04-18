@@ -7,7 +7,7 @@ const Category = require('../models/Category');
 router.get('/', async (req, res) => {
   try {
     const implantTypes = await ImplantType.find({ isActive: true })
-      .populate('subcategories.surgicalCategory', 'code description')
+      .populate('subcategories.surgicalCategories', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName')
       .sort({ name: 1 });
@@ -63,8 +63,8 @@ router.post('/', async (req, res) => {
         if (subcat.length !== undefined && subcat.length !== null && subcat.length !== '' && subcat.length <= 0) {
           return res.status(400).json({ message: 'Subcategory length must be greater than 0 if provided' });
         }
-        if (!subcat.surgicalCategory) {
-          return res.status(400).json({ message: 'Surgical category is required for subcategory' });
+        if (!subcat.surgicalCategories || !Array.isArray(subcat.surgicalCategories) || subcat.surgicalCategories.length === 0) {
+          return res.status(400).json({ message: 'At least one surgical category is required for subcategory' });
         }
       }
     }
@@ -78,7 +78,7 @@ router.post('/', async (req, res) => {
 
     const savedImplantType = await implantType.save();
     const populatedImplantType = await ImplantType.findById(savedImplantType._id)
-      .populate('subcategories.surgicalCategory', 'code description')
+      .populate('subcategories.surgicalCategories', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
@@ -129,8 +129,8 @@ router.put('/:id', async (req, res) => {
         if (subcat.length !== undefined && subcat.length !== null && subcat.length !== '' && subcat.length <= 0) {
           return res.status(400).json({ message: 'Subcategory length must be greater than 0 if provided' });
         }
-        if (!subcat.surgicalCategory) {
-          return res.status(400).json({ message: 'Surgical category is required for subcategory' });
+        if (!subcat.surgicalCategories || !Array.isArray(subcat.surgicalCategories) || subcat.surgicalCategories.length === 0) {
+          return res.status(400).json({ message: 'At least one surgical category is required for subcategory' });
         }
       }
     }
@@ -142,7 +142,7 @@ router.put('/:id', async (req, res) => {
 
     const updatedImplantType = await existingImplantType.save();
     const populatedImplantType = await ImplantType.findById(updatedImplantType._id)
-      .populate('subcategories.surgicalCategory', 'code description')
+      .populate('subcategories.surgicalCategories', 'code description')
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 

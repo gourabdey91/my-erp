@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiRequest } from '../../services/api';
-import * as XLSX from 'xlsx';
 import '../../shared/styles/unified-design.css';
 import '../../shared/styles/unified-upload.css';
 
-const FileUpload = () => {
+const ImplantSubcategoryUpload = () => {
   const { currentUser } = useAuth();
-  
+
   const [file, setFile] = useState(null);
   const [uploadedData, setUploadedData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -16,44 +16,36 @@ const FileUpload = () => {
   const [messageType, setMessageType] = useState('');
 
   const downloadTemplate = () => {
-    // Create template data with examples of comma-separated surgical categories
+    // Create template data with headers and sample rows
     const templateData = [
       {
         'Implant Type': 'Plates',
-        'Surgical Category': 'Orthopedic, Trauma',
-        'Subcategory': '4 Hole Plate',
-        'Length (mm)': 120.5
+        'Surgical Category': 'General',
+        'Subcategory': '2 Hole',
+        'Length': '25'
       },
       {
         'Implant Type': 'Screws',
-        'Surgical Category': 'Orthopedic', 
-        'Subcategory': 'Cortical Screw',
-        'Length (mm)': 35
-      },
-      {
-        'Implant Type': 'Mesh',
-        'Surgical Category': 'General Surgery, Orthopedic',
-        'Subcategory': 'Borehole Mesh',
-        'Length (mm)': ''  // Optional field example
+        'Surgical Category': 'Spine',
+        'Subcategory': '3.5mm',
+        'Length': '15'
       }
     ];
 
-    // Create workbook and worksheet
-    const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ImplantSubcategoryTemplate');
 
-    // Set column widths
-    ws['!cols'] = [
-      { wch: 20 }, // Implant Type
-      { wch: 35 }, // Surgical Category (wider for comma-separated values)
-      { wch: 20 }, // Subcategory
-      { wch: 15 }  // Length (mm)
+    // Auto-size columns
+    const cols = [
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 12 }
     ];
+    ws['!cols'] = cols;
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Implant Subcategories');
-    
-    // Download file
-    XLSX.writeFile(wb, 'implant-subcategory-template.xlsx');
+    XLSX.writeFile(wb, 'implant_subcategory_template.xlsx');
   };
 
   const handleFileChange = (e) => {
@@ -97,7 +89,7 @@ const FileUpload = () => {
         validRows: response.validRows || 0,
         invalidRows: response.invalidRows || 0
       });
-      
+
       if ((response.validRows || 0) === 0) {
         setMessage('No valid rows found in the uploaded file');
         setMessageType('warning');
@@ -117,7 +109,7 @@ const FileUpload = () => {
   const handleDeleteRow = (index) => {
     const updatedData = (uploadedData || []).filter((_, i) => i !== index);
     setUploadedData(updatedData);
-    
+
     // Update summary
     const validRows = updatedData.filter(row => row.isValid).length;
     const invalidRows = updatedData.filter(row => !row.isValid).length;
@@ -130,7 +122,7 @@ const FileUpload = () => {
 
   const handleSaveToDatabase = async () => {
     const validRows = (uploadedData || []).filter(row => row.isValid);
-    
+
     if (validRows.length === 0) {
       setMessage('No valid rows to save');
       setMessageType('error');
@@ -157,14 +149,14 @@ const FileUpload = () => {
 
       setMessage(response.message);
       setMessageType('success');
-      
+
       // Clear the data after successful save
       setUploadedData([]);
       setUploadSummary(null);
       setFile(null);
       // Reset file input
-      document.getElementById('fileInput').value = '';
-      
+      document.getElementById('implantFileInput').value = '';
+
     } catch (error) {
       console.error('Error saving data:', error);
       setMessage(error.message || 'Error saving data to database');
@@ -179,7 +171,7 @@ const FileUpload = () => {
     setUploadedData([]);
     setUploadSummary(null);
     setMessage('');
-    document.getElementById('fileInput').value = '';
+    document.getElementById('implantFileInput').value = '';
   };
 
   return (
@@ -204,10 +196,8 @@ const FileUpload = () => {
               <h3>Instructions:</h3>
               <ul>
                 <li><strong>Implant Type</strong>, <strong>Surgical Category</strong>, and <strong>Subcategory</strong> are required</li>
-                <li><strong>Implant Type</strong> - If not found in the system, a new one will be created automatically</li>
-                <li><strong>Surgical Category</strong> must already exist in the system (can be single or multiple separated by comma)</li>
-                <li>Can specify multiple surgical categories separated by comma (e.g., "Orthopedic, Trauma, General Surgery")</li>
-                <li>Each row creates separate entries for each surgical category specified</li>
+                <li><strong>Implant Type</strong> must already exist in the system</li>
+                <li><strong>Surgical Category</strong> must already exist in the system</li>
                 <li><strong>Length</strong> is optional and must be a valid number (in mm)</li>
                 <li>Supported formats: Excel (.xlsx, .xls)</li>
               </ul>
@@ -228,9 +218,9 @@ const FileUpload = () => {
                 accept=".xlsx,.xls"
                 onChange={handleFileChange}
                 className="unified-file-input"
-                id="fileInput"
+                id="implantFileInput"
               />
-              <label htmlFor="fileInput" className="unified-file-label">
+              <label htmlFor="implantFileInput" className="unified-file-label">
                 📁 {file ? file.name : 'Choose File'}
               </label>
             </div>
@@ -341,9 +331,7 @@ const FileUpload = () => {
                         <td>
                           <span className="code-badge">{row.implantTypeName}</span>
                         </td>
-                        <td>
-                          {Array.isArray(row.surgicalCategories) ? row.surgicalCategories.join(', ') : row.surgicalCategories || 'N/A'}
-                        </td>
+                        <td>{row.surgicalCategory}</td>
                         <td>{row.subCategory}</td>
                         <td>{row.length !== null && row.length !== undefined ? `${row.length} mm` : 'N/A'}</td>
                         <td>
@@ -396,9 +384,7 @@ const FileUpload = () => {
                       </div>
                       <div className="mobile-card-row">
                         <div className="mobile-card-label">Surgical Category</div>
-                        <div className="mobile-card-value">
-                          {Array.isArray(row.surgicalCategories) ? row.surgicalCategories.join(', ') : row.surgicalCategories || 'N/A'}
-                        </div>
+                        <div className="mobile-card-value">{row.surgicalCategory}</div>
                       </div>
                       <div className="mobile-card-row">
                         <div className="mobile-card-label">Row</div>
@@ -441,4 +427,4 @@ const FileUpload = () => {
   );
 };
 
-export default FileUpload;
+export default ImplantSubcategoryUpload;

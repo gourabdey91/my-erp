@@ -35,9 +35,11 @@ const ImplantTypes = () => {
     if (!filters.surgicalCategoryId) {
       return implantTypes; // Show all implant types if no surgical category is selected
     }
-    
-    return implantTypes.filter(implantType => 
-      implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId)
+
+    return implantTypes.filter(implantType =>
+      implantType.subcategories.some(sub =>
+        sub.surgicalCategories && sub.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId)
+      )
     );
   }, [implantTypes, filters.surgicalCategoryId]);
 
@@ -45,22 +47,26 @@ const ImplantTypes = () => {
   const filteredImplantTypes = useMemo(() => {
     return implantTypes
       .filter(implantType => {
-        const matchesName = !filters.implantTypeName || 
+        const matchesName = !filters.implantTypeName ||
           implantType.name.toLowerCase().includes(filters.implantTypeName.toLowerCase());
-        
+
         const matchesSurgicalCategory = !filters.surgicalCategoryId ||
-          implantType.subcategories.some(sub => sub.surgicalCategory._id === filters.surgicalCategoryId);
-        
+          implantType.subcategories.some(sub =>
+            sub.surgicalCategories && sub.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId)
+          );
+
         const matchesImplantType = !filters.implantTypeId ||
           implantType._id === filters.implantTypeId;
-        
+
         return matchesName && matchesSurgicalCategory && matchesImplantType;
       })
       .map(implantType => ({
         ...implantType,
         // Filter subcategories to only show those matching the selected surgical category
-        subcategories: filters.surgicalCategoryId 
-          ? implantType.subcategories.filter(sub => sub.surgicalCategory._id === filters.surgicalCategoryId)
+        subcategories: filters.surgicalCategoryId
+          ? implantType.subcategories.filter(sub =>
+            sub.surgicalCategories && sub.surgicalCategories.some(cat => cat._id === filters.surgicalCategoryId)
+          )
           : implantType.subcategories
       }));
   }, [implantTypes, filters]);
@@ -117,7 +123,7 @@ const ImplantTypes = () => {
       ...prev,
       subcategories: [
         ...prev.subcategories,
-        { subCategory: '', length: '', surgicalCategory: '' }
+        { subCategory: '', length: '', surgicalCategories: [] }
       ]
     }));
   };
@@ -176,12 +182,12 @@ const ImplantTypes = () => {
       subcategories: implantType.subcategories.map(subcat => ({
         subCategory: subcat.subCategory,
         length: subcat.length,
-        surgicalCategory: subcat.surgicalCategory._id
+        surgicalCategories: subcat.surgicalCategories.map(cat => cat._id)
       }))
     });
     setShowForm(true);
     setError('');
-    
+
     // Scroll to top
     scrollToTop();
   };
@@ -313,108 +319,122 @@ const ImplantTypes = () => {
             </h2>
           </div>
           <form onSubmit={handleSubmit}>
+            {/* Implant Type Name Field */}
             <div className="unified-form-grid">
               <div className="unified-form-field">
                 <label className="unified-form-label">
-                  Implant Type Name * (e.g., Plates, Screws, Borehole Mesh)
+                  Implant Type Name *
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter implant type name"
+                  placeholder="e.g., Plates, Screws, Borehole Mesh"
                   className="unified-search-input"
                   required
                 />
               </div>
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--gray-200)', paddingBottom: '0.5rem' }}>
-                <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>📝 Subcategories</h3>
+            {/* Subcategories Section */}
+            <div className="unified-subcategories-section">
+              <div className="unified-subcategories-header">
+                <h3>Subcategories</h3>
                 <button
                   type="button"
                   className="unified-btn unified-btn-secondary"
                   onClick={addSubcategory}
                 >
-                  ➕ Add Subcategory
+                  Add Subcategory
                 </button>
               </div>
 
-              <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid var(--gray-300)', borderRadius: '8px', padding: '1rem', backgroundColor: 'var(--white)' }}>
+              <div className="unified-subcategories-container">
                 {formData.subcategories.map((subcat, index) => (
-                  <div key={index} style={{ border: '1px solid var(--gray-300)', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', backgroundColor: 'var(--gray-50)' }}>
-                    <div className="unified-form-grid" style={{ gridTemplateColumns: '2fr 1fr 2fr', gap: '1rem' }}>
-                      <div className="unified-form-field">
-                        <label className="unified-form-label">
-                          Subcategory *
-                        </label>
-                        <input
-                          type="text"
-                          value={subcat.subCategory}
-                          onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
-                          placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
-                          className="unified-search-input"
-                          required
-                        />
-                      </div>
-                      <div className="unified-form-field">
-                        <label className="unified-form-label">
-                          Length (mm) <span style={{ color: 'var(--gray-500)', fontWeight: 'normal' }}>(Optional)</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={subcat.length}
-                          onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
-                          placeholder="Length in mm"
-                          className="unified-search-input"
-                          min="0"
-                          step="0.1"
-                        />
-                      </div>
-                      <div className="unified-form-field">
-                        <label className="unified-form-label">
-                          Surgical Category *
-                        </label>
-                        <select
-                          value={subcat.surgicalCategory}
-                          onChange={(e) => updateSubcategory(index, 'surgicalCategory', e.target.value)}
-                          className="unified-search-input"
-                          required
-                        >
-                          <option value="">Select Category</option>
-                          {categories.map(category => (
-                            <option key={category._id} value={category._id}>
-                              {category.code} - {category.description}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div key={index} className="unified-subcategory-row">
+                    <div className="unified-form-field">
+                      <label className="unified-form-label">
+                        Subcategory *
+                      </label>
+                      <input
+                        type="text"
+                        value={subcat.subCategory}
+                        onChange={(e) => updateSubcategory(index, 'subCategory', e.target.value)}
+                        placeholder="e.g., 2 Hole, 3 Hole, 4 Hole"
+                        className="unified-search-input"
+                        required
+                      />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                      <button
-                        type="button"
-                        className="unified-btn unified-btn-danger"
-                        onClick={() => removeSubcategory(index)}
-                        title="Remove Subcategory"
-                        style={{ fontSize: '0.875rem' }}
-                      >
-                        🗑️ Remove
-                      </button>
+
+                    <div className="unified-form-field">
+                      <label className="unified-form-label">
+                        Length (mm) <span className="optional-text">(Optional)</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={subcat.length}
+                        onChange={(e) => updateSubcategory(index, 'length', e.target.value)}
+                        placeholder="e.g., 10, 15, 20"
+                        className="unified-search-input"
+                        min="0"
+                        step="0.1"
+                      />
                     </div>
+
+                    <div className="unified-form-field full-width">
+                      <label className="unified-form-label">
+                        Surgical Categories *
+                      </label>
+                      <div className="unified-checkbox-group">
+                        {categories.length > 0 ? (
+                          categories.map(category => (
+                            <label key={category._id} className="unified-checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={subcat.surgicalCategories.includes(category._id)}
+                                onChange={(e) => {
+                                  const newCategories = e.target.checked
+                                    ? [...subcat.surgicalCategories, category._id]
+                                    : subcat.surgicalCategories.filter(id => id !== category._id);
+                                  updateSubcategory(index, 'surgicalCategories', newCategories);
+                                }}
+                              />
+                              <span>{category.code} - {category.description}</span>
+                            </label>
+                          ))
+                        ) : (
+                          <div className="unified-empty-text">No categories available</div>
+                        )}
+                      </div>
+                      {subcat.surgicalCategories.length === 0 && (
+                        <div className="unified-error-text">
+                          At least one category is required
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="unified-btn unified-btn-danger unified-btn-remove"
+                      onClick={() => removeSubcategory(index)}
+                      title="Remove Subcategory"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
 
                 {formData.subcategories.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)', fontStyle: 'italic' }}>
-                    <p>No subcategories added yet. Click "Add Subcategory" to add one.</p>
+                  <div className="unified-empty-state-small">
+                    No subcategories added yet. Click "Add Subcategory" to add one.
                   </div>
                 )}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            {/* Form Actions */}
+            <div className="unified-form-actions">
               <button type="submit" className="unified-btn unified-btn-primary" disabled={loading}>
                 {loading ? 'Saving...' : (editingImplantType ? 'Update Implant Type' : 'Add Implant Type')}
               </button>
@@ -474,7 +494,9 @@ const ImplantTypes = () => {
                                       {subcat.length ? `${subcat.length}mm` : 'N/A'}
                                     </span>
                                     <span className="category-badge">
-                                      {subcat.surgicalCategory.code}
+                                      {subcat.surgicalCategories && subcat.surgicalCategories.length > 0
+                                        ? subcat.surgicalCategories.map(cat => cat.code).join(', ')
+                                        : 'N/A'}
                                     </span>
                                   </span>
                                 </div>
@@ -522,10 +544,14 @@ const ImplantTypes = () => {
                   sections={[
                     {
                       title: 'Subcategories',
-                      items: implantType.subcategories.length > 0 
+                      items: implantType.subcategories.length > 0
                         ? implantType.subcategories.map((subcat, index) => ({
                             label: subcat.subCategory,
-                            value: `${subcat.length ? `${subcat.length}mm` : 'N/A'} - ${subcat.surgicalCategory.code}`
+                            value: `${subcat.length ? `${subcat.length}mm` : 'N/A'} - ${
+                              subcat.surgicalCategories && subcat.surgicalCategories.length > 0
+                                ? subcat.surgicalCategories.map(cat => cat.code).join(', ')
+                                : 'N/A'
+                            }`
                           }))
                         : [{ label: 'No subcategories', value: '' }]
                     }

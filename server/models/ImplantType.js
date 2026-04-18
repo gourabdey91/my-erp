@@ -12,11 +12,10 @@ const implantSubcategorySchema = new mongoose.Schema({
     min: 0,
     default: null
   },
-  surgicalCategory: {
+  surgicalCategories: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
-  },
+    ref: 'Category'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

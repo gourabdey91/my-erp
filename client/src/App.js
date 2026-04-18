@@ -14,6 +14,7 @@ import Doctors from './features/doctors/Doctors';
 import Hospitals from './features/hospitals/Hospitals';
 import Procedures from './features/procedures/Procedures';
 import ImplantTypes from './features/implant-types/ImplantTypes';
+import ImplantSubcategoryUpload from './features/implant-types/ImplantSubcategoryUpload';
 import MaterialMaster from './features/material-master/MaterialMaster';
 import DeliveryChallanDetails from './features/delivery-challan-details/DeliveryChallanDetails';
 import SalesOrders from './features/sales-orders/SalesOrders';
@@ -77,6 +78,8 @@ function AppContent() {
         return <Procedures />;
       case 'implant-types':
         return <ImplantTypes />;
+      case 'implant-subcategory-upload':
+        return <ImplantSubcategoryUpload />;
       case 'material-master':
         return <MaterialMaster />;
       case 'delivery-challan-details':

@@ -61,48 +61,57 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
 
     // Create lookup maps for faster validation
     const implantTypeMap = new Map(existingImplantTypes.map(it => [it.name.toLowerCase().trim(), it]));
-    const categoryMap = new Map(existingCategories.map(cat => [cat.code.toLowerCase().trim(), cat]));
+    // Use both code AND description for category lookup (more flexible)
+    const categoryMap = new Map();
+    existingCategories.forEach(cat => {
+      categoryMap.set(cat.code.toLowerCase().trim(), cat);
+      categoryMap.set(cat.description.toLowerCase().trim(), cat);
+    });
+
+    console.log(`Loaded ${existingImplantTypes.length} implant types and ${existingCategories.length} categories`);
 
     for (let i = 0; i < jsonData.length; i++) {
       const row = jsonData[i];
       const rowIndex = i + 2; // Excel rows start from 2 (after header)
-      const validationErrors = [];
 
       // Clean and extract data
       const implantTypeName = row['Implants type'] || row['Implant Type'] || '';
-      const surgicalCategory = row['Surgical category'] || row['Surgical Category'] || '';
+      const surgicalCategoryRaw = row['Surgical category'] || row['Surgical Category'] || '';
       const subCategory = row['Subcategory'] || row['Sub Category'] || row['SubCategory'] || '';
       const length = row['length'] || row['Length'] || '';
 
-      // Validate required fields
+      // Split surgical categories by comma (handles comma-separated values)
+      const surgicalCategories = surgicalCategoryRaw
+        .toString()
+        .split(',')
+        .map(cat => cat.trim())
+        .filter(cat => cat.length > 0);
+
+      // Validate required fields at row level
+      const baseValidationErrors = [];
       if (!implantTypeName.toString().trim()) {
-        validationErrors.push('Implant type is required');
+        baseValidationErrors.push('Implant type is required');
       }
-      if (!surgicalCategory.toString().trim()) {
-        validationErrors.push('Surgical category is required');
+      if (surgicalCategories.length === 0) {
+        baseValidationErrors.push('Surgical category is required');
       }
       if (!subCategory.toString().trim()) {
-        validationErrors.push('Subcategory is required');
+        baseValidationErrors.push('Subcategory is required');
       }
-      // Length is optional, no required validation
 
       let implantTypeObj = null;
-      let categoryObj = null;
       let lengthValue = null;
 
-      // Validate implant type exists
+      // Check implant type - create if doesn't exist (marked as needsCreation)
       if (implantTypeName.toString().trim()) {
         implantTypeObj = implantTypeMap.get(implantTypeName.toString().toLowerCase().trim());
         if (!implantTypeObj) {
-          validationErrors.push(`Implant type "${implantTypeName}" not found`);
-        }
-      }
-
-      // Validate surgical category exists
-      if (surgicalCategory.toString().trim()) {
-        categoryObj = categoryMap.get(surgicalCategory.toString().toLowerCase().trim());
-        if (!categoryObj) {
-          validationErrors.push(`Surgical category "${surgicalCategory}" not found`);
+          // Mark this for creation during save - no error, just flag it
+          implantTypeObj = {
+            _id: null,
+            name: implantTypeName.toString().trim(),
+            needsCreation: true
+          };
         }
       }
 
@@ -110,17 +119,33 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
       if (length.toString().trim()) {
         lengthValue = parseFloat(length.toString().trim());
         if (isNaN(lengthValue) || lengthValue < 0) {
-          validationErrors.push('Length must be a valid positive number');
+          baseValidationErrors.push('Length must be a valid positive number');
         }
       } else {
-        // Length is optional, set to null if not provided
         lengthValue = null;
       }
 
+      // Validate ALL surgical categories and collect their IDs
+      const surgicalCategoryIds = [];
+      const surgicalCategoryNames = [];
+      const categoryValidationErrors = [];
+
+      for (const surgicalCategory of surgicalCategories) {
+        const categoryObj = categoryMap.get(surgicalCategory.toLowerCase().trim());
+        if (!categoryObj) {
+          categoryValidationErrors.push(`Surgical category "${surgicalCategory}" not found`);
+        } else {
+          surgicalCategoryIds.push(categoryObj._id);
+          surgicalCategoryNames.push(categoryObj.description || surgicalCategory);
+        }
+      }
+
+      const validationErrors = [...baseValidationErrors, ...categoryValidationErrors];
+
       // Check for duplicate entries within the uploaded data
+      // Key: implant type + subcategory + length (NOT surgical category - same item can be in multiple categories)
       const duplicateInUpload = processedData.find(item => 
         item.implantTypeName.toLowerCase() === implantTypeName.toString().toLowerCase().trim() &&
-        item.surgicalCategory.toLowerCase() === surgicalCategory.toString().toLowerCase().trim() &&
         item.subCategory.toLowerCase() === subCategory.toString().toLowerCase().trim() &&
         ((item.length === null && lengthValue === null) || (item.length === lengthValue))
       );
@@ -130,10 +155,9 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
       }
 
       // Check for existing entries in database
-      if (implantTypeObj && categoryObj && subCategory.toString().trim()) {
+      if (implantTypeObj && !implantTypeObj.needsCreation && subCategory.toString().trim()) {
         const existingSubcategory = implantTypeObj.subcategories?.find(sub =>
           sub.subCategory.toLowerCase() === subCategory.toString().toLowerCase().trim() &&
-          sub.surgicalCategory.toString() === categoryObj._id.toString() &&
           ((sub.length === null && lengthValue === null) || (sub.length === lengthValue))
         );
 
@@ -145,11 +169,11 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
       const processedRow = {
         rowIndex,
         implantTypeName: implantTypeName.toString().trim(),
-        surgicalCategory: surgicalCategory.toString().trim(),
+        surgicalCategories: surgicalCategoryNames, // Display names for UI
+        surgicalCategoryIds: surgicalCategoryIds,   // IDs for database
         subCategory: subCategory.toString().trim(),
         length: lengthValue,
         implantTypeId: implantTypeObj?._id,
-        surgicalCategoryId: categoryObj?._id,
         validationErrors,
         isValid: validationErrors.length === 0
       };
@@ -159,6 +183,11 @@ router.post('/implant-subcategories', upload.single('excelFile'), async (req, re
 
     // Clean up uploaded file
     fs.unlinkSync(req.file.path);
+
+    console.log(`Validation complete: Total=${processedData.length}, Valid=${processedData.filter(row => row.isValid).length}, Invalid=${processedData.filter(row => !row.isValid).length}`);
+    if (processedData.length > 0) {
+      console.log('Sample validated row:', JSON.stringify(processedData[0], null, 2));
+    }
 
     res.json({
       data: processedData,
@@ -182,6 +211,8 @@ router.post('/save-implant-subcategories', async (req, res) => {
   try {
     const { data, updatedBy } = req.body;
 
+    console.log(`Save request received: ${data?.length} rows, updatedBy: ${updatedBy}`);
+
     if (!data || !Array.isArray(data)) {
       return res.status(400).json({ message: 'Invalid data provided' });
     }
@@ -190,59 +221,99 @@ router.post('/save-implant-subcategories', async (req, res) => {
       return res.status(400).json({ message: 'Updated by user is required' });
     }
 
-    // Filter only valid rows
-    const validRows = data.filter(row => row.isValid && row.implantTypeId && row.surgicalCategoryId);
+    // Filter only valid rows that have surgical categories
+    const validRows = data.filter(row => row.isValid && row.surgicalCategoryIds && row.surgicalCategoryIds.length > 0);
+
+    console.log(`After filtering: ${validRows.length} valid rows with surgical categories`);
+    if (validRows.length > 0) {
+      console.log('First valid row:', JSON.stringify(validRows[0], null, 2));
+    }
 
     if (validRows.length === 0) {
+      console.log('No valid rows to save after filtering');
       return res.status(400).json({ message: 'No valid rows to save' });
     }
 
     let savedCount = 0;
     const errors = [];
+    const createdImplantTypes = new Map(); // Track newly created types to avoid duplicates
 
-    // Group by implant type for batch updates
-    const groupedByImplantType = validRows.reduce((acc, row) => {
-      const key = row.implantTypeId.toString();
+    // Group by implant type name for processing
+    const groupedByImplantTypeName = validRows.reduce((acc, row) => {
+      const key = row.implantTypeName;
       if (!acc[key]) {
-        acc[key] = [];
+        acc[key] = {
+          implantTypeId: row.implantTypeId,
+          rows: []
+        };
       }
-      acc[key].push(row);
+      acc[key].rows.push(row);
       return acc;
     }, {});
 
-    for (const [implantTypeId, rows] of Object.entries(groupedByImplantType)) {
+    for (const [implantTypeName, group] of Object.entries(groupedByImplantTypeName)) {
       try {
-        const implantType = await ImplantType.findById(implantTypeId);
+        let implantType = null;
+        let implantTypeId = group.implantTypeId;
+
+        // If implantTypeId is not set, we need to create the implant type
+        if (!implantTypeId) {
+          // Check if we already created this type in this batch
+          if (createdImplantTypes.has(implantTypeName)) {
+            implantTypeId = createdImplantTypes.get(implantTypeName);
+          } else {
+            // Create new implant type
+            const newImplantType = new ImplantType({
+              name: implantTypeName,
+              isActive: true,
+              createdBy: updatedBy,
+              updatedBy: updatedBy
+            });
+            await newImplantType.save();
+            implantTypeId = newImplantType._id;
+            createdImplantTypes.set(implantTypeName, implantTypeId);
+            console.log(`Created new implant type: ${implantTypeName} with ID: ${implantTypeId}`);
+          }
+        }
+
+        // Now fetch or use the implant type
+        implantType = await ImplantType.findById(implantTypeId);
         if (!implantType) {
-          errors.push(`Implant type not found for ID: ${implantTypeId}`);
+          errors.push(`Implant type not found for: ${implantTypeName}`);
           continue;
         }
 
-        // Add new subcategories
-        for (const row of rows) {
+        // Add new subcategories with multiple surgical categories
+        for (const row of group.rows) {
           const newSubcategory = {
             subCategory: row.subCategory,
             length: row.length,
-            surgicalCategory: row.surgicalCategoryId
+            surgicalCategories: row.surgicalCategoryIds  // Array of category IDs
           };
 
           implantType.subcategories.push(newSubcategory);
           savedCount++;
+          console.log(`Added subcategory: ${row.subCategory} with ${row.surgicalCategoryIds.length} surgical categories`);
         }
+
+        console.log(`Saving ${group.rows.length} subcategories to implant type: ${implantTypeName} (ID: ${implantTypeId})`);
 
         implantType.updatedBy = updatedBy;
         implantType.updatedAt = new Date();
         await implantType.save();
 
+        console.log(`Successfully saved implant type: ${implantTypeName}`);
+
       } catch (error) {
-        console.error(`Error saving data for implant type ${implantTypeId}:`, error);
-        errors.push(`Error saving data for implant type: ${error.message}`);
+        console.error(`Error saving data for implant type ${implantTypeName}:`, error);
+        errors.push(`Error saving data for implant type "${implantTypeName}": ${error.message}`);
       }
     }
 
     res.json({
       message: `Successfully saved ${savedCount} subcategory entries`,
       savedCount,
+      createdImplantTypes: createdImplantTypes.size > 0 ? Array.from(createdImplantTypes.keys()) : undefined,
       errors: errors.length > 0 ? errors : undefined
     });
 
