@@ -488,13 +488,14 @@ router.get('/subcategories/:surgicalCategoryId/:implantTypeId', async (req, res)
       
       if (implantType && implantType.subcategories) {
         // Filter subcategories to only those containing the selected surgical category
-        subcategories = implantType.subcategories
+        // Remove duplicates using Set before returning
+        subcategories = [...new Set(implantType.subcategories
           .filter(sub => 
             sub.surgicalCategories && 
             sub.surgicalCategories.some(catId => catId.toString() === surgicalCategoryId)
           )
           .map(sub => sub.subCategory)
-          .sort();
+        )].sort();
       }
       
       console.log(`✅ Found ${subcategories.length} template-mode subcategories`);
