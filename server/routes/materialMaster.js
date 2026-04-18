@@ -716,6 +716,13 @@ router.get('/implant-types/:surgicalCategoryId', async (req, res) => {
       ]);
       
       console.log(`✅ Found ${implantTypes.length} template-mode implant types`);
+      
+      // Debug: Check count of materials
+      const countWithCategory = await MaterialMaster.countDocuments({
+        surgicalCategories: new mongoose.Types.ObjectId(surgicalCategoryId),
+        isActive: true
+      });
+      console.log(`📊 DEBUG: Total materials with this surgicalCategory: ${countWithCategory}`);
     }
 
     // Add cache control headers to prevent 304 responses
