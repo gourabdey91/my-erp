@@ -149,7 +149,7 @@ const Template = () => {
 
     try {
       setLoading(true);
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
       await templateAPI.deleteTemplate(templateId, user._id);
       fetchTemplates();
     } catch (error) {
