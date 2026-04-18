@@ -352,17 +352,18 @@ const MaterialMaster = () => {
         // Get filtered subcategories for the surgical category and implant type
         const filteredSubs = await materialMasterAPI.getFilteredSubcategories(categoryId, material.implantType._id);
         setSubcategories(filteredSubs);
-      
-      // Get filtered lengths if subcategory exists
-      if (material.subCategory) {
-        const filteredLengths = await materialMasterAPI.getFilteredLengths(
-          categoryId, 
-          material.implantType._id, 
-          material.subCategory
-        );
-        setLengths(filteredLengths);
+        
+        // Get filtered lengths if subcategory exists
+        if (material.subCategory) {
+          const filteredLengths = await materialMasterAPI.getFilteredLengths(
+            categoryId, 
+            material.implantType._id, 
+            material.subCategory
+          );
+          setLengths(filteredLengths);
+        }
       }
-    }
+    } catch (err) {
       console.error('Error fetching filtered data for editing:', err);
     }
     
