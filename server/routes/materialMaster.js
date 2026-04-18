@@ -243,10 +243,11 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Verify surgical category exists
-    const categoryExists = await Category.findById(surgicalCategory);
-    if (!categoryExists) {
-      return res.status(400).json({ message: 'Invalid surgical category' });
+    // Verify all surgical categories exist
+    const categoryIds = Array.isArray(surgicalCategories) ? surgicalCategories : [surgicalCategories];
+    const validCategories = await Category.find({ _id: { $in: categoryIds }, isActive: true });
+    if (validCategories.length !== categoryIds.length) {
+      return res.status(400).json({ message: 'One or more surgical categories do not exist' });
     }
 
     // Verify implant type exists if provided
@@ -360,6 +361,21 @@ router.put('/:id', async (req, res) => {
     // Length is optional - only validate if provided and should allow 0 as valid
     if (lengthMm !== null && lengthMm !== undefined && lengthMm < 0) {
       return res.status(400).json({ message: 'Length cannot be negative if provided' });
+    }
+
+    // Verify all surgical categories exist
+    const categoryIds = Array.isArray(surgicalCategories) ? surgicalCategories : [surgicalCategories];
+    const validCategories = await Category.find({ _id: { $in: categoryIds }, isActive: true });
+    if (validCategories.length !== categoryIds.length) {
+      return res.status(400).json({ message: 'One or more surgical categories do not exist' });
+    }
+
+    // Verify implant type exists if provided
+    if (implantType) {
+      const implantTypeExists = await ImplantType.findById(implantType);
+      if (!implantTypeExists) {
+        return res.status(400).json({ message: 'Invalid implant type' });
+      }
     }
 
     // Check if material exists
