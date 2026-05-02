@@ -808,12 +808,12 @@ router.get('/:id/pdf', async (req, res) => {
     doc.text('Sl No.', colSl + 2, headerY + 2, { width: colSlWidth - 4 });
     doc.text('Product', colProduct + 2, headerY + 2, { width: colProductWidth - 4 });
     doc.text('Description of Goods', colDesc + 2, headerY + 2, { width: colDescWidth - 4 });
-    doc.text('HSN/SAC', colHSN + 2, headerY + 2, { width: colHSNWidth - 4, align: 'center' });
+    doc.text('HSN/SAC', colHSN, headerY + 2, { width: colHSNWidth, align: 'center' });
     doc.text('Qty', colQty + 2, headerY + 2, { width: colQtyWidth - 4, align: 'center' });
     doc.text('Unit Price', colPrice + 2, headerY + 2, { width: colPriceWidth - 4, align: 'right' });
     doc.text('Unit', colUnit + 2, headerY + 2, { width: colUnitWidth - 4, align: 'center' });
     doc.text('Disc. %', colDisc + 2, headerY + 2, { width: colDiscWidth - 4, align: 'right' });
-    doc.text('Amount', colAmount + 2, headerY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('Amount', colAmount, headerY + 2, { width: colAmountWidth, align: 'right' });
 
     // Data rows - Fixed 12 rows with only vertical separators
     let itemsStartY = headerY + rowHeight;
@@ -843,12 +843,12 @@ router.get('/:id/pdf', async (req, res) => {
           doc.text((index + 1).toString(), colSl + 2, rowY + 2, { width: colSlWidth - 4 });
           doc.text(item.materialNumber || '', colProduct + 2, rowY + 2, { width: colProductWidth - 4 });
           doc.text(item.description || 'Implant', colDesc + 2, rowY + 2, { width: colDescWidth - 4 });
-          doc.text(item.hsnCode || '', colHSN + 2, rowY + 2, { width: colHSNWidth - 4, align: 'center' });
+          doc.text(item.hsnCode || '', colHSN, rowY + 2, { width: colHSNWidth, align: 'center' });
           doc.text(qty.toFixed(0), colQty + 2, rowY + 2, { width: colQtyWidth - 4, align: 'center' });
           doc.text('₹ ' + rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colPrice + 2, rowY + 2, { width: colPriceWidth - 4, align: 'right' });
           doc.text('NOS', colUnit + 2, rowY + 2, { width: colUnitWidth - 4, align: 'center' });
           doc.text(disc.toFixed(2) + '%', colDisc + 2, rowY + 2, { width: colDiscWidth - 4, align: 'right' });
-          doc.text('₹ ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, rowY + 2, { width: colAmountWidth - 4, align: 'right' });
+          doc.text('₹ ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, rowY + 2, { width: colAmountWidth, align: 'right' });
 
           totalAmount += amount;     // Sum of amounts BEFORE GST
           totalCGST += cgstAmt;      // Sum all CGST amounts from items
@@ -882,7 +882,7 @@ router.get('/:id/pdf', async (req, res) => {
     // Right border (at end of Amount column)
     doc.moveTo(margin + pageWidth, subtotalY).lineTo(margin + pageWidth, subtotalY + rowHeight).stroke();
     
-    doc.text('₹ ' + totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, subtotalY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('₹ ' + totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, subtotalY + 2, { width: colAmountWidth, align: 'right' });
 
     // Rows 17-19: CGST, SGST, Rounding - FULL grid like items rows
     let taxY = subtotalY + rowHeight;
@@ -894,18 +894,18 @@ router.get('/:id/pdf', async (req, res) => {
     // CGST Row
     doc.fontSize(11).font(getFont());
     doc.text('CGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
-    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
     
     // SGST Row
     taxY += rowHeight;
     doc.fontSize(11).font(getFont());
     doc.text('SGST/UTGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
-    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
 
     // Rounding Row
     taxY += rowHeight;
     doc.text('Rounding', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
-    doc.text('₹ ' + roundingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('₹ ' + roundingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
 
     // Row 20: Total - FULL grid with all columns
     taxY += rowHeight;
@@ -940,7 +940,7 @@ router.get('/:id/pdf', async (req, res) => {
     doc.text('Total', colDesc + 2, totalRowStartY + 2, { width: colDescWidth - 4 });
     doc.text(totalQty.toFixed(0), colQty + 2, totalRowStartY + 2, { width: colQtyWidth - 4, align: 'center' });
     doc.text('NOS', colUnit + 2, totalRowStartY + 2, { width: colUnitWidth - 4, align: 'center' });
-    doc.text('₹ ' + totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, totalRowStartY + 2, { width: colAmountWidth - 4, align: 'right' });
+    doc.text('₹ ' + totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, totalRowStartY + 2, { width: colAmountWidth, align: 'right' });
 
     // Position y after total row - NO gap, start immediately
     y = totalRowStartY + totalRowHeight;
