@@ -483,17 +483,36 @@ router.get('/:id/pdf', async (req, res) => {
 
     // Ensure tax amounts are calculated for each item (they may not be if inquiry was fetched without triggering pre-save hook)
     if (inquiry.items && inquiry.items.length > 0) {
-      inquiry.items.forEach(item => {
+      console.log('DEBUG: Processing', inquiry.items.length, 'items');
+      inquiry.items.forEach((item, idx) => {
+        console.log(`DEBUG: Item ${idx}:`, {
+          cgst: item.cgstAmount,
+          sgst: item.sgstAmount,
+          igst: item.igstAmount,
+          gst: item.gstAmount,
+          total: item.totalAmount
+        });
+        
         // If tax fields are missing or all zero, the values weren't properly persisted
         const hasTaxValues = (item.cgstAmount || 0) + (item.sgstAmount || 0) + (item.igstAmount || 0) > 0;
         
-        if (!hasTaxValues && item.gstAmount && item.gstAmount > 0) {
-          // Item has gstAmount but tax breakdown is missing - this means IGST scenario
-          // Set igstAmount = gstAmount and zero out CGST/SGST
-          item.cgstAmount = 0;
-          item.sgstAmount = 0;
-          item.igstAmount = item.gstAmount;
+        // ALWAYS ensure IGST scenario is properly detected: if gstAmount exists but CGST/SGST are 0 or missing
+        if (item.gstAmount && item.gstAmount > 0) {
+          const cgst = item.cgstAmount || 0;
+          const sgst = item.sgstAmount || 0;
+          if (cgst === 0 && sgst === 0) {
+            // This is IGST scenario - ensure igstAmount is set
+            console.log(`DEBUG: Item ${idx} is IGST scenario, setting igstAmount to ${item.gstAmount}`);
+            item.cgstAmount = 0;
+            item.sgstAmount = 0;
+            item.igstAmount = item.gstAmount;
+          }
         }
+      });
+      console.log('DEBUG: After processing, first item:', {
+        cgst: inquiry.items[0].cgstAmount,
+        sgst: inquiry.items[0].sgstAmount,
+        igst: inquiry.items[0].igstAmount
       });
     }
 
@@ -899,13 +918,30 @@ router.get('/:id/pdf', async (req, res) => {
     let igstAmount = Math.round(totalIGST * 100) / 100;
     const roundingAmount = 0; // Can be calculated if needed
     
+    console.log('DEBUG: Tax Totals from items:', {
+      totalCGST,
+      totalSGST,
+      totalIGST,
+      cgstAmount,
+      sgstAmount,
+      igstAmount
+    });
+    
     // Detect tax type: IGST or CGST/SGST
     // IGST is used when: igstAmount > 0, OR when total tax > 0 but both CGST and SGST are 0
     const totalTax = cgstAmount + sgstAmount + igstAmount;
     const isIGST = igstAmount > 0 || (totalTax > 0 && cgstAmount === 0 && sgstAmount === 0);
     
+    console.log('DEBUG: IGST Detection:', {
+      totalTax,
+      isIGST,
+      'igstAmount > 0': igstAmount > 0,
+      'totalTax > 0 && cgst === 0 && sgst === 0': totalTax > 0 && cgstAmount === 0 && sgstAmount === 0
+    });
+    
     // If IGST is detected but igstAmount is 0, calculate it from total tax
     if (isIGST && igstAmount === 0 && totalTax > 0) {
+      console.log('DEBUG: Fallback calculation - setting igstAmount to', totalTax);
       igstAmount = totalTax;
     }
     
