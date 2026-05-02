@@ -823,6 +823,7 @@ router.get('/:id/pdf', async (req, res) => {
     let rowCount = 0;
     let totalCGST = 0;
     let totalSGST = 0;
+    let totalIGST = 0;
 
     if (inquiry.items && inquiry.items.length > 0) {
       inquiry.items.forEach((item, index) => {
@@ -838,6 +839,7 @@ router.get('/:id/pdf', async (req, res) => {
           const disc = parseFloat(item.discountPercentage || 0);
           const cgstAmt = parseFloat(item.cgstAmount || 0);
           const sgstAmt = parseFloat(item.sgstAmount || 0);
+          const igstAmt = parseFloat(item.igstAmount || 0);
 
           doc.fontSize(11).font(getFont());
           doc.text((index + 1).toString(), colSl + 2, rowY + 2, { width: colSlWidth - 4 });
@@ -853,6 +855,7 @@ router.get('/:id/pdf', async (req, res) => {
           totalAmount += amount;     // Sum of amounts BEFORE GST
           totalCGST += cgstAmt;      // Sum all CGST amounts from items
           totalSGST += sgstAmt;      // Sum all SGST amounts from items
+          totalIGST += igstAmt;      // Sum all IGST amounts from items
           totalQty += qty;
           rowCount++;
         }
@@ -865,8 +868,20 @@ router.get('/:id/pdf', async (req, res) => {
     // Tax amounts are already calculated from items
     const cgstAmount = Math.round(totalCGST * 100) / 100;
     const sgstAmount = Math.round(totalSGST * 100) / 100;
+    const igstAmount = Math.round(totalIGST * 100) / 100;
     const roundingAmount = 0; // Can be calculated if needed
-    const totalWithTax = totalAmount + cgstAmount + sgstAmount + roundingAmount;
+    
+    // Detect tax type: IGST or CGST/SGST
+    const isIGST = igstAmount > 0;
+    const isCGSTSGST = cgstAmount > 0 || sgstAmount > 0;
+    
+    // Calculate total with appropriate tax
+    let totalWithTax;
+    if (isIGST) {
+      totalWithTax = totalAmount + igstAmount + roundingAmount;
+    } else {
+      totalWithTax = totalAmount + cgstAmount + sgstAmount + roundingAmount;
+    }
 
     // Row 16: Subtotal - Border from Sl No to Amount column (full row width)
     let subtotalY = itemsStartY + (fixedItemRows * rowHeight);
@@ -884,25 +899,35 @@ router.get('/:id/pdf', async (req, res) => {
     
     doc.text('₹ ' + totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, subtotalY + 2, { width: colAmountWidth, align: 'right' });
 
-    // Rows 17-19: CGST, SGST, Rounding - FULL grid like items rows
+    // Rows 17+: Tax rows (dynamic based on IGST or CGST/SGST) + Rounding - FULL grid like items rows
     let taxY = subtotalY + rowHeight;
-    const taxRowCount = 3; // CGST, SGST, Rounding
+    
+    // Determine tax row count: 
+    // - If IGST: 2 rows (IGST + Rounding)
+    // - If CGST/SGST: 3 rows (CGST + SGST + Rounding)
+    const taxRowCount = isIGST ? 2 : 3;
     
     // Draw full grid for tax rows (same as items rows)
     drawTableGridLines(taxY, taxRowCount, false);
     
-    // CGST Row
     doc.fontSize(11).font(getFont());
-    doc.text('CGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
-    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
     
-    // SGST Row
-    taxY += rowHeight;
-    doc.fontSize(11).font(getFont());
-    doc.text('SGST/UTGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
-    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
+    if (isIGST) {
+      // IGST Row
+      doc.text('IGST @ 5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+      doc.text('₹ ' + igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
+    } else {
+      // CGST Row
+      doc.text('CGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+      doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
+      
+      // SGST Row
+      taxY += rowHeight;
+      doc.text('SGST/UTGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+      doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
+    }
 
-    // Rounding Row
+    // Rounding Row (always last)
     taxY += rowHeight;
     doc.text('Rounding', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
     doc.text('₹ ' + roundingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
@@ -960,32 +985,60 @@ router.get('/:id/pdf', async (req, res) => {
 
     // ===== TAX BREAKDOWN TABLE (NO gap, start immediately after) =====
     y = amountInWordsY + amountInWordsHeight;
-    const taxTableColWidth = pageWidth / 4;
+    
+    if (isIGST) {
+      // IGST mode: 3 columns
+      const taxTableColWidth = pageWidth / 3;
 
-    // Row 1 - Headers
-    doc.rect(margin, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+      // Row 1 - Headers
+      doc.rect(margin, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
 
-    doc.fontSize(12).font(getFont(true));
-    doc.text('Taxable Value', margin + 5, y + 2, { height: 15 });
-    doc.text('CGST (₹)', margin + taxTableColWidth + 5, y + 2, { height: 15 });
-    doc.text('SGST/UTGST (₹)', margin + taxTableColWidth * 2 + 5, y + 2, { height: 15 });
-    doc.text('Total Amount (₹)', margin + taxTableColWidth * 3 + 5, y + 2, { height: 15 });
+      doc.fontSize(12).font(getFont(true));
+      doc.text('Taxable Value', margin + 5, y + 2, { height: 15 });
+      doc.text('IGST (₹)', margin + taxTableColWidth + 5, y + 2, { height: 15 });
+      doc.text('Total Amount (₹)', margin + taxTableColWidth * 2 + 5, y + 2, { height: 15 });
 
-    // Row 2 - Values (Subtotal before tax + taxes)
-    y += 15;
-    doc.rect(margin, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
-    doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+      // Row 2 - Values
+      y += 15;
+      doc.rect(margin, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
 
-    doc.fontSize(12).font(getFont());
-    doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
-    doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
-    doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
-    doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.fontSize(12).font(getFont());
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.text(igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    } else {
+      // CGST/SGST mode: 4 columns
+      const taxTableColWidth = pageWidth / 4;
+
+      // Row 1 - Headers
+      doc.rect(margin, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+
+      doc.fontSize(12).font(getFont(true));
+      doc.text('Taxable Value', margin + 5, y + 2, { height: 15 });
+      doc.text('CGST (₹)', margin + taxTableColWidth + 5, y + 2, { height: 15 });
+      doc.text('SGST/UTGST (₹)', margin + taxTableColWidth * 2 + 5, y + 2, { height: 15 });
+      doc.text('Total Amount (₹)', margin + taxTableColWidth * 3 + 5, y + 2, { height: 15 });
+
+      // Row 2 - Values
+      y += 15;
+      doc.rect(margin, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
+      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+
+      doc.fontSize(12).font(getFont());
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    }
 
     // ===== TAX AMOUNT IN WORDS (WITH BORDER & BOLD) =====
     // (Row 3 of tax table removed - redundant total row)
@@ -996,11 +1049,14 @@ router.get('/:id/pdf', async (req, res) => {
     // Draw border around Tax amount in words section
     doc.rect(margin, taxAmountInWordsY, pageWidth, taxAmountInWordsHeight).stroke();
     
+    // Calculate total tax amount for display
+    const totalTaxAmount = isIGST ? igstAmount : (cgstAmount + sgstAmount);
+    
     // Split text: bold label + normal amount
     doc.fontSize(12).font(getFont(true));
     doc.text('Tax Amount (in words): ', margin + 5, taxAmountInWordsY + 3, { continued: true });
     doc.fontSize(12).font(getFont());
-    doc.text(numberToWords(Math.floor(cgstAmount + sgstAmount)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+    doc.text(numberToWords(Math.floor(totalTaxAmount)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
 
     // ===== REMARKS SECTION (WITH TABLE STRUCTURE) =====
     y = taxAmountInWordsY + taxAmountInWordsHeight;
