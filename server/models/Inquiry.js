@@ -197,14 +197,21 @@ inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', comp
   // Then calculate GST on DISCOUNTED amount
   const gstAmount = (amountAfterDiscount * this.gstPercentage) / 100;
   
-  // Calculate GST breakdown
-  const cgstAmount = gstAmount * 0.5; // Always 50%
-  
-  // Same state: SGST = 50%, IGST = 0
-  // Different state: SGST = 0, IGST = 50%
+  // Calculate GST breakdown based on customer state
+  // Same state (Intra-state): CGST (50%) + SGST (50%)
+  // Different state (Inter-state): IGST (100%)
   const isSameState = customerStateCode === companyStateCode;
-  const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
-  const igstAmount = isSameState ? 0 : gstAmount * 0.5;
+  
+  let cgstAmount, sgstAmount, igstAmount;
+  if (isSameState) {
+    cgstAmount = gstAmount * 0.5;  // 50% of total GST
+    sgstAmount = gstAmount * 0.5;  // 50% of total GST
+    igstAmount = 0;                // No IGST for same state
+  } else {
+    cgstAmount = 0;                // No CGST for different state
+    sgstAmount = 0;                // No SGST for different state
+    igstAmount = gstAmount;        // 100% of total GST as IGST
+  }
   
   // Total = discounted amount + GST
   const totalAmount = amountAfterDiscount + gstAmount;
@@ -266,21 +273,24 @@ inquirySchema.pre('save', async function(next) {
       const materialNumbers = this.items.map(item => item.materialNumber);
       const materials = await MaterialMaster.find({ 
         materialNumber: { $in: materialNumbers } 
-      }).populate('surgicalCategory');
+      }).populate('surgicalCategories');
       
-      // Create a map of material numbers to their surgical categories
+      // Create a map of material numbers to their surgical categories (now an array)
       const materialCategoryMap = {};
       materials.forEach(material => {
-        materialCategoryMap[material.materialNumber] = material.surgicalCategory._id.toString();
+        const categoryIds = (material.surgicalCategories || []).map(cat => 
+          cat._id ? cat._id.toString() : cat.toString()
+        );
+        materialCategoryMap[material.materialNumber] = categoryIds;
       });
       
       // Check each inquiry item
       const invalidMaterials = [];
       this.items.forEach(item => {
-        const materialCategory = materialCategoryMap[item.materialNumber];
-        if (!materialCategory) {
+        const materialCategories = materialCategoryMap[item.materialNumber];
+        if (!materialCategories || materialCategories.length === 0) {
           invalidMaterials.push(`Material ${item.materialNumber} not found`);
-        } else if (!allowedCategoryIds.includes(materialCategory)) {
+        } else if (!materialCategories.some(catId => allowedCategoryIds.includes(catId))) {
           invalidMaterials.push(`Material ${item.materialNumber} does not belong to any surgical category allowed for this procedure`);
         }
       });

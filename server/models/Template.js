@@ -195,14 +195,21 @@ templateItemSchema.methods.calculateTotal = function(customerStateCode = '', com
   // Then calculate GST on DISCOUNTED amount
   const gstAmount = (amountAfterDiscount * this.gstPercentage) / 100;
   
-  // Calculate GST breakdown
-  const cgstAmount = gstAmount * 0.5; // Always 50%
-  
-  // Same state: SGST = 50%, IGST = 0
-  // Different state: SGST = 0, IGST = 50%
+  // Calculate GST breakdown based on customer state
+  // Same state (Intra-state): CGST (50%) + SGST (50%)
+  // Different state (Inter-state): IGST (100%)
   const isSameState = customerStateCode === companyStateCode;
-  const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
-  const igstAmount = isSameState ? 0 : gstAmount * 0.5;
+  
+  let cgstAmount, sgstAmount, igstAmount;
+  if (isSameState) {
+    cgstAmount = gstAmount * 0.5;  // 50% of total GST
+    sgstAmount = gstAmount * 0.5;  // 50% of total GST
+    igstAmount = 0;                // No IGST for same state
+  } else {
+    cgstAmount = 0;                // No CGST for different state
+    sgstAmount = 0;                // No SGST for different state
+    igstAmount = gstAmount;        // 100% of total GST as IGST
+  }
   
   // Total = discounted amount + GST
   const totalAmount = amountAfterDiscount + gstAmount;
