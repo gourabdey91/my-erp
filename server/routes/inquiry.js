@@ -868,12 +868,18 @@ router.get('/:id/pdf', async (req, res) => {
     // Tax amounts are already calculated from items
     const cgstAmount = Math.round(totalCGST * 100) / 100;
     const sgstAmount = Math.round(totalSGST * 100) / 100;
-    const igstAmount = Math.round(totalIGST * 100) / 100;
+    let igstAmount = Math.round(totalIGST * 100) / 100;
     const roundingAmount = 0; // Can be calculated if needed
     
     // Detect tax type: IGST or CGST/SGST
-    const isIGST = igstAmount > 0;
-    const isCGSTSGST = cgstAmount > 0 || sgstAmount > 0;
+    // IGST is used when: igstAmount > 0, OR when total tax > 0 but both CGST and SGST are 0
+    const totalTax = cgstAmount + sgstAmount + igstAmount;
+    const isIGST = igstAmount > 0 || (totalTax > 0 && cgstAmount === 0 && sgstAmount === 0);
+    
+    // If IGST is detected but igstAmount is 0, calculate it from total tax
+    if (isIGST && igstAmount === 0 && totalTax > 0) {
+      igstAmount = totalTax;
+    }
     
     // Calculate total with appropriate tax
     let totalWithTax;
