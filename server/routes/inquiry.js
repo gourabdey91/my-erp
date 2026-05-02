@@ -481,6 +481,22 @@ router.get('/:id/pdf', async (req, res) => {
       });
     }
 
+    // Ensure tax amounts are calculated for each item (they may not be if inquiry was fetched without triggering pre-save hook)
+    if (inquiry.items && inquiry.items.length > 0) {
+      inquiry.items.forEach(item => {
+        // If tax fields are missing or all zero, the values weren't properly persisted
+        const hasTaxValues = (item.cgstAmount || 0) + (item.sgstAmount || 0) + (item.igstAmount || 0) > 0;
+        
+        if (!hasTaxValues && item.gstAmount && item.gstAmount > 0) {
+          // Item has gstAmount but tax breakdown is missing - this means IGST scenario
+          // Set igstAmount = gstAmount and zero out CGST/SGST
+          item.cgstAmount = 0;
+          item.sgstAmount = 0;
+          item.igstAmount = item.gstAmount;
+        }
+      });
+    }
+
     // Debug logging
     console.log('Inquiry Hospital:', inquiry.hospital?._id);
     console.log('Inquiry Hospital BusinessUnit:', inquiry.hospital?.businessUnit);
@@ -840,6 +856,18 @@ router.get('/:id/pdf', async (req, res) => {
           const cgstAmt = parseFloat(item.cgstAmount || 0);
           const sgstAmt = parseFloat(item.sgstAmount || 0);
           const igstAmt = parseFloat(item.igstAmount || 0);
+          
+          // Debug logging for first item
+          if (index === 0) {
+            console.log('PDF Item Tax Breakdown:', {
+              cgstAmount: item.cgstAmount,
+              sgstAmount: item.sgstAmount,
+              igstAmount: item.igstAmount,
+              gstAmount: item.gstAmount,
+              totalAmount: item.totalAmount,
+              allFields: Object.keys(item.toObject ? item.toObject() : item)
+            });
+          }
 
           doc.fontSize(11).font(getFont());
           doc.text((index + 1).toString(), colSl + 2, rowY + 2, { width: colSlWidth - 4 });
