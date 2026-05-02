@@ -518,7 +518,7 @@ router.get('/:id/pdf', async (req, res) => {
       
       console.log('DEBUG: State codes - Hospital:', hospitalStateCode, 'Company:', companyStateCode);
       const isSameState = hospitalStateCode === companyStateCode && hospitalStateCode !== '';
-      console.log('DEBUG: Is same state transaction?', isSameState);
+      console.log('DEBUG: Is same state transaction?', isSameState, 'Logic: hospital==company &&  hospital!=empty:', hospitalStateCode === companyStateCode, hospitalStateCode !== '');
       
       inquiry.items.forEach((item, idx) => {
         console.log(`DEBUG: Item ${idx} BEFORE tax recalc:`, {
@@ -530,7 +530,18 @@ router.get('/:id/pdf', async (req, res) => {
         });
         
         // Recalculate tax based on state codes
-        const gstAmount = item.gstAmount || 0;
+        // Calculate gstAmount from totalAmount - (unitRate * qty - discount)
+        let gstAmount = item.gstAmount || 0;
+        
+        if (gstAmount === 0 && item.totalAmount > 0) {
+          // If gstAmount is missing, try to calculate it
+          const baseAmount = item.unitRate * item.quantity;
+          const discountAmount = item.discountAmount || ((baseAmount * item.discountPercentage) / 100);
+          const amountBeforeGST = baseAmount - discountAmount;
+          gstAmount = item.totalAmount - amountBeforeGST;
+          console.log(`DEBUG: Item ${idx} - Calculated gstAmount from totalAmount: ${gstAmount}`);
+        }
+        
         if (gstAmount > 0) {
           if (isSameState) {
             // Intra-state: CGST 50% + SGST 50%
@@ -987,6 +998,8 @@ router.get('/:id/pdf', async (req, res) => {
     // Detect tax type: IGST or CGST/SGST
     // IGST is used when: igstAmount > 0, OR when total tax > 0 but both CGST and SGST are 0
     const totalTax = cgstAmount + sgstAmount + igstAmount;
+    
+    // IMPORTANT: If igstAmount > 0 from items, it means IGST scenario regardless of state code comparison
     const isIGST = igstAmount > 0 || (totalTax > 0 && cgstAmount === 0 && sgstAmount === 0);
     
     console.log('DEBUG: IGST Detection BEFORE rendering:', {
@@ -994,7 +1007,8 @@ router.get('/:id/pdf', async (req, res) => {
       isIGST,
       'igstAmount > 0': igstAmount > 0,
       'totalTax > 0 && cgst === 0 && sgst === 0': totalTax > 0 && cgstAmount === 0 && sgstAmount === 0,
-      'VALUES': { cgstAmount, sgstAmount, igstAmount }
+      'VALUES': { cgstAmount, sgstAmount, igstAmount },
+      'DECISION': isIGST ? 'RENDER IGST' : 'RENDER CGST/SGST'
     });
     
     // If IGST is detected but igstAmount is 0, calculate it from total tax
