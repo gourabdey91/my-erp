@@ -77,8 +77,8 @@ export const inquiryAPI = {
     api.get('/inquiries/stats/overview').then(response => response.data),
 
   // Download inquiry PDF
-  downloadInquiryPDF: (inquiryId) => 
-    api.get(`/inquiries/${inquiryId}/pdf`, { responseType: 'blob' }).then(response => response.data)
+  downloadInquiryPDF: (inquiryId, docType = 'Estimation for Inquiry') => 
+    api.get(`/inquiries/${inquiryId}/pdf?docType=${encodeURIComponent(docType)}`, { responseType: 'blob' }).then(response => response.data)
 };
 
 export default inquiryAPI;

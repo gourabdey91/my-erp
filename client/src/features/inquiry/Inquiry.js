@@ -166,7 +166,9 @@ const Inquiry = () => {
   // Handle PDF download
   const handlePrintPDF = async (inquiryId, inquiryNumber) => {
     try {
-      const pdfBlob = await inquiryAPI.downloadInquiryPDF(inquiryId);
+      // Default to "Estimation for Inquiry" for the inquiry list
+      const docType = 'Estimation for Inquiry';
+      const pdfBlob = await inquiryAPI.downloadInquiryPDF(inquiryId, docType);
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
