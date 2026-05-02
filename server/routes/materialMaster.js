@@ -31,7 +31,21 @@ router.get('/', async (req, res) => {
     }
 
     if (surgicalCategory) {
-      filter.surgicalCategories = { $in: [surgicalCategory] };
+      // Convert string to ObjectId if valid
+      if (mongoose.Types.ObjectId.isValid(surgicalCategory)) {
+        filter.surgicalCategories = { $in: [new mongoose.Types.ObjectId(surgicalCategory)] };
+      } else {
+        // If not a valid ObjectId, return empty results
+        return res.json({
+          materials: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
+        });
+      }
     }
 
     if (implantType) {
@@ -194,10 +208,31 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'At least one surgical category is required' });
     }
 
-    // ImplantType and subCategory are optional
-    // Only validate if implantType is provided, then subCategory should also be provided
-    if (implantType && (!subCategory || !subCategory.trim())) {
-      return res.status(400).json({ message: 'Subcategory is required when implant type is provided' });
+    // ImplantType is mandatory
+    if (!implantType) {
+      return res.status(400).json({ message: 'Implant type is required' });
+    }
+
+    // SubCategory is optional, but if provided it should be validated against the implant type
+    if (subCategory) {
+      const trimmedSubCategory = subCategory.trim();
+      
+      // Only validate if subCategory is not empty after trimming
+      if (trimmedSubCategory) {
+        // Validate that the subcategory exists under this implant type
+        const implantTypeDoc = await ImplantType.findById(implantType);
+        if (implantTypeDoc) {
+          const subCategoryExists = implantTypeDoc.subcategories.some(sub => 
+            sub.subCategory.toLowerCase() === trimmedSubCategory.toLowerCase()
+          );
+          
+          if (!subCategoryExists) {
+            return res.status(400).json({ 
+              message: `Subcategory "${trimmedSubCategory}" does not exist for the selected implant type. Valid subcategories: ${implantTypeDoc.subcategories.map(s => s.subCategory).join(', ')}`
+            });
+          }
+        }
+      }
     }
 
     // Length is optional - only validate if provided and should allow 0 as valid
@@ -225,7 +260,7 @@ router.post('/', async (req, res) => {
         existingMaterial.distributionPrice = distributionPrice;
         existingMaterial.surgicalCategories = surgicalCategories;  // Array of IDs
         existingMaterial.implantType = implantType;
-        existingMaterial.subCategory = subCategory.trim();
+        existingMaterial.subCategory = subCategory ? subCategory.trim() : null;
         existingMaterial.lengthMm = lengthMm;
         existingMaterial.isActive = true;
         existingMaterial.updatedBy = req.user?.id;
@@ -352,10 +387,31 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ message: 'At least one surgical category is required' });
     }
 
-    // ImplantType and subCategory are optional
-    // Only validate if implantType is provided, then subCategory should also be provided
-    if (implantType && (!subCategory || !subCategory.trim())) {
-      return res.status(400).json({ message: 'Subcategory is required when implant type is provided' });
+    // ImplantType is mandatory
+    if (!implantType) {
+      return res.status(400).json({ message: 'Implant type is required' });
+    }
+
+    // SubCategory is optional, but if provided it should be validated against the implant type
+    if (subCategory) {
+      const trimmedSubCategory = subCategory.trim();
+      
+      // Only validate if subCategory is not empty after trimming
+      if (trimmedSubCategory) {
+        // Validate that the subcategory exists under this implant type
+        const implantTypeDoc = await ImplantType.findById(implantType);
+        if (implantTypeDoc) {
+          const subCategoryExists = implantTypeDoc.subcategories.some(sub => 
+            sub.subCategory.toLowerCase() === trimmedSubCategory.toLowerCase()
+          );
+          
+          if (!subCategoryExists) {
+            return res.status(400).json({ 
+              message: `Subcategory "${trimmedSubCategory}" does not exist for the selected implant type. Valid subcategories: ${implantTypeDoc.subcategories.map(s => s.subCategory).join(', ')}`
+            });
+          }
+        }
+      }
     }
 
     // Length is optional - only validate if provided and should allow 0 as valid
@@ -748,6 +804,111 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting material:', error);
     res.status(500).json({ message: 'Server error while deleting material' });
+  }
+});
+
+// Debug endpoint - Get raw material data by material number
+router.get('/debug/material/:materialNumber', async (req, res) => {
+  try {
+    const { materialNumber } = req.params;
+    
+    const material = await MaterialMaster.findOne({ 
+      materialNumber: materialNumber.toUpperCase() 
+    }).populate('surgicalCategories', 'code description _id');
+    
+    if (!material) {
+      return res.status(404).json({ 
+        error: 'Material not found',
+        materialNumber 
+      });
+    }
+
+    // Get all categories for comparison
+    const allCategories = await Category.find({ isActive: true }).select('_id code description');
+
+    res.json({
+      material: {
+        materialNumber: material.materialNumber,
+        description: material.description,
+        surgicalCategories: material.surgicalCategories,
+        surgicalCategoryIds: material.surgicalCategories.map(c => c._id),
+        surgicalCategoriesCount: material.surgicalCategories.length
+      },
+      debug: {
+        materialHasSurgicalCategories: material.surgicalCategories && material.surgicalCategories.length > 0,
+        allCategoriesInSystem: allCategories,
+        message: material.surgicalCategories.length === 0 ? '⚠️ Material has NO surgical categories assigned!' : '✅ Material has surgical categories'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching material debug info:', error);
+    res.status(500).json({ 
+      error: 'Server error',
+      message: error.message 
+    });
+  }
+});
+
+// Debug endpoint - Test material query by category ID
+router.get('/debug/query-by-category/:categoryId', async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    
+    // Check if it's a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({ error: 'Invalid category ID format' });
+    }
+
+    const objectId = new mongoose.Types.ObjectId(categoryId);
+    
+    // Try the query exactly as it happens in validation
+    const materials = await MaterialMaster.find({
+      surgicalCategories: { $in: [objectId] },
+      isActive: true
+    }).select('materialNumber description surgicalCategories');
+
+    res.json({
+      query: {
+        surgicalCategories: { $in: [objectId.toString()] },
+        isActive: true
+      },
+      results: {
+        count: materials.length,
+        materials: materials.map(m => ({
+          materialNumber: m.materialNumber,
+          description: m.description,
+          surgicalCategoryCount: m.surgicalCategories.length
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error querying by category:', error);
+    res.status(500).json({ 
+      error: 'Server error',
+      message: error.message 
+    });
+  }
+});
+
+// Debug endpoint - List all categories
+router.get('/debug/categories', async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true }).select('_id code description');
+    
+    res.json({
+      totalCategories: categories.length,
+      categories: categories.map(c => ({
+        id: c._id.toString(),
+        code: c.code,
+        description: c.description
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ 
+      error: 'Server error',
+      message: error.message 
+    });
   }
 });
 

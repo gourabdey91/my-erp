@@ -103,12 +103,12 @@ const SimpleMaterialSelector = ({
 
       console.log('Fetching materials for surgical category:', selectedSurgicalCategory);
 
-      // Build filters
+      // Build filters - use correct backend parameter names
       const filters = {
         surgicalCategory: selectedSurgicalCategory,
         ...(selectedImplantType && { implantType: selectedImplantType }),
-        ...(selectedSubcategory && { subcategory: selectedSubcategory }),
-        ...(selectedLength && { length: selectedLength })
+        ...(selectedSubcategory && { subCategory: selectedSubcategory }),  // Note: subCategory (camelCase)
+        ...(selectedLength && { lengthMm: selectedLength })  // Note: lengthMm (not length)
       };
 
       const response = await materialAPI.getMaterialsBySurgicalCategory(filters);

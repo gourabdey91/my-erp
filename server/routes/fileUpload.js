@@ -445,7 +445,10 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
       validationErrors.push(...categoryValidationErrors);
 
       // Validate implant type exists (if provided)
-      if (implantType.toString().trim()) {
+      // Validate Implant Type - it is mandatory
+      if (!implantType.toString().trim()) {
+        validationErrors.push('Implant Type is required');
+      } else {
         implantTypeObj = implantTypeMap.get(implantType.toString().toLowerCase().trim());
         if (!implantTypeObj) {
           validationErrors.push(`Implant type "${implantType}" not found`);
@@ -492,12 +495,16 @@ router.post('/material-master', upload.single('excelFile'), async (req, res) => 
         lengthValue = null;
       }
       
-      // Business logic validation: If Implant Type is provided, Sub Category and Length should be provided
-      if (implantTypeObj) {
-        if (!subCategory.toString().trim()) {
-          validationErrors.push('Sub Category is required when Implant Type is specified');
+      // SubCategory is optional, but if provided it should be validated against implant type
+      if (implantTypeObj && subCategory.toString().trim()) {
+        const trimmedSubCategory = subCategory.toString().trim();
+        const subCategoryExists = implantTypeObj.subcategories.some(sub => 
+          sub.subCategory.toLowerCase() === trimmedSubCategory.toLowerCase()
+        );
+        if (!subCategoryExists) {
+          const validSubcategories = implantTypeObj.subcategories.map(s => s.subCategory).join(', ');
+          validationErrors.push(`Sub Category "${trimmedSubCategory}" does not exist for the selected Implant Type. Valid subcategories: ${validSubcategories}`);
         }
-        // Length is optional - removed required validation
       }
 
       // Check for duplicate material numbers within uploaded data (considering BU + Material Number combination)

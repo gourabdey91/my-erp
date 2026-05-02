@@ -23,9 +23,9 @@ router.get('/', async (req, res) => {
     .populate('updatedBy', 'firstName lastName')
     .populate({
       path: 'materialAssignments.material',
-      select: 'materialNumber description hsnCode surgicalCategory implantType subCategory',
+      select: 'materialNumber description hsnCode surgicalCategories implantType subCategory',
       populate: {
-        path: 'surgicalCategory implantType',
+        path: 'surgicalCategories implantType',
         select: 'description name'
       }
     })
@@ -68,9 +68,9 @@ router.get('/:id', async (req, res) => {
       .populate('updatedBy', 'firstName lastName')
       .populate({
         path: 'materialAssignments.material',
-        select: 'materialNumber description hsnCode surgicalCategory implantType subCategory',
+        select: 'materialNumber description hsnCode surgicalCategories implantType subCategory',
         populate: {
-          path: 'surgicalCategory implantType',
+          path: 'surgicalCategories implantType',
           select: 'description name'
         }
       });
@@ -357,13 +357,13 @@ router.get('/:hospitalId/available-materials', async (req, res) => {
 
     // Get materials that match hospital's surgical categories and are not already assigned
     const availableMaterials = await MaterialMaster.find({
-      surgicalCategory: { $in: hospital.surgicalCategories },
+      surgicalCategories: { $in: hospital.surgicalCategories },
       isActive: true,
       _id: { $nin: assignedMaterialIds }
     })
-    .populate('surgicalCategory', 'description')
+    .populate('surgicalCategories', 'description')
     .populate('implantType', 'name')
-    .select('materialNumber description mrp institutionalPrice surgicalCategory implantType subCategory')
+    .select('materialNumber description mrp institutionalPrice surgicalCategories implantType subCategory')
     .sort({ materialNumber: 1 });
 
     res.json(availableMaterials);
@@ -434,7 +434,7 @@ router.post('/:hospitalId/materials', async (req, res) => {
 
     // Return the updated hospital with populated material assignments
     const updatedHospital = await Hospital.findById(hospitalId)
-      .populate('materialAssignments.material', 'materialNumber description hsnCode surgicalCategory implantType subCategory');
+      .populate('materialAssignments.material', 'materialNumber description hsnCode surgicalCategories implantType subCategory');
 
     res.json(updatedHospital);
   } catch (error) {
@@ -661,16 +661,19 @@ router.post('/:hospitalId/material-assignments/bulk-upload', async (req, res) =>
         if (assignment.materialNumber) {
           const material = await MaterialMaster.findOne({ 
             materialNumber: assignment.materialNumber 
-          }).populate('surgicalCategory implantType', 'description name');
+          }).populate('surgicalCategories implantType', 'description name');
 
           if (!material) {
             processedRow.validationErrors.push(`Material ${assignment.materialNumber} not found in Material Master`);
             processedRow.isValid = false;
           } else {
+            // Get category descriptions from array (first one or join all)
+            const categoryDescriptions = material.surgicalCategories?.map(cat => cat.description).join(', ') || '';
+            
             processedRow.material = {
               _id: material._id,
               description: material.description,
-              surgicalCategory: material.surgicalCategory?.description || '',
+              surgicalCategories: categoryDescriptions,
               implantType: material.implantType?.name || '',
               subCategory: material.subCategory || '',
               lengthMm: material.lengthMm,
@@ -859,7 +862,9 @@ router.get('/:hospitalId/assigned-materials-for-inquiry', async (req, res) => {
     // Apply filters
     if (surgicalCategory) {
       materials = materials.filter(material => 
-        material.surgicalCategory && material.surgicalCategory._id.toString() === surgicalCategory
+        material.surgicalCategories && 
+        Array.isArray(material.surgicalCategories) &&
+        material.surgicalCategories.some(cat => cat._id.toString() === surgicalCategory)
       );
     }
 

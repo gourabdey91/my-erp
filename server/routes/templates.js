@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const Template = require('../models/Template');
 const Category = require('../models/Category');
@@ -15,37 +16,50 @@ const validateSurgicalCategoryMaterials = async (templateData) => {
 
   try {
     console.log('🔍 Validating surgical category materials for template...');
+    console.log('📋 Template surgical category:', templateData.surgicalCategory);
+    console.log('📋 Template items count:', templateData.items.length);
     
-    // Get all materials for the surgical category
-    const categoryMaterials = await MaterialMaster.find({
-      surgicalCategory: templateData.surgicalCategory,
+    // Convert to ObjectId if it's a string
+    const categoryId = typeof templateData.surgicalCategory === 'string' 
+      ? new mongoose.Types.ObjectId(templateData.surgicalCategory)
+      : templateData.surgicalCategory;
+    
+    console.log('🔍 Converted category ID:', categoryId.toString());
+    
+    // Extract material numbers from template items
+    const materialNumbers = templateData.items.map(item => item.materialNumber).filter(m => m);
+    console.log('📋 Validating only these materials:', materialNumbers);
+    
+    // Query ONLY the materials in the template items, not all materials for the category
+    const templateMaterials = await MaterialMaster.find({
+      materialNumber: { $in: materialNumbers },
       isActive: true
-    });
+    }).select('materialNumber surgicalCategories');
 
-    if (categoryMaterials.length === 0) {
+    console.log(`✅ Found ${templateMaterials.length} materials from template items in database`);
+
+    if (templateMaterials.length === 0) {
       return {
         isValid: false,
-        error: 'No materials found for the selected surgical category'
+        error: 'None of the template materials found in database'
       };
     }
 
-    // Get list of category's material numbers
-    const categoryMaterialNumbers = categoryMaterials.map(material => material.materialNumber);
-    
-    // Check if all template materials belong to the surgical category
-    const wrongCategoryMaterials = templateData.items.filter(item => 
-      !categoryMaterialNumbers.includes(item.materialNumber)
+    // Check if all template materials have the selected surgical category
+    const wrongCategoryMaterials = templateMaterials.filter(material => 
+      !material.surgicalCategories.some(catId => catId.equals(categoryId))
     );
 
     if (wrongCategoryMaterials.length > 0) {
       const materialList = wrongCategoryMaterials.map(m => m.materialNumber).join(', ');
+      console.warn('❌ Materials do not have the selected category:', materialList);
       return {
         isValid: false,
         error: `The following materials do not belong to the selected surgical category: ${materialList}`
       };
     }
 
-    console.log('✅ All materials belong to the selected surgical category');
+    console.log('✅ All template materials belong to the selected surgical category');
     return { isValid: true };
 
   } catch (error) {
@@ -218,6 +232,52 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching template',
+      error: error.message
+    });
+  }
+});
+
+// Validate materials belong to surgical category (for frontend real-time validation)
+router.post('/validate-materials', async (req, res) => {
+  try {
+    const { surgicalCategory, materialNumbers } = req.body;
+
+    if (!surgicalCategory || !materialNumbers || !Array.isArray(materialNumbers) || materialNumbers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'surgicalCategory and materialNumbers array are required'
+      });
+    }
+
+    // Convert category string to ObjectId
+    const categoryId = typeof surgicalCategory === 'string'
+      ? new mongoose.Types.ObjectId(surgicalCategory)
+      : surgicalCategory;
+
+    // Query ONLY the materials being validated (not all materials for the category)
+    const materials = await MaterialMaster.find({
+      materialNumber: { $in: materialNumbers },
+      isActive: true
+    }).select('materialNumber surgicalCategories');
+
+    // Check which materials don't have the selected category
+    const invalidMaterials = materials.filter(material =>
+      !material.surgicalCategories.some(catId => catId.equals(categoryId))
+    );
+
+    res.json({
+      success: true,
+      isValid: invalidMaterials.length === 0,
+      invalidMaterials: invalidMaterials.map(m => m.materialNumber),
+      message: invalidMaterials.length === 0 
+        ? 'All materials belong to the selected surgical category'
+        : `Materials not in category: ${invalidMaterials.map(m => m.materialNumber).join(', ')}`
+    });
+  } catch (error) {
+    console.error('Error validating materials:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error validating materials',
       error: error.message
     });
   }

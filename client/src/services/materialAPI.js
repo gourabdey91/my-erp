@@ -252,7 +252,7 @@ export const materialAPI = {
         }
       });
       
-      // Set a reasonable limit for template material selection
+      // Set a reasonable limit for material listing (use pagination for large result sets)
       queryParams.append('limit', '100');
       queryParams.append('isActive', 'true');
       

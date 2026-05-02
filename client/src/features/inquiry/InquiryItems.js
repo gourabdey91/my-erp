@@ -212,15 +212,21 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
     const discountAmount = parseFloat(item.discountAmount) || 0;
 
     const baseAmount = unitRate * quantity;
-    const gstAmount = (baseAmount * gstPercentage) / 100;
+    
+    // Calculate discount FIRST
+    const finalDiscountAmount = discountAmount > 0 ? discountAmount : (baseAmount * discountPercentage) / 100;
+    
+    // Apply discount to get amount after discount
+    const amountAfterDiscount = baseAmount - finalDiscountAmount;
+    
+    // Then calculate GST on the DISCOUNTED amount
+    const gstAmount = (amountAfterDiscount * gstPercentage) / 100;
     
     // Calculate GST breakdown based on state codes
     const gstBreakdown = calculateGSTAmounts(gstAmount, customerStateCode, companyStateCode);
     
-    // Use discount amount if provided, otherwise calculate from percentage
-    const finalDiscountAmount = discountAmount > 0 ? discountAmount : (baseAmount * discountPercentage) / 100;
-    
-    const totalAmount = baseAmount + gstAmount - finalDiscountAmount;
+    // Total = discounted amount + GST
+    const totalAmount = amountAfterDiscount + gstAmount;
     
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,

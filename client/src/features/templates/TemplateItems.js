@@ -148,12 +148,18 @@ const TemplateItems = ({
     const discountAmount = parseFloat(item.discountAmount) || 0;
 
     const baseAmount = unitRate * quantity;
-    const gstAmount = Math.round((baseAmount * gstPercentage) / 100 * 100) / 100;
     
-    // Use discount amount if provided, otherwise calculate from percentage
+    // Calculate discount FIRST
     const finalDiscountAmount = discountAmount > 0 ? discountAmount : (baseAmount * discountPercentage) / 100;
     
-    const totalAmount = baseAmount + gstAmount - finalDiscountAmount;
+    // Apply discount to get amount after discount
+    const amountAfterDiscount = baseAmount - finalDiscountAmount;
+    
+    // Then calculate GST on the DISCOUNTED amount
+    const gstAmount = Math.round((amountAfterDiscount * gstPercentage) / 100 * 100) / 100;
+    
+    // Total = discounted amount + GST
+    const totalAmount = amountAfterDiscount + gstAmount;
     
     return {
       baseAmount: Math.round(baseAmount * 100) / 100,

@@ -165,29 +165,45 @@ const TemplateForm = ({ template, dropdownData, onSubmit, onCancel }) => {
     if (formData.surgicalCategory && formData.items.length > 0) {
       console.log('🔍 Validating materials belong to surgical category...');
       try {
-        // Use a single API call to get all materials for the surgical category
-        const response = await materialAPI.getMaterials({
-          surgicalCategory: formData.surgicalCategory
-        });
-        
-        if (response.success && response.data) {
-          const categoryMaterialNumbers = response.data.map(material => material.materialNumber);
-          
-          // Check if any template items don't belong to the surgical category
-          const wrongCategoryMaterials = formData.items.filter(item => 
-            item.materialNumber && !categoryMaterialNumbers.includes(item.materialNumber)
-          );
+        // Get material numbers from template items
+        const materialNumbers = formData.items
+          .filter(item => item.materialNumber)
+          .map(item => item.materialNumber);
 
-          if (wrongCategoryMaterials.length > 0) {
-            const materialList = wrongCategoryMaterials
-              .map(material => `${material.materialNumber} (${material.description || 'Unknown'})`)
+        if (materialNumbers.length > 0) {
+          console.log('📋 Validating materials:', materialNumbers);
+          console.log('📋 Surgical category:', formData.surgicalCategory);
+          
+          // Call backend validation endpoint - only validates the specific materials
+          const apiUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/templates/validate-materials`;
+          console.log('🔗 Calling validation endpoint:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              surgicalCategory: formData.surgicalCategory,
+              materialNumbers: materialNumbers
+            })
+          });
+
+          console.log('📊 Validation response status:', response.status);
+          const data = await response.json();
+          console.log('📊 Validation response data:', data);
+          
+          if (!data.isValid && data.invalidMaterials && data.invalidMaterials.length > 0) {
+            // Get descriptions for error message
+            const invalidMaterialDetails = formData.items
+              .filter(item => data.invalidMaterials.includes(item.materialNumber))
+              .map(item => `${item.materialNumber} (${item.description || 'Unknown'})`)
               .join(', ');
             
-            newErrors.categoryMaterials = `The following materials do not belong to the selected surgical category: ${materialList}. Please remove them or change the surgical category.`;
+            newErrors.categoryMaterials = `The following materials do not belong to the selected surgical category: ${invalidMaterialDetails}. Please remove them or change the surgical category.`;
           }
         }
       } catch (error) {
-        console.error('Error validating surgical category materials:', error);
+        console.error('❌ Error validating surgical category materials:', error);
+        console.error('Error details:', error.message);
         newErrors.categoryMaterials = 'Unable to validate surgical category materials. Please try again.';
       }
     }

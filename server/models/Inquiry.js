@@ -189,8 +189,13 @@ inquirySchema.plugin(mongoosePaginate);
 // Helper method to calculate item total amount with GST breakdown
 inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', companyStateCode = '') {
   const baseAmount = this.unitRate * this.quantity;
-  const gstAmount = (baseAmount * this.gstPercentage) / 100;
   const discountAmount = this.discountAmount || ((baseAmount * this.discountPercentage) / 100);
+  
+  // Apply discount FIRST
+  const amountAfterDiscount = baseAmount - discountAmount;
+  
+  // Then calculate GST on DISCOUNTED amount
+  const gstAmount = (amountAfterDiscount * this.gstPercentage) / 100;
   
   // Calculate GST breakdown
   const cgstAmount = gstAmount * 0.5; // Always 50%
@@ -201,7 +206,8 @@ inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', comp
   const sgstAmount = isSameState ? gstAmount * 0.5 : 0;
   const igstAmount = isSameState ? 0 : gstAmount * 0.5;
   
-  const totalAmount = baseAmount + gstAmount - discountAmount;
+  // Total = discounted amount + GST
+  const totalAmount = amountAfterDiscount + gstAmount;
   
   // Update GST amounts on the item
   this.gstAmount = Math.round(gstAmount * 100) / 100;      // Total GST amount
