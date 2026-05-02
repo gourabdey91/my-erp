@@ -43,7 +43,6 @@ router.get('/', async (req, res) => {
       sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
       populate: [
         { path: 'hospital', select: 'shortName legalName code' },
-        { path: 'surgicalCategory', select: 'description code' },
         { 
           path: 'surgicalProcedure', 
           select: 'name code totalLimit currency items',
@@ -87,7 +86,6 @@ router.get('/:id', async (req, res) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id)
       .populate('hospital', 'shortName legalName code')
-      .populate('surgicalCategory', 'description code')
       .populate({
         path: 'surgicalProcedure',
         select: 'name code totalLimit currency items',
@@ -134,7 +132,6 @@ router.post('/', async (req, res) => {
 
     await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
-      { path: 'surgicalCategory', select: 'description code' },
       { 
         path: 'surgicalProcedure', 
         select: 'name code amount currency items',
@@ -223,7 +220,6 @@ router.put('/:id', async (req, res) => {
     // Populate the saved inquiry for response
     await inquiry.populate([
       { path: 'hospital', select: 'shortName legalName code' },
-      { path: 'surgicalCategory', select: 'description code' },
       { 
         path: 'surgicalProcedure', 
         select: 'name code amount currency items',

@@ -415,12 +415,22 @@ async function validateCategoryLevelLimits(inquiry, procedure) {
   const materialNumbers = inquiry.items.map(item => item.materialNumber);
   const materials = await MaterialMaster.find({ 
     materialNumber: { $in: materialNumbers } 
-  }).populate('surgicalCategory');
+  }).populate('surgicalCategories');
   
-  // Create mapping of material number to surgical category
+  // Get allowed procedure category IDs
+  const procedureCategoryIds = procedure.items.map(item => 
+    item.surgicalCategoryId._id.toString()
+  );
+  
+  // Create mapping of material number to first matching surgical category (from procedure)
   const materialCategoryMap = {};
   materials.forEach(material => {
-    materialCategoryMap[material.materialNumber] = material.surgicalCategory._id.toString();
+    const matchingCategory = (material.surgicalCategories || []).find(cat => 
+      procedureCategoryIds.includes(cat._id.toString())
+    );
+    if (matchingCategory) {
+      materialCategoryMap[material.materialNumber] = matchingCategory._id.toString();
+    }
   });
   
   // Group inquiry amounts by surgical category
