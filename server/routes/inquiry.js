@@ -484,8 +484,28 @@ router.get('/:id/pdf', async (req, res) => {
     // Ensure tax amounts are calculated for each item (they may not be if inquiry was fetched without triggering pre-save hook)
     if (inquiry.items && inquiry.items.length > 0) {
       console.log('DEBUG: Processing', inquiry.items.length, 'items');
+      
+      // Get hospital and company state codes to determine tax type
+      let hospitalStateCode = inquiry.hospital?.state || '';
+      let companyStateCode = '';
+      
+      // Try to fetch company state code from database
+      try {
+        const CompanyDetailsModel = require('../models/CompanyDetails');
+        const companyDetails = await CompanyDetailsModel.findOne({});
+        if (companyDetails && companyDetails.compliance && companyDetails.compliance.stateCode) {
+          companyStateCode = companyDetails.compliance.stateCode;
+        }
+      } catch (e) {
+        console.log('Could not fetch company state code:', e.message);
+      }
+      
+      console.log('DEBUG: State codes - Hospital:', hospitalStateCode, 'Company:', companyStateCode);
+      const isSameState = hospitalStateCode === companyStateCode && hospitalStateCode !== '';
+      console.log('DEBUG: Is same state transaction?', isSameState);
+      
       inquiry.items.forEach((item, idx) => {
-        console.log(`DEBUG: Item ${idx}:`, {
+        console.log(`DEBUG: Item ${idx} BEFORE fix:`, {
           cgst: item.cgstAmount,
           sgst: item.sgstAmount,
           igst: item.igstAmount,
@@ -493,26 +513,30 @@ router.get('/:id/pdf', async (req, res) => {
           total: item.totalAmount
         });
         
-        // If tax fields are missing or all zero, the values weren't properly persisted
-        const hasTaxValues = (item.cgstAmount || 0) + (item.sgstAmount || 0) + (item.igstAmount || 0) > 0;
-        
-        // ALWAYS ensure IGST scenario is properly detected: if gstAmount exists but CGST/SGST are 0 or missing
-        if (item.gstAmount && item.gstAmount > 0) {
-          const cgst = item.cgstAmount || 0;
-          const sgst = item.sgstAmount || 0;
-          if (cgst === 0 && sgst === 0) {
-            // This is IGST scenario - ensure igstAmount is set
-            console.log(`DEBUG: Item ${idx} is IGST scenario, setting igstAmount to ${item.gstAmount}`);
+        // Recalculate tax based on state codes
+        const gstAmount = item.gstAmount || 0;
+        if (gstAmount > 0) {
+          if (isSameState) {
+            // Intra-state: CGST 50% + SGST 50%
+            item.cgstAmount = Math.round((gstAmount * 0.5) * 100) / 100;
+            item.sgstAmount = Math.round((gstAmount * 0.5) * 100) / 100;
+            item.igstAmount = 0;
+            console.log(`DEBUG: Item ${idx} - CGST/SGST intra-state: CGST=${item.cgstAmount}, SGST=${item.sgstAmount}`);
+          } else {
+            // Inter-state: IGST 100%
             item.cgstAmount = 0;
             item.sgstAmount = 0;
-            item.igstAmount = item.gstAmount;
+            item.igstAmount = gstAmount;
+            console.log(`DEBUG: Item ${idx} - IGST inter-state: IGST=${item.igstAmount}`);
           }
         }
-      });
-      console.log('DEBUG: After processing, first item:', {
-        cgst: inquiry.items[0].cgstAmount,
-        sgst: inquiry.items[0].sgstAmount,
-        igst: inquiry.items[0].igstAmount
+        
+        console.log(`DEBUG: Item ${idx} AFTER fix:`, {
+          cgst: item.cgstAmount,
+          sgst: item.sgstAmount,
+          igst: item.igstAmount,
+          gst: item.gstAmount
+        });
       });
     }
 
