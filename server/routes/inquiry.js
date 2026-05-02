@@ -521,7 +521,7 @@ router.get('/:id/pdf', async (req, res) => {
       console.log('DEBUG: Is same state transaction?', isSameState);
       
       inquiry.items.forEach((item, idx) => {
-        console.log(`DEBUG: Item ${idx} BEFORE fix:`, {
+        console.log(`DEBUG: Item ${idx} BEFORE tax recalc:`, {
           cgst: item.cgstAmount,
           sgst: item.sgstAmount,
           igst: item.igstAmount,
@@ -537,23 +537,29 @@ router.get('/:id/pdf', async (req, res) => {
             item.cgstAmount = Math.round((gstAmount * 0.5) * 100) / 100;
             item.sgstAmount = Math.round((gstAmount * 0.5) * 100) / 100;
             item.igstAmount = 0;
-            console.log(`DEBUG: Item ${idx} - CGST/SGST intra-state: CGST=${item.cgstAmount}, SGST=${item.sgstAmount}`);
+            console.log(`DEBUG: Item ${idx} RECALC TO CGST/SGST: CGST=${item.cgstAmount}, SGST=${item.sgstAmount}, IGST=${item.igstAmount}`);
           } else {
             // Inter-state: IGST 100%
             item.cgstAmount = 0;
             item.sgstAmount = 0;
             item.igstAmount = gstAmount;
-            console.log(`DEBUG: Item ${idx} - IGST inter-state: IGST=${item.igstAmount}`);
+            console.log(`DEBUG: Item ${idx} RECALC TO IGST: CGST=${item.cgstAmount}, SGST=${item.sgstAmount}, IGST=${item.igstAmount}`);
           }
         }
         
-        console.log(`DEBUG: Item ${idx} AFTER fix:`, {
+        console.log(`DEBUG: Item ${idx} AFTER tax recalc:`, {
           cgst: item.cgstAmount,
           sgst: item.sgstAmount,
-          igst: item.igstAmount,
-          gst: item.gstAmount
+          igst: item.igstAmount
         });
       });
+      
+      console.log('DEBUG: ALL ITEMS AFTER RECALC:', inquiry.items.map((item, idx) => ({
+        idx,
+        cgst: item.cgstAmount,
+        sgst: item.sgstAmount,
+        igst: item.igstAmount
+      })));
     }
 
     // Debug logging
@@ -918,13 +924,15 @@ router.get('/:id/pdf', async (req, res) => {
           
           // Debug logging for first item
           if (index === 0) {
-            console.log('PDF Item Tax Breakdown:', {
-              cgstAmount: item.cgstAmount,
-              sgstAmount: item.sgstAmount,
-              igstAmount: item.igstAmount,
+            console.log('PDF ITEMS LOOP - First item tax values being accumulated:', {
+              cgstAmt,
+              sgstAmt,
+              igstAmt,
+              cgstAmount_from_item: item.cgstAmount,
+              sgstAmount_from_item: item.sgstAmount,
+              igstAmount_from_item: item.igstAmount,
               gstAmount: item.gstAmount,
-              totalAmount: item.totalAmount,
-              allFields: Object.keys(item.toObject ? item.toObject() : item)
+              totalAmount: item.totalAmount
             });
           }
 
@@ -951,6 +959,15 @@ router.get('/:id/pdf', async (req, res) => {
 
     // Draw vertical lines for all 15 item rows (even if not all filled)
     drawTableGridLines(itemsStartY, fixedItemRows, false);
+    
+    console.log('DEBUG: ACCUMULATED TOTALS FROM ITEMS LOOP:', {
+      totalCGST,
+      totalSGST,
+      totalIGST,
+      totalAmount,
+      totalQty,
+      rowCount
+    });
 
     // Tax amounts are already calculated from items
     const cgstAmount = Math.round(totalCGST * 100) / 100;
@@ -972,11 +989,12 @@ router.get('/:id/pdf', async (req, res) => {
     const totalTax = cgstAmount + sgstAmount + igstAmount;
     const isIGST = igstAmount > 0 || (totalTax > 0 && cgstAmount === 0 && sgstAmount === 0);
     
-    console.log('DEBUG: IGST Detection:', {
+    console.log('DEBUG: IGST Detection BEFORE rendering:', {
       totalTax,
       isIGST,
       'igstAmount > 0': igstAmount > 0,
-      'totalTax > 0 && cgst === 0 && sgst === 0': totalTax > 0 && cgstAmount === 0 && sgstAmount === 0
+      'totalTax > 0 && cgst === 0 && sgst === 0': totalTax > 0 && cgstAmount === 0 && sgstAmount === 0,
+      'VALUES': { cgstAmount, sgstAmount, igstAmount }
     });
     
     // If IGST is detected but igstAmount is 0, calculate it from total tax
@@ -984,6 +1002,8 @@ router.get('/:id/pdf', async (req, res) => {
       console.log('DEBUG: Fallback calculation - setting igstAmount to', totalTax);
       igstAmount = totalTax;
     }
+    
+    console.log('DEBUG: RENDERING PDF TAX SECTION with isIGST=', isIGST, 'cgst=', cgstAmount, 'sgst=', sgstAmount, 'igst=', igstAmount);
     
     // Calculate total with appropriate tax
     let totalWithTax;
