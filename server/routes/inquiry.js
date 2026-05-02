@@ -489,12 +489,28 @@ router.get('/:id/pdf', async (req, res) => {
       let hospitalStateCode = inquiry.hospital?.state || '';
       let companyStateCode = '';
       
-      // Try to fetch company state code from database
+      // Get business unit ID first
+      let businessUnitId = inquiry.hospital?.businessUnit?._id || inquiry.hospital?.businessUnit;
+      console.log('DEBUG: Business Unit ID:', businessUnitId);
+      
+      // Try to fetch company state code from database using correct business unit
       try {
         const CompanyDetailsModel = require('../models/CompanyDetails');
-        const companyDetails = await CompanyDetailsModel.findOne({});
+        let companyDetailsQuery = {};
+        
+        if (businessUnitId) {
+          companyDetailsQuery = { businessUnit: businessUnitId, isActive: true };
+        } else {
+          // Fallback to any active company details
+          companyDetailsQuery = { isActive: true };
+        }
+        
+        const companyDetails = await CompanyDetailsModel.findOne(companyDetailsQuery);
+        console.log('DEBUG: Company Details Query:', companyDetailsQuery, 'Found:', !!companyDetails);
+        
         if (companyDetails && companyDetails.compliance && companyDetails.compliance.stateCode) {
           companyStateCode = companyDetails.compliance.stateCode;
+          console.log('DEBUG: Company State Code:', companyStateCode);
         }
       } catch (e) {
         console.log('Could not fetch company state code:', e.message);
