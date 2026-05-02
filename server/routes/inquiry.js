@@ -771,7 +771,7 @@ router.get('/:id/pdf', async (req, res) => {
     const colAmountWidth = 66;
 
     const rowHeight = 16; // Tighter row height
-    const fixedItemRows = 15; // Always 15 rows for items
+    const fixedItemRows = 12; // Always 12 rows for items
 
     // Helper function to draw vertical grid lines
     const drawTableGridLines = (startY, numRows, includeHeader = false) => {
@@ -1004,35 +1004,84 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(12).font(getFont());
     doc.text(numberToWords(Math.floor(cgstAmount + sgstAmount)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
 
-    // ===== REMARKS SECTION (NO gap, start immediately) =====
+    // ===== REMARKS SECTION (WITH TABLE STRUCTURE) =====
     y = taxAmountInWordsY + taxAmountInWordsHeight;
-    doc.fontSize(12).font(getFont(true)).text('Remarks', margin + 5, y);
-    doc.fontSize(12).font(getFont());
+    const remarksStartY = y;
+    const remarksHeight = 115; // Increased height to accommodate declaration text
+
+    // Draw border around Remarks section
+    doc.rect(margin, remarksStartY, pageWidth, remarksHeight).stroke();
     
-    y += 13;
-    doc.text(`Patient Name: ${inquiry.patientName || ''}`, margin + 5, y);
-    y += 10;
-    doc.text(`Surgeon Name: Dr ${inquiry.patientName || ''}`, margin + 5, y);
-    y += 10;
-    doc.text(`Patient IP No.: ${inquiry.patientUHID || ''}`, margin + 5, y);
-    y += 10;
-    doc.text(`Date of Surgery: ${new Date(inquiry.inquiryDate).toLocaleDateString('en-IN')}`, margin + 5, y);
+    // Remarks heading - Bold
+    doc.fontSize(12).font(getFont(true));
+    doc.text('Remarks', margin + 5, remarksStartY + 5);
+    
+    // Table structure with 3 columns
+    const col1Start = margin + 5;
+    const col2Start = margin + 140;
+    const col3Start = margin + 155;
+    
+    doc.fontSize(11).font(getFont());
+    let tableY = remarksStartY + 22;
+    const tableRowHeight = 13;
+    
+    // Row 1: Patient Name
+    doc.text('Patient Name', col1Start, tableY);
+    doc.text(':', col2Start, tableY);
+    doc.text(inquiry.patientName || '', col3Start, tableY, { width: pageWidth - col3Start - 5 });
+    tableY += tableRowHeight;
+    
+    // Row 2: Surgeon Name
+    doc.text('Surgeon Name', col1Start, tableY);
+    doc.text(':', col2Start, tableY);
+    doc.text(`Dr ${inquiry.patientName || ''}`, col3Start, tableY, { width: pageWidth - col3Start - 5 });
+    tableY += tableRowHeight;
+    
+    // Row 3: Patient IP No
+    doc.text('Patient IP No.', col1Start, tableY);
+    doc.text(':', col2Start, tableY);
+    doc.text(inquiry.patientUHID || '', col3Start, tableY, { width: pageWidth - col3Start - 5 });
+    tableY += tableRowHeight;
+    
+    // Row 4: Date of Surgery (NO bottom border line, declaration will be at bottom)
+    doc.text('Date of Surgery', col1Start, tableY);
+    doc.text(':', col2Start, tableY);
+    doc.text(new Date(inquiry.inquiryDate).toLocaleDateString('en-IN'), col3Start, tableY, { width: pageWidth - col3Start - 5 });
+    tableY += tableRowHeight;
+    
+    // Declaration - Bold label on same line as text, wraps to next line
+    doc.fontSize(11).font(getFont(true));
+    doc.text('Declaration:', col1Start, tableY, { continued: true });
+    doc.fontSize(11).font(getFont());
+    doc.text(' We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.', { width: pageWidth - col1Start - 10, align: 'left' });
 
-    // ===== DECLARATION =====
-    y += 15;
-    doc.fontSize(12).font(getFont());
-    doc.text('Declaration:', margin + 5, y);
-    doc.text('We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.', margin + 5, y + 10, { width: pageWidth - 10 });
-
-    // ===== SIGNATURE SECTION =====
-    y += 35;
-    doc.moveTo(margin + 50, y).lineTo(margin + 150, y).stroke();
-    doc.moveTo(pageWidth - 100, y).lineTo(pageWidth - 10, y).stroke();
-
-    doc.fontSize(12).font(getFont());
-    doc.text("Receiver's Signature & Stamp", margin + 20, y + 5);
-    doc.text(`For ${companyName}`, pageWidth - 120, y + 5);
-    doc.text('Authorized Signatory', pageWidth - 140, y + 15);
+    // ===== SIGNATURE SECTION (TWO COLUMN LAYOUT WITH BORDERS) =====
+    y = remarksStartY + remarksHeight; // No gap, start immediately
+    const signatureSectionHeight = 80; // Increased height
+    const midLine = margin + pageWidth / 2;
+    
+    // Draw vertical divider in middle
+    doc.moveTo(midLine, y).lineTo(midLine, y + signatureSectionHeight).stroke();
+    
+    // Left column border (left, top, bottom)
+    doc.moveTo(margin, y).lineTo(margin, y + signatureSectionHeight).stroke(); // Left
+    doc.moveTo(margin, y).lineTo(midLine, y).stroke(); // Top
+    doc.moveTo(margin, y + signatureSectionHeight).lineTo(midLine, y + signatureSectionHeight).stroke(); // Bottom
+    
+    // Right column border (right, top, bottom)
+    doc.moveTo(midLine + 0.5, y).lineTo(margin + pageWidth, y).stroke(); // Top
+    doc.moveTo(margin + pageWidth, y).lineTo(margin + pageWidth, y + signatureSectionHeight).stroke(); // Right
+    doc.moveTo(midLine + 0.5, y + signatureSectionHeight).lineTo(margin + pageWidth, y + signatureSectionHeight).stroke(); // Bottom
+    
+    // Left column: Label at BOTTOM
+    doc.fontSize(11).font(getFont());
+    doc.text("Receiver's Signature & Stamp", margin + 5, y + signatureSectionHeight - 15, { width: pageWidth / 2 - 10, align: 'center' });
+    
+    // Right column: "For SS Agency" at TOP (NO underline, just text)
+    doc.text(`For ${companyName}`, midLine + 5, y + 8, { width: pageWidth / 2 - 10, align: 'center' });
+    
+    // Right column: Label at BOTTOM
+    doc.text('Authorized Signatory', midLine + 5, y + signatureSectionHeight - 15, { width: pageWidth / 2 - 10, align: 'center' });
 
     // Finalize PDF
     doc.end();
