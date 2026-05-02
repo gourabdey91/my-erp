@@ -163,6 +163,24 @@ const Inquiry = () => {
     }
   };
 
+  // Handle PDF download
+  const handlePrintPDF = async (inquiryId, inquiryNumber) => {
+    try {
+      const pdfBlob = await inquiryAPI.downloadInquiryPDF(inquiryId);
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Inquiry_${inquiryNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Error downloading PDF. Please try again.');
+    }
+  };
+
   // Handle form cancel
   const handleFormCancel = () => {
     setShowForm(false);
@@ -372,6 +390,14 @@ const Inquiry = () => {
                             ✏️
                           </button>
                           <button
+                            className="unified-table-action download"
+                            onClick={() => handlePrintPDF(inquiry._id, inquiry.inquiryNumber)}
+                            title="Download PDF"
+                            disabled={loading}
+                          >
+                            📄
+                          </button>
+                          <button
                             className="unified-table-action delete"
                             onClick={() => handleDelete(inquiry._id)}
                             title="Delete"
@@ -433,6 +459,11 @@ const Inquiry = () => {
                       label: 'Edit',
                       icon: '✏️',
                       onClick: () => handleEdit(inquiry)
+                    },
+                    {
+                      label: 'Download PDF',
+                      icon: '📄',
+                      onClick: () => handlePrintPDF(inquiry._id, inquiry.inquiryNumber)
                     },
                     {
                       label: 'Delete',

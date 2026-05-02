@@ -74,7 +74,11 @@ export const inquiryAPI = {
 
   // Get inquiry statistics
   getInquiryStats: () =>
-    api.get('/inquiries/stats/overview').then(response => response.data)
+    api.get('/inquiries/stats/overview').then(response => response.data),
+
+  // Download inquiry PDF
+  downloadInquiryPDF: (inquiryId) => 
+    api.get(`/inquiries/${inquiryId}/pdf`, { responseType: 'blob' }).then(response => response.data)
 };
 
 export default inquiryAPI;

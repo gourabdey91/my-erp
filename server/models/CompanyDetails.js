@@ -98,6 +98,11 @@ const companyDetailsSchema = new mongoose.Schema({
   },
 
   // System Information
+  businessUnit: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BusinessUnit',
+    required: true
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -115,7 +120,7 @@ const companyDetailsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Only one active company details record should exist
-companyDetailsSchema.index({ isActive: 1 }, { unique: true, partialFilterExpression: { isActive: true } });
+// One active company details record per business unit
+companyDetailsSchema.index({ businessUnit: 1, isActive: 1 }, { unique: true, partialFilterExpression: { isActive: true } });
 
 module.exports = mongoose.model('CompanyDetails', companyDetailsSchema);

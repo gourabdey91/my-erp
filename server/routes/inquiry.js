@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
 const Inquiry = require('../models/Inquiry');
 const Hospital = require('../models/Hospital');
 const Category = require('../models/Category');
 const PaymentType = require('../models/PaymentType');
 const Procedure = require('../models/Procedure');
+const CompanyDetails = require('../models/CompanyDetails');
 
 // Get all inquiries with pagination and search
 router.get('/', async (req, res) => {
@@ -444,5 +448,650 @@ router.get('/stats/overview', async (req, res) => {
     });
   }
 });
+
+// Generate PDF for inquiry
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const inquiry = await Inquiry.findById(req.params.id)
+      .populate({
+        path: 'hospital',
+        select: 'shortName legalName code address city state businessUnit',
+        populate: {
+          path: 'businessUnit',
+          select: '_id'
+        }
+      })
+      .populate({
+        path: 'surgicalProcedure',
+        select: 'name code totalLimit currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'name description code'
+        }
+      })
+      .populate('paymentMethod', 'description code')
+      .populate('createdBy', 'name email');
+
+    if (!inquiry) {
+      console.error('Inquiry not found:', req.params.id);
+      return res.status(404).json({
+        success: false,
+        message: 'Inquiry not found'
+      });
+    }
+
+    // Debug logging
+    console.log('Inquiry Hospital:', inquiry.hospital?._id);
+    console.log('Inquiry Hospital BusinessUnit:', inquiry.hospital?.businessUnit);
+
+    let businessUnitId = inquiry.hospital?.businessUnit?._id || inquiry.hospital?.businessUnit;
+
+    // Fetch company details for the business unit (if available)
+    let companyDetails = null;
+    
+    if (businessUnitId) {
+      companyDetails = await CompanyDetails.findOne({
+        businessUnit: businessUnitId,
+        isActive: true
+      });
+
+      console.log('Company Details Query:', { businessUnit: businessUnitId });
+      console.log('Company Details Found:', !!companyDetails);
+    }
+
+    // Fallback: Try to find any active company details if specific one not found
+    if (!companyDetails) {
+      console.log('Trying fallback: fetching any active CompanyDetails');
+      companyDetails = await CompanyDetails.findOne({ isActive: true });
+    }
+
+    if (!companyDetails) {
+      console.error('No company details found. Using default values.');
+      // Provide default/fallback values
+      companyDetails = {
+        companyName: 'SS AGENCY',
+        address: {
+          street: '45, 2nd Floor District Center, Chandrasekharpur, Infront of LIC Office, Bhubaneswar',
+          city: 'Bhubaneswar',
+          state: 'Odisha',
+          pincode: '751001'
+        },
+        contact: {
+          mobile1: '+91-8790077225',
+          mobile2: '7606022509',
+          email: 'crm.ss.agency@gmail.com'
+        },
+        compliance: {
+          dlNumber: 'MBJ-NZ-0013/W/MBJ-NZ-0014/WC/MBJ-NZ-0015/WX',
+          gstNumber: '21AAHPP9714G1ZR',
+          stateCode: '21'
+        }
+      };
+    }
+
+    // Create PDF Document - Optimized for A4 printing
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 12,
+      bufferPages: true,
+      info: {
+        Title: `Inquiry_${inquiry.inquiryNumber}`,
+        Author: 'SS AGENCY',
+        Subject: 'TAX INVOICE'
+      }
+    });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Inquiry_${inquiry.inquiryNumber}.pdf"`);
+
+    // Pipe the PDF to response
+    doc.pipe(res);
+
+    const margin = 12;
+    const pageWidth = 576; // A4 width (210mm) minus margins (12+12)
+    let y = margin;
+
+    // Register Calibri font with proper bold support
+    let calibriAvailable = false;
+    let calibriBoldAvailable = false;
+
+    try {
+      // Try common Calibri paths on Windows
+      const calibriPath = 'C:\\Windows\\Fonts\\calibri.ttf';
+      const calibriBoldPath = 'C:\\Windows\\Fonts\\calibrib.ttf';
+      
+      if (fs.existsSync(calibriPath)) {
+        try {
+          doc.registerFont('Calibri', calibriPath);
+          calibriAvailable = true;
+        } catch (e) {
+          console.log('Could not register Calibri:', e.message);
+        }
+      }
+      
+      if (fs.existsSync(calibriBoldPath)) {
+        try {
+          doc.registerFont('CaliBold', calibriBoldPath);
+          calibriBoldAvailable = true;
+        } catch (e) {
+          console.log('Could not register CaliBold:', e.message);
+        }
+      }
+    } catch (e) {
+      console.log('Font setup error:', e.message);
+    }
+
+    // Font helper - Use Calibri if available, fallback to Helvetica
+    const getFont = (bold = false) => {
+      if (bold) {
+        // Prefer CaliBold, fallback to Helvetica-Bold
+        return calibriBoldAvailable ? 'CaliBold' : 'Helvetica-Bold';
+      }
+      // Prefer Calibri, fallback to Helvetica
+      return calibriAvailable ? 'Calibri' : 'Helvetica';
+    };
+    const fontBaseSize = 12;
+
+    // ===== SET GLOBAL LINE WIDTH FOR ALL BORDERS =====
+    doc.lineWidth(0.5); // Reduced border thickness throughout PDF
+
+    // ===== TITLE ROW: TAX INVOICE =====
+    doc.rect(margin, y, pageWidth, 20).stroke();
+    doc.fontSize(12).font(getFont(true)).text('TAX INVOICE', margin + 10, y + 3, { width: pageWidth - 20, align: 'center' });
+    y += 20;
+
+    // ===== HEADER SECTION: Redesigned as TABLE with Logo Column + Address Column =====
+    const leftSectionWidth = pageWidth * 0.55;
+    const rightSectionWidth = pageWidth * 0.45;
+    const leftX = margin;
+    const rightX = margin + leftSectionWidth;
+    const headerHeight = 140;
+
+    // Draw main border for left section
+    doc.rect(leftX, y, leftSectionWidth, headerHeight).stroke();
+
+    // LEFT COLUMN: Logo (fixed width of 40px)
+    const logoColumnWidth = 40;
+    const logoSize = 30;
+    const logoX = leftX + 5;
+    const logoY = y + 5;
+
+    // Try to load and display logo - adjust path for different environments
+    let logoPath = path.join(__dirname, '../public/SsAgency.png');
+    if (!fs.existsSync(logoPath)) {
+      logoPath = path.join(__dirname, '../../public/SsAgency.png');
+    }
+
+    if (fs.existsSync(logoPath)) {
+      try {
+        doc.image(logoPath, logoX, logoY, { width: logoSize, height: logoSize });
+      } catch (e) {
+        console.log('Logo loading error:', e.message);
+      }
+    } else {
+      console.log('Logo file not found at:', logoPath);
+    }
+
+    // RIGHT COLUMN: Company Details (all address/contact info)
+    const addressColumnX = leftX + logoColumnWidth;
+    const addressColumnWidth = leftSectionWidth - logoColumnWidth;
+    const addressStartY = y + 3;
+
+    doc.fontSize(12).font(getFont(true));
+    
+    // Build address from company details with safety checks
+    const street = companyDetails?.address?.street || '43, 2nd Floor District Center, Chandrasekharpur';
+    const city = companyDetails?.address?.city || 'Bhubaneswar';
+    const state = companyDetails?.address?.state || 'Odisha';
+    const pincode = companyDetails?.address?.pincode || '751016';
+    const mobile1 = companyDetails?.contact?.mobile1 || '8790077225';
+    const mobile2 = companyDetails?.contact?.mobile2 || '7606022509';
+    const email = companyDetails?.contact?.email || 'crm.ss.agency@gmail.com';
+    const dlNumber = companyDetails?.compliance?.dlNumber || 'MBJ-NZ-0013/W/MBJ-NZ-0014/WC/MBJ-NZ-0015/WX';
+    const gstNumber = companyDetails?.compliance?.gstNumber || '21AAHPP9714G1ZR';
+    const stateCode = companyDetails?.compliance?.stateCode || '21';
+    const companyName = companyDetails?.companyName || 'SS AGENCY';
+
+    const addressTextPadding = 4;
+    const addressTextWidth = addressColumnWidth - (2 * addressTextPadding);
+    const lineGap = -1; // Negative gap to compress lines and prevent overflow
+    
+    let currentY = addressStartY;
+
+    // Helper to draw text and return next Y position accounting for text wrapping
+    const drawAddressLine = (text, currentY, bold = false) => {
+      doc.fontSize(12).font(bold ? getFont(true) : getFont());
+      const textHeight = doc.heightOfString(text, { width: addressTextWidth });
+      doc.text(text, addressColumnX + addressTextPadding, currentY, { width: addressTextWidth });
+      return currentY + textHeight + lineGap;
+    };
+
+    // Draw company details in address column
+    currentY = drawAddressLine(companyName, currentY, true);
+    currentY = drawAddressLine(street, currentY, false);
+    currentY = drawAddressLine(`${city}, ${state} - ${pincode}`, currentY, false);
+    currentY = drawAddressLine(`Mob. ${mobile1}, ${mobile2}`, currentY, false);
+    currentY = drawAddressLine(`Email-${email}`, currentY, false);
+    currentY = drawAddressLine(`DL No.: ${dlNumber}`, currentY, false);
+    currentY = drawAddressLine(`GSTIN/UIN: ${gstNumber}`, currentY, false);
+
+    // Right section - Invoice details table
+    // Draw main border for right section (same height as left section = 140)
+    doc.rect(rightX, y, rightSectionWidth, headerHeight).stroke();
+
+    // Split right section into 2 columns
+    const rightCol1Width = rightSectionWidth * 0.5;
+    const rightCol2Width = rightSectionWidth * 0.5;
+
+    // Row height
+    const cellRowHeight = 28;
+    let rowY = y;
+
+    // Helper function to draw a cell with label on top and value below with proper spacing
+    const drawInvoiceCell = (label, value, cellX, cellY, cellWidth) => {
+      doc.rect(cellX, cellY, cellWidth, cellRowHeight).stroke();
+      
+      // Label with small top margin
+      doc.fontSize(12).font(getFont(true)).text(label, cellX + 4, cellY + 2, { width: cellWidth - 8 });
+      // Value with margin from label
+      doc.fontSize(12).font(getFont()).text(value || '', cellX + 4, cellY + 14, { width: cellWidth - 8 });
+    };
+
+    // Row 1: Invoice No. | Dated
+    drawInvoiceCell('Invoice No.', inquiry.inquiryNumber, rightX, rowY, rightCol1Width);
+    drawInvoiceCell('Dated', new Date(inquiry.inquiryDate).toLocaleDateString('en-IN'), rightX + rightCol1Width, rowY, rightCol2Width);
+    rowY += cellRowHeight;
+
+    // Row 2: Delivery Note | Case Number
+    drawInvoiceCell('Delivery Note', '', rightX, rowY, rightCol1Width);
+    drawInvoiceCell('Case Number', '', rightX + rightCol1Width, rowY, rightCol2Width);
+    rowY += cellRowHeight;
+
+    // Row 3: Reference No. & Date | Other References
+    drawInvoiceCell('Reference No. & Date', '', rightX, rowY, rightCol1Width);
+    drawInvoiceCell('Other References', '', rightX + rightCol1Width, rowY, rightCol2Width);
+    rowY += cellRowHeight;
+
+    // Row 4: Dispatch Doc. No. | Delivery Note Date
+    drawInvoiceCell('Dispatch Doc. No.', '', rightX, rowY, rightCol1Width);
+    drawInvoiceCell('Delivery Note Date', '', rightX + rightCol1Width, rowY, rightCol2Width);
+    rowY += cellRowHeight;
+
+    // Row 5: Dispatch Through | Destination
+    drawInvoiceCell('Dispatch Through', '', rightX, rowY, rightCol1Width);
+    drawInvoiceCell('Destination', '', rightX + rightCol1Width, rowY, rightCol2Width);
+
+    y += headerHeight;
+
+    // ===== BUYER SECTION =====
+    // Calculate dynamic height based on address length
+    doc.fontSize(12).font(getFont());
+    const fullAddress = inquiry.hospital?.address || '';
+    const addressHeight = doc.heightOfString(fullAddress, { width: pageWidth - 20 });
+    const buyerSectionHeight = Math.max(60, addressHeight + 40); // Min 60px, or content + 40px padding
+    
+    doc.rect(margin, y, pageWidth, buyerSectionHeight).stroke();
+
+    doc.fontSize(12).font(getFont(true)).text('Buyer (Bill to)', margin + 5, y + 5);
+    doc.fontSize(12).font(getFont(true)).text(inquiry.hospital?.legalName || inquiry.hospital?.shortName || '', margin + 5, y + 18);
+    
+    doc.fontSize(12).font(getFont());
+    doc.text(fullAddress, margin + 5, y + 32, { width: pageWidth - 10 });
+
+    // ===== ITEMS TABLE - No gap, continuous from buyer section =====
+    y += buyerSectionHeight;
+
+    // Column positions - Optimized spacing for 9 columns
+    const colSl = margin;
+    const colSlWidth = 35;
+    
+    const colProduct = colSl + colSlWidth;
+    const colProductWidth = 70;
+    
+    const colDesc = colProduct + colProductWidth;
+    const colDescWidth = 130;
+    
+    const colHSN = colDesc + colDescWidth;
+    const colHSNWidth = 65;
+    
+    const colQty = colHSN + colHSNWidth;
+    const colQtyWidth = 40;
+    
+    const colPrice = colQty + colQtyWidth;
+    const colPriceWidth = 70;
+    
+    const colUnit = colPrice + colPriceWidth;
+    const colUnitWidth = 35;
+    
+    const colDisc = colUnit + colUnitWidth;
+    const colDiscWidth = 50;
+    
+    const colAmount = colDisc + colDiscWidth;
+    const colAmountWidth = 66;
+
+    const rowHeight = 16; // Tighter row height
+    const fixedItemRows = 15; // Always 15 rows for items
+
+    // Helper function to draw vertical grid lines
+    const drawTableGridLines = (startY, numRows, includeHeader = false) => {
+      const totalHeight = numRows * rowHeight;
+      
+      // Left border (left side of Sl No)
+      doc.moveTo(margin, startY).lineTo(margin, startY + totalHeight).stroke();
+      
+      // Vertical lines between columns
+      doc.moveTo(colProduct, startY).lineTo(colProduct, startY + totalHeight).stroke();
+      doc.moveTo(colDesc, startY).lineTo(colDesc, startY + totalHeight).stroke();
+      doc.moveTo(colHSN, startY).lineTo(colHSN, startY + totalHeight).stroke();
+      doc.moveTo(colQty, startY).lineTo(colQty, startY + totalHeight).stroke();
+      doc.moveTo(colPrice, startY).lineTo(colPrice, startY + totalHeight).stroke();
+      doc.moveTo(colUnit, startY).lineTo(colUnit, startY + totalHeight).stroke();
+      doc.moveTo(colDisc, startY).lineTo(colDisc, startY + totalHeight).stroke();
+      doc.moveTo(colAmount, startY).lineTo(colAmount, startY + totalHeight).stroke();
+      
+      // Right border (right side of Amount)
+      doc.moveTo(margin + pageWidth, startY).lineTo(margin + pageWidth, startY + totalHeight).stroke();
+      
+      // Top border
+      doc.moveTo(margin, startY).lineTo(margin + pageWidth, startY).stroke();
+      // Bottom border
+      doc.moveTo(margin, startY + totalHeight).lineTo(margin + pageWidth, startY + totalHeight).stroke();
+    };
+
+    // Header row with full borders
+    const headerY = y;
+    drawTableGridLines(headerY, 1, true);
+    
+    doc.fontSize(11).font(getFont(true));
+    doc.text('Sl No.', colSl + 2, headerY + 2, { width: colSlWidth - 4 });
+    doc.text('Product', colProduct + 2, headerY + 2, { width: colProductWidth - 4 });
+    doc.text('Description of Goods', colDesc + 2, headerY + 2, { width: colDescWidth - 4 });
+    doc.text('HSN/SAC', colHSN + 2, headerY + 2, { width: colHSNWidth - 4 });
+    doc.text('Qty', colQty + 2, headerY + 2, { width: colQtyWidth - 4, align: 'center' });
+    doc.text('Unit Price', colPrice + 2, headerY + 2, { width: colPriceWidth - 4, align: 'right' });
+    doc.text('Unit', colUnit + 2, headerY + 2, { width: colUnitWidth - 4, align: 'center' });
+    doc.text('Disc. %', colDisc + 2, headerY + 2, { width: colDiscWidth - 4, align: 'right' });
+    doc.text('Amount', colAmount + 2, headerY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+    // Data rows - Fixed 15 rows with only vertical separators
+    let itemsStartY = headerY + rowHeight;
+    
+    let totalAmount = 0;
+    let totalQty = 0;
+    let rowCount = 0;
+
+    if (inquiry.items && inquiry.items.length > 0) {
+      inquiry.items.forEach((item, index) => {
+        if (rowCount < fixedItemRows) {
+          const rowY = itemsStartY + (rowCount * rowHeight);
+
+          const amount = parseFloat(item.totalAmount || 0);
+          const rate = parseFloat(item.unitRate || 0);
+          const qty = parseFloat(item.quantity || 0);
+          const disc = parseFloat(item.discountPercentage || 0);
+
+          doc.fontSize(11).font(getFont());
+          doc.text((index + 1).toString(), colSl + 2, rowY + 2, { width: colSlWidth - 4 });
+          doc.text(item.materialNumber || '', colProduct + 2, rowY + 2, { width: colProductWidth - 4 });
+          doc.text(item.description || 'Implant', colDesc + 2, rowY + 2, { width: colDescWidth - 4 });
+          doc.text(item.hsnCode || '', colHSN + 2, rowY + 2, { width: colHSNWidth - 4 });
+          doc.text(qty.toFixed(0), colQty + 2, rowY + 2, { width: colQtyWidth - 4, align: 'center' });
+          doc.text('₹ ' + rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colPrice + 2, rowY + 2, { width: colPriceWidth - 4, align: 'right' });
+          doc.text('NOS', colUnit + 2, rowY + 2, { width: colUnitWidth - 4, align: 'center' });
+          doc.text(disc.toFixed(2) + '%', colDisc + 2, rowY + 2, { width: colDiscWidth - 4, align: 'right' });
+          doc.text('₹ ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, rowY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+          totalAmount += amount;
+          totalQty += qty;
+          rowCount++;
+        }
+      });
+    }
+
+    // Draw vertical lines for all 15 item rows (even if not all filled)
+    drawTableGridLines(itemsStartY, fixedItemRows, false);
+
+    // Calculate tax amounts
+    const cgstAmount = totalAmount * 0.025;
+    const sgstAmount = totalAmount * 0.025;
+    const roundingAmount = 0; // Can be calculated if needed
+    const totalWithTax = totalAmount + cgstAmount + sgstAmount + roundingAmount;
+
+    // Row 16: Subtotal - Border from Sl No to Amount column (full row width)
+    let subtotalY = itemsStartY + (fixedItemRows * rowHeight);
+    doc.fontSize(11).font(getFont());
+    
+    // Draw borders: left (from margin), right (to end of Amount), top and bottom spans full width
+    doc.moveTo(margin, subtotalY).lineTo(margin + pageWidth, subtotalY).stroke(); // Top border
+    doc.moveTo(margin, subtotalY + rowHeight).lineTo(margin + pageWidth, subtotalY + rowHeight).stroke(); // Bottom border
+    
+    // Left border (at Sl No column)
+    doc.moveTo(margin, subtotalY).lineTo(margin, subtotalY + rowHeight).stroke();
+    
+    // Right border (at end of Amount column)
+    doc.moveTo(margin + pageWidth, subtotalY).lineTo(margin + pageWidth, subtotalY + rowHeight).stroke();
+    
+    doc.text('₹ ' + totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, subtotalY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+    // Rows 17-19: CGST, SGST, Rounding - FULL grid like items rows
+    let taxY = subtotalY + rowHeight;
+    const taxRowCount = 3; // CGST, SGST, Rounding
+    
+    // Draw full grid for tax rows (same as items rows)
+    drawTableGridLines(taxY, taxRowCount, false);
+    
+    // CGST Row
+    doc.fontSize(11).font(getFont());
+    doc.text('CGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+    
+    // SGST Row
+    taxY += rowHeight;
+    doc.fontSize(11).font(getFont());
+    doc.text('SGST/UTGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+    // Rounding Row
+    taxY += rowHeight;
+    doc.text('Rounding', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
+    doc.text('₹ ' + roundingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, taxY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+    // Row 20: Total - FULL grid with all columns
+    taxY += rowHeight;
+    
+    // Draw full grid for Total row
+    const totalRowStartY = taxY;
+    const totalRowHeight = rowHeight;
+    
+    // Left border
+    doc.moveTo(margin, totalRowStartY).lineTo(margin, totalRowStartY + totalRowHeight).stroke();
+    
+    // Vertical lines between columns
+    doc.moveTo(colProduct, totalRowStartY).lineTo(colProduct, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colDesc, totalRowStartY).lineTo(colDesc, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colHSN, totalRowStartY).lineTo(colHSN, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colQty, totalRowStartY).lineTo(colQty, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colPrice, totalRowStartY).lineTo(colPrice, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colUnit, totalRowStartY).lineTo(colUnit, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colDisc, totalRowStartY).lineTo(colDisc, totalRowStartY + totalRowHeight).stroke();
+    doc.moveTo(colAmount, totalRowStartY).lineTo(colAmount, totalRowStartY + totalRowHeight).stroke();
+    
+    // Right border
+    doc.moveTo(margin + pageWidth, totalRowStartY).lineTo(margin + pageWidth, totalRowStartY + totalRowHeight).stroke();
+    
+    // Top border
+    doc.moveTo(margin, totalRowStartY).lineTo(margin + pageWidth, totalRowStartY).stroke();
+    // Bottom border
+    doc.moveTo(margin, totalRowStartY + totalRowHeight).lineTo(margin + pageWidth, totalRowStartY + totalRowHeight).stroke();
+    
+    // Total Row content
+    doc.fontSize(11).font(getFont(true));
+    doc.text('Total', colDesc + 2, totalRowStartY + 2, { width: colDescWidth - 4 });
+    doc.text(totalQty.toFixed(0), colQty + 2, totalRowStartY + 2, { width: colQtyWidth - 4, align: 'center' });
+    doc.text('NOS', colUnit + 2, totalRowStartY + 2, { width: colUnitWidth - 4, align: 'center' });
+    doc.text('₹ ' + totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount + 2, totalRowStartY + 2, { width: colAmountWidth - 4, align: 'right' });
+
+    // Position y after total row - NO gap, start immediately
+    y = totalRowStartY + totalRowHeight;
+
+    // ===== AMOUNT IN WORDS (WITH BORDER) =====
+    const amountInWordsY = y;
+    const amountInWordsHeight = 20;
+    
+    // Draw border around Amount in words section (like company details, buyer details)
+    doc.rect(margin, amountInWordsY, pageWidth, amountInWordsHeight).stroke();
+    
+    // Split text: bold label + normal amount
+    doc.fontSize(12).font(getFont(true));
+    doc.text('Amount Chargeable (in words): ', margin + 5, amountInWordsY + 3, { continued: true });
+    doc.fontSize(12).font(getFont());
+    doc.text(numberToWords(Math.floor(totalWithTax)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+
+    // ===== TAX BREAKDOWN TABLE (NO gap, start immediately after) =====
+    y = amountInWordsY + amountInWordsHeight;
+    const taxTableColWidth = pageWidth / 4;
+
+    // Row 1 - Headers
+    doc.rect(margin, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+
+    doc.fontSize(12).font(getFont(true));
+    doc.text('Taxable Value', margin + 5, y + 2, { height: 15 });
+    doc.text('CGST', margin + taxTableColWidth + 5, y + 2, { height: 15 });
+    doc.text('SGST/UTGST', margin + taxTableColWidth * 2 + 5, y + 2, { height: 15 });
+    doc.text('Total Amount', margin + taxTableColWidth * 3 + 5, y + 2, { height: 15 });
+
+    // Row 2 - Values
+    y += 15;
+    doc.rect(margin, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+
+    doc.fontSize(12).font(getFont());
+    doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    doc.text('₹ ' + totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+
+    // Row 3 - Total Label
+    y += 15;
+    doc.rect(margin, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
+    doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
+
+    doc.fontSize(12).font(getFont(true));
+    doc.text('Total', margin + 5, y + 2, { height: 15 });
+    doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+    doc.text('₹ ' + totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+
+    // ===== TAX AMOUNT IN WORDS (WITH BORDER & BOLD) =====
+    y += 15;
+    const taxAmountInWordsY = y;
+    const taxAmountInWordsHeight = 20;
+    
+    // Draw border around Tax amount in words section
+    doc.rect(margin, taxAmountInWordsY, pageWidth, taxAmountInWordsHeight).stroke();
+    
+    // Split text: bold label + normal amount
+    doc.fontSize(12).font(getFont(true));
+    doc.text('Tax Amount (in words): ', margin + 5, taxAmountInWordsY + 3, { continued: true });
+    doc.fontSize(12).font(getFont());
+    doc.text(numberToWords(Math.floor(cgstAmount + sgstAmount)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+
+    // ===== REMARKS SECTION (NO gap, start immediately) =====
+    y = taxAmountInWordsY + taxAmountInWordsHeight;
+    doc.fontSize(12).font(getFont(true)).text('Remarks', margin + 5, y);
+    doc.fontSize(12).font(getFont());
+    
+    y += 13;
+    doc.text(`Patient Name: ${inquiry.patientName || ''}`, margin + 5, y);
+    y += 10;
+    doc.text(`Surgeon Name: Dr ${inquiry.patientName || ''}`, margin + 5, y);
+    y += 10;
+    doc.text(`Patient IP No.: ${inquiry.patientUHID || ''}`, margin + 5, y);
+    y += 10;
+    doc.text(`Date of Surgery: ${new Date(inquiry.inquiryDate).toLocaleDateString('en-IN')}`, margin + 5, y);
+
+    // ===== DECLARATION =====
+    y += 15;
+    doc.fontSize(12).font(getFont());
+    doc.text('Declaration:', margin + 5, y);
+    doc.text('We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.', margin + 5, y + 10, { width: pageWidth - 10 });
+
+    // ===== SIGNATURE SECTION =====
+    y += 35;
+    doc.moveTo(margin + 50, y).lineTo(margin + 150, y).stroke();
+    doc.moveTo(pageWidth - 100, y).lineTo(pageWidth - 10, y).stroke();
+
+    doc.fontSize(12).font(getFont());
+    doc.text("Receiver's Signature & Stamp", margin + 20, y + 5);
+    doc.text(`For ${companyName}`, pageWidth - 120, y + 5);
+    doc.text('Authorized Signatory', pageWidth - 140, y + 15);
+
+    // Finalize PDF
+    doc.end();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating PDF',
+      error: error.message
+    });
+  }
+});
+
+// Helper function to convert number to words
+function numberToWords(num) {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const scales = ['', 'Thousand', 'Lakh', 'Crore'];
+
+  if (num === 0) return 'Zero';
+
+  let parts = [];
+  let scaleIndex = 0;
+
+  while (num > 0) {
+    let part = num % (scaleIndex === 0 ? 1000 : 100);
+    if (part !== 0) {
+      let partStr = '';
+      let hundreds = Math.floor(part / 100);
+      let remainder = part % 100;
+
+      if (hundreds > 0) {
+        partStr += ones[hundreds] + ' Hundred ';
+      }
+
+      if (remainder >= 20) {
+        partStr += tens[Math.floor(remainder / 10)] + ' ';
+        if (remainder % 10 > 0) {
+          partStr += ones[remainder % 10] + ' ';
+        }
+      } else if (remainder >= 10) {
+        partStr += teens[remainder - 10] + ' ';
+      } else if (remainder > 0) {
+        partStr += ones[remainder] + ' ';
+      }
+
+      if (scales[scaleIndex]) {
+        partStr += scales[scaleIndex] + ' ';
+      }
+
+      parts.unshift(partStr);
+    }
+
+    num = Math.floor(num / (scaleIndex === 0 ? 1000 : 100));
+    scaleIndex++;
+  }
+
+  return parts.join('').trim();
+}
 
 module.exports = router;
