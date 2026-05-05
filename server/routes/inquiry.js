@@ -686,6 +686,8 @@ router.get('/:id/pdf', async (req, res) => {
 
     y = totalRowStartY + totalRowHeight;
 
+    // Top margin for Amount Chargeable section
+    y += 5;
     const amountInWordsY = y;
     const amountInWordsHeight = 12;
     
@@ -698,7 +700,7 @@ router.get('/:id/pdf', async (req, res) => {
     const finalChargeable = totalAmount + cgstAmount + sgstAmount + igstAmount + roundingAmount;
     doc.text(amountToWords(finalChargeable), { width: pageWidth - 60, align: 'left' });
 
-    y = amountInWordsY + amountInWordsHeight;
+    y = amountInWordsY + amountInWordsHeight + 5;  // Bottom margin for Amount Chargeable, top margin for table
     
     if (isIGST) {
       const taxTableColWidth = pageWidth / 3;
@@ -752,7 +754,7 @@ router.get('/:id/pdf', async (req, res) => {
       doc.text(totalTaxCGSTSGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
     }
 
-    y += 10;
+    y += 15;  // Margin for Tax Amount section (bottom of table + top of section)
     const taxAmountInWordsY = y;
     const taxAmountInWordsHeight = 12;
     
@@ -765,7 +767,7 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(9).font(getFont());
     doc.text(amountToWords(totalTaxAmount), { width: pageWidth - 60, align: 'left' });
 
-    y = taxAmountInWordsY + taxAmountInWordsHeight;
+    y = taxAmountInWordsY + taxAmountInWordsHeight + 5;  // Add bottom margin for Tax Amount
     const remarksStartY = y;
     const remarksHeight = 85;
 
