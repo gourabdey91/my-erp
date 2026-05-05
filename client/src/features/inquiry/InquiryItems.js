@@ -76,7 +76,12 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
   const fetchDescriptionsForItems = async (itemsToProcess, hospitalId) => {
     console.log('fetchDescriptionsForItems called with:', itemsToProcess.length, 'items');
     let hasChanges = false;
-    const updatedItems = [];
+    const processedItems = {};
+
+    // First, mark which items are being processed
+    itemsToProcess.forEach(item => {
+      processedItems[item.materialNumber] = null; // Mark for processing
+    });
 
     for (const item of itemsToProcess) {
       console.log('Processing item:', item.materialNumber, 'has description:', !!item.materialDescription);
@@ -86,7 +91,7 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
         
         if (materialData) {
           console.log('Found material data:', materialData);
-          updatedItems.push({
+          processedItems[item.materialNumber] = {
             ...item,
             materialDescription: materialData.description,
             hsnCode: materialData.hsnCode,
@@ -94,56 +99,64 @@ const InquiryItems = ({ items = [], onItemsChange, hospital, procedure, dropdown
             gstPercentage: materialData.gstPercentage,
             unit: materialData.unit,
             isFromMaster: true
-          });
+          };
           hasChanges = true;
         } else {
           console.log('No material data found for:', item.materialNumber);
-          updatedItems.push(item);
+          processedItems[item.materialNumber] = item;
         }
       } else {
-        updatedItems.push(item);
+        processedItems[item.materialNumber] = item;
       }
     }
 
     if (hasChanges) {
       console.log('Updating items with material data');
-      const itemsWithTotals = updatedItems.map(item => {
-        // Only calculate GST if the item doesn't already have saved GST amounts
-        // This prevents overwriting database values for existing inquiries
-        const hasExistingGST = item.cgstAmount > 0 || item.sgstAmount > 0 || item.igstAmount > 0;
+      
+      // Merge processed items back with original items list, preserving all items
+      const itemsWithTotals = inquiryItems.map(originalItem => {
+        const processedItem = processedItems[originalItem.materialNumber];
+        if (processedItem === undefined) {
+          // Item wasn't processed, return as-is
+          return originalItem;
+        }
+        if (processedItem === null) {
+          // Item is still being processed, return original
+          return originalItem;
+        }
         
-        if (!hasExistingGST && item.unitRate && item.quantity && item.gstPercentage) {
-          // Get state codes for GST calculation only for new items
+        // Item was processed, check if we need to calculate GST
+        const hasExistingGST = processedItem.cgstAmount > 0 || processedItem.sgstAmount > 0 || processedItem.igstAmount > 0;
+        
+        if (!hasExistingGST && processedItem.unitRate && processedItem.quantity && processedItem.gstPercentage) {
           const customerStateCode = hospital?.stateCode || '';
           const companyStateCode = companyDetails?.compliance?.stateCode || '';
           
           console.log('Calculating GST for new material - State codes:', { customerStateCode, companyStateCode });
           
-          const calculations = calculateItemTotal(item, customerStateCode, companyStateCode);
+          const calculations = calculateItemTotal(processedItem, customerStateCode, companyStateCode);
           return { 
-            ...item, 
+            ...processedItem, 
             totalAmount: calculations.totalAmount,
-            gstAmount: calculations.gstAmount,       // Total GST amount for database storage
-            cgstAmount: calculations.cgstAmount,     // Central GST component
-            sgstAmount: calculations.sgstAmount,     // State GST component  
-            igstAmount: calculations.igstAmount      // Integrated GST component
+            gstAmount: calculations.gstAmount,
+            cgstAmount: calculations.cgstAmount,
+            sgstAmount: calculations.sgstAmount,  
+            igstAmount: calculations.igstAmount
           };
         } else {
-          console.log('Using existing GST amounts from database for item:', item.materialNumber);
-          // For existing items with saved GST, just return the item as-is
-          // or recalculate total if needed without changing GST breakdown
-          if (item.unitRate && item.quantity && item.gstAmount !== undefined) {
-            const baseAmount = parseFloat(item.unitRate) * parseFloat(item.quantity);
-            const gstAmount = parseFloat(item.gstAmount) || 0;
-            const discountAmount = parseFloat(item.discountAmount) || ((baseAmount * parseFloat(item.discountPercentage || 0)) / 100);
+          console.log('Using existing GST amounts from database for item:', processedItem.materialNumber);
+          if (processedItem.unitRate && processedItem.quantity && processedItem.gstAmount !== undefined) {
+            const baseAmount = parseFloat(processedItem.unitRate) * parseFloat(processedItem.quantity);
+            const gstAmount = parseFloat(processedItem.gstAmount) || 0;
+            const discountAmount = parseFloat(processedItem.discountAmount) || ((baseAmount * parseFloat(processedItem.discountPercentage || 0)) / 100);
             const totalAmount = Math.round((baseAmount + gstAmount - discountAmount) * 100) / 100;
             
             return {
-              ...item,
+              ...processedItem,
               totalAmount: totalAmount
             };
           }
-          return item;
+          return processedItem;
         }
       });
 
