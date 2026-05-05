@@ -488,7 +488,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     const rowHeight = 20;
     const taxRowHeight = 16;
-    const fixedItemRows = 10;
+    let fixedItemRows = 10;  // Default, will be recalculated below
 
     const drawTableGridLines = (startY, numRows, includeHeader = false) => {
       const totalHeight = numRows * rowHeight;
@@ -588,6 +588,10 @@ router.get('/:id/pdf', async (req, res) => {
         }
       });
     }
+
+    // Calculate actual item rows needed (don't show empty rows if we have few items)
+    const actualItemCount = inquiry.items ? inquiry.items.length : 0;
+    fixedItemRows = Math.max(Math.min(actualItemCount + 2, 10), 3);  // +2 for buffer, min 3, max 10
 
     drawTableGridLines(itemsStartY, fixedItemRows, false);
     
