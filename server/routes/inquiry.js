@@ -348,7 +348,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     doc.lineWidth(0.5);
     doc.rect(margin, y, pageWidth, 20).stroke();
-    doc.fontSize(12).font(getFont(true)).text(docType, margin + 10, y + 3, { width: pageWidth - 20, align: 'center' });
+    doc.fontSize(9).font(getFont(true)).text(docType, margin + 10, y + 3, { width: pageWidth - 20, align: 'center' });
     y += 20;
 
     const leftSectionWidth = pageWidth * 0.55;
@@ -401,7 +401,7 @@ router.get('/:id/pdf', async (req, res) => {
     let currentY = addressStartY;
 
     const drawAddressLine = (text, currentY, bold = false) => {
-      doc.fontSize(12).font(bold ? getFont(true) : getFont());
+      doc.fontSize(9).font(bold ? getFont(true) : getFont());
       const textHeight = doc.heightOfString(text, { width: addressTextWidth });
       doc.text(text, addressColumnX + addressTextPadding, currentY, { width: addressTextWidth });
       return currentY + textHeight + lineGap;
@@ -424,8 +424,8 @@ router.get('/:id/pdf', async (req, res) => {
 
     const drawInvoiceCell = (label, value, cellX, cellY, cellWidth) => {
       doc.rect(cellX, cellY, cellWidth, cellRowHeight).stroke();
-      doc.fontSize(12).font(getFont(true)).text(label, cellX + 4, cellY + 2, { width: cellWidth - 8 });
-      doc.fontSize(12).font(getFont()).text(value || '', cellX + 4, cellY + 14, { width: cellWidth - 8 });
+      doc.fontSize(9).font(getFont(true)).text(label, cellX + 4, cellY + 2, { width: cellWidth - 8 });
+      doc.fontSize(9).font(getFont()).text(value || '', cellX + 4, cellY + 14, { width: cellWidth - 8 });
     };
 
     drawInvoiceCell('Invoice No.', inquiry.inquiryNumber, rightX, rowY, rightCol1Width);
@@ -449,7 +449,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     y += headerHeight;
 
-    doc.fontSize(12).font(getFont());
+    doc.fontSize(9).font(getFont());
     const fullAddress = inquiry.hospital?.address || '';
     const hospitalCountry = inquiry.hospital?.country || 'India'; // DEBUG: Adding country
     const addressWithCountry = fullAddress + (fullAddress ? ', ' : '') + hospitalCountry;
@@ -458,10 +458,10 @@ router.get('/:id/pdf', async (req, res) => {
     
     doc.rect(margin, y, pageWidth, buyerSectionHeight).stroke();
 
-    doc.fontSize(12).font(getFont(true)).text('Buyer (Bill to)', margin + 5, y + 5);
-    doc.fontSize(12).font(getFont(true)).text(inquiry.hospital?.legalName || inquiry.hospital?.shortName || '', margin + 5, y + 18);
+    doc.fontSize(9).font(getFont(true)).text('Buyer (Bill to)', margin + 5, y + 5);
+    doc.fontSize(9).font(getFont(true)).text(inquiry.hospital?.legalName || inquiry.hospital?.shortName || '', margin + 5, y + 18);
     
-    doc.fontSize(12).font(getFont());
+    doc.fontSize(9).font(getFont());
     doc.text(addressWithCountry, margin + 5, y + 32, { width: pageWidth - 10 });
     logBoth('🏢 HOSPITAL: ' + inquiry.hospital?.shortName + ', COUNTRY: ' + hospitalCountry);
 
