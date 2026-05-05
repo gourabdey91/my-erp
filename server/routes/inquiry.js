@@ -790,7 +790,8 @@ router.get('/:id/pdf', async (req, res) => {
     doc.text('Surgeon Name', col1Start, tableY);
     doc.text(':', col2Start, tableY);
     const surgeonName = inquiry.surgeon?.name || inquiry.surgeon || 'Not Assigned';
-    doc.text(surgeonName, col3Start, tableY, { width: pageWidth - col3Start - 5 });
+    const surgeonNameWithPrefix = (surgeonName && surgeonName !== 'Not Assigned') ? `Dr. ${surgeonName}` : surgeonName;
+    doc.text(surgeonNameWithPrefix, col3Start, tableY, { width: pageWidth - col3Start - 5 });
     tableY += tableRowHeight;
     
     doc.text('Patient IP No.', col1Start, tableY);
