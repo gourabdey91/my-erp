@@ -355,7 +355,7 @@ router.get('/:id/pdf', async (req, res) => {
     const rightSectionWidth = pageWidth * 0.45;
     const leftX = margin;
     const rightX = margin + leftSectionWidth;
-    const headerHeight = 140;
+    const headerHeight = 100;
 
     doc.rect(leftX, y, leftSectionWidth, headerHeight).stroke();
 
@@ -591,7 +591,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     // Calculate actual item rows needed (don't show empty rows if we have few items)
     const actualItemCount = inquiry.items ? inquiry.items.length : 0;
-    fixedItemRows = Math.max(Math.min(actualItemCount + 2, 10), 3);  // +2 for buffer, min 3, max 10
+    fixedItemRows = Math.max(Math.min(actualItemCount + 3, 12), 4);  // +3 for buffer, min 4, max 12
 
     drawTableGridLines(itemsStartY, fixedItemRows, false);
     
