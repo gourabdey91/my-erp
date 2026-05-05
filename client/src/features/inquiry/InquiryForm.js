@@ -448,7 +448,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             <div className="header-total-amount">
               <span className="header-total-label">Total Amount:</span>
               <span className="header-total-value">
-                {parseFloat(formData.totalInquiryAmount || 0).toLocaleString('en-IN', {
+                {parseFloat((formData.totalInquiryAmount || 0) + (formData.rounding || 0)).toLocaleString('en-IN', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })} INR

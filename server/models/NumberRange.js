@@ -141,14 +141,30 @@ numberRangeSchema.statics.getOrCreateRange = async function(businessUnitId, docu
 
 // Static method to get next number for a document type (atomic operation)
 numberRangeSchema.statics.getNextNumberForType = async function(businessUnitId, documentType, createdBy) {
-  // Use atomic findOneAndUpdate to prevent race conditions
-  const range = await this.findOneAndUpdate(
+  // First, try to get the existing range
+  let range = await this.findOne({ 
+    businessUnit: businessUnitId, 
+    documentType: documentType,
+    isActive: true 
+  });
+
+  if (range) {
+    // If range exists and currentNumber < startingNumber, reset it to startingNumber
+    if (range.currentNumber < range.startingNumber) {
+      console.log(`Resetting NumberRange ${documentType} from ${range.currentNumber} to ${range.startingNumber}`);
+      range.currentNumber = range.startingNumber;
+      await range.save();
+    }
+  }
+
+  // Use atomic findOneAndUpdate to increment
+  const updatedRange = await this.findOneAndUpdate(
     { businessUnit: businessUnitId, documentType: documentType, isActive: true },
     { $inc: { currentNumber: 1 } },
-    { new: true, upsert: false }
+    { new: true }
   );
 
-  if (!range) {
+  if (!updatedRange) {
     // Range doesn't exist, create it
     const newRange = await this.getOrCreateRange(businessUnitId, documentType, createdBy);
     const nextNumber = newRange.getNextNumber();
@@ -157,8 +173,8 @@ numberRangeSchema.statics.getNextNumberForType = async function(businessUnitId, 
   }
 
   // Format the number with the incremented value
-  const paddedNumber = range.currentNumber.toString().padStart(range.paddingLength, '0');
-  return `${range.prefix}${paddedNumber}`;
+  const paddedNumber = updatedRange.currentNumber.toString().padStart(updatedRange.paddingLength, '0');
+  return `${updatedRange.prefix}${paddedNumber}`;
 };
 
 module.exports = mongoose.model('NumberRange', numberRangeSchema);
