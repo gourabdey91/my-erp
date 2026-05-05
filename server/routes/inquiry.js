@@ -486,7 +486,7 @@ router.get('/:id/pdf', async (req, res) => {
     const colAmount = colDisc + colDiscWidth;
     const colAmountWidth = 66;
 
-    const rowHeight = 18;
+    const rowHeight = 24;
     const fixedItemRows = 12;
 
     const drawTableGridLines = (startY, numRows, includeHeader = false) => {
