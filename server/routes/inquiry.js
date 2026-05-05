@@ -696,8 +696,8 @@ router.get('/:id/pdf', async (req, res) => {
       doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
 
       doc.fontSize(12).font(getFont());
-      const totalTaxesAndRoundingIGST = igstAmount + roundingAmount;
-      doc.text(totalTaxesAndRoundingIGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      // Taxable Value = base amount before tax (totalAmount), NOT tax + rounding
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
     } else {
@@ -721,8 +721,9 @@ router.get('/:id/pdf', async (req, res) => {
       doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
 
       doc.fontSize(12).font(getFont());
-      const totalTaxesAndRounding = cgstAmount + sgstAmount + roundingAmount;
-      doc.text(totalTaxesAndRounding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      // Taxable Value = base amount before tax (totalAmount), NOT tax + rounding
+      // Total tax = CGST + SGST = 1,902.18 (correctly shown in separate columns)
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
