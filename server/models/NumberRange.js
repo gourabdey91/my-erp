@@ -148,19 +148,52 @@ numberRangeSchema.statics.getNextNumberForType = async function(businessUnitId, 
     isActive: true 
   });
 
+  // Define defaults for document types
+  const defaults = {
+    'Inquiry': { prefix: 'EST', paddingLength: 8, startingNumber: 11009 },
+    'SalesOrder': { prefix: 'CS', paddingLength: 8, startingNumber: 10000000 },
+    'Billing': { prefix: 'CINV', paddingLength: 6, startingNumber: 100000 },
+    'CreditNote': { prefix: 'CN', paddingLength: 7, startingNumber: 1000000 },
+    'PurchaseOrder': { prefix: 'PO', paddingLength: 8, startingNumber: 5000000 },
+    'Invoice': { prefix: 'INV', paddingLength: 8, startingNumber: 1000000 }
+  };
+  const typeDefaults = defaults[documentType] || { prefix: documentType.substring(0, 3).toUpperCase(), paddingLength: 8, startingNumber: 0 };
+
   if (range) {
+    // If startingNumber is not set (old records), set it from defaults
+    if (!range.startingNumber || range.startingNumber === 0) {
+      console.log(`⚠️ NumberRange ${documentType} has no startingNumber. Setting to ${typeDefaults.startingNumber}`);
+      range.startingNumber = typeDefaults.startingNumber;
+    }
+    
     // If range exists and currentNumber < startingNumber, reset it to startingNumber
     if (range.currentNumber < range.startingNumber) {
-      console.log(`Resetting NumberRange ${documentType} from ${range.currentNumber} to ${range.startingNumber}`);
+      console.log(`🔄 Resetting NumberRange ${documentType} from ${range.currentNumber} to ${range.startingNumber}`);
       range.currentNumber = range.startingNumber;
       await range.save();
     }
   }
 
-  // Use atomic findOneAndUpdate to increment
+  // Use atomic findOneAndUpdate to increment, with reset logic built-in
   const updatedRange = await this.findOneAndUpdate(
     { businessUnit: businessUnitId, documentType: documentType, isActive: true },
-    { $inc: { currentNumber: 1 } },
+    [
+      {
+        $set: {
+          // If startingNumber is missing or 0, set it from defaults
+          startingNumber: { $cond: [{ $or: [{ $not: '$startingNumber' }, { $eq: ['$startingNumber', 0] }] }, typeDefaults.startingNumber, '$startingNumber'] },
+          // If currentNumber < startingNumber, reset to startingNumber before incrementing
+          currentNumber: { 
+            $cond: [
+              { $lt: ['$currentNumber', { $cond: [{ $or: [{ $not: '$startingNumber' }, { $eq: ['$startingNumber', 0] }] }, typeDefaults.startingNumber, '$startingNumber'] }] },
+              { $add: [{ $cond: [{ $or: [{ $not: '$startingNumber' }, { $eq: ['$startingNumber', 0] }] }, typeDefaults.startingNumber, '$startingNumber'] }, 1] },
+              { $add: ['$currentNumber', 1] }
+            ]
+          },
+          updatedAt: new Date()
+        }
+      }
+    ],
     { new: true }
   );
 
@@ -174,6 +207,7 @@ numberRangeSchema.statics.getNextNumberForType = async function(businessUnitId, 
 
   // Format the number with the incremented value
   const paddedNumber = updatedRange.currentNumber.toString().padStart(updatedRange.paddingLength, '0');
+  console.log(`✅ Generated ${documentType} number: ${updatedRange.prefix}${paddedNumber} (current: ${updatedRange.currentNumber})`);
   return `${updatedRange.prefix}${paddedNumber}`;
 };
 

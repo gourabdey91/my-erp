@@ -239,8 +239,15 @@ inquiryItemSchema.methods.calculateTotal = function(customerStateCode = '', comp
   return Math.round(totalAmount * 100) / 100;
 };
 
-// Helper method to calculate inquiry total
+// Helper method to calculate inquiry total (includes rounding)
 inquirySchema.methods.calculateInquiryTotal = function() {
+  const subtotal = this.items.reduce((sum, item) => sum + item.totalAmount, 0);
+  const total = subtotal + (this.rounding || 0);
+  return Math.round(total * 100) / 100;
+};
+
+// Helper method to calculate inquiry subtotal (without rounding)
+inquirySchema.methods.calculateInquirySubtotal = function() {
   const total = this.items.reduce((sum, item) => sum + item.totalAmount, 0);
   return Math.round(total * 100) / 100;
 };
@@ -370,7 +377,12 @@ inquirySchema.pre('save', async function(next) {
   });
   
   // Calculate total inquiry amount
-  this.totalInquiryAmount = this.calculateInquiryTotal();
+  // Calculate subtotal first (sum of items)
+  const subtotal = this.items.reduce((sum, item) => sum + item.totalAmount, 0);
+  const subtotalRounded = Math.round(subtotal * 100) / 100;
+  
+  // Total = subtotal + rounding
+  this.totalInquiryAmount = Math.round((subtotalRounded + (this.rounding || 0)) * 100) / 100;
   
   // Enhanced limit validation logic
   try {
@@ -390,9 +402,10 @@ async function validateInquiryLimits(inquiry) {
   }
   
   // If no surgical procedure is selected, use simple total validation
+  // Note: totalInquiryAmount already includes rounding (added in pre-save hook)
   if (!inquiry.surgicalProcedure) {
     if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
-      throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
+      throw new Error(`Total inquiry amount including rounding (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
     }
     return;
   }
@@ -404,8 +417,9 @@ async function validateInquiryLimits(inquiry) {
   
   if (!procedure) {
     // If procedure not found, fall back to total limit validation
+    // Note: totalInquiryAmount already includes rounding
     if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
-      throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
+      throw new Error(`Total inquiry amount including rounding (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
     }
     return;
   }
@@ -414,6 +428,7 @@ async function validateInquiryLimits(inquiry) {
   if (procedure.limitAppliedByIndividualCategory) {
     await validateCategoryLevelLimits(inquiry, procedure);
   } else {
+    // Note: totalInquiryAmount already includes rounding
     // Use total limit validation
     if (inquiry.totalInquiryAmount > inquiry.limit.amount) {
       throw new Error(`Total inquiry amount (${inquiry.totalInquiryAmount} ${inquiry.limit.currency || 'INR'}) exceeds the limit (${inquiry.limit.amount} ${inquiry.limit.currency || 'INR'})`);
