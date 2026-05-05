@@ -1214,8 +1214,14 @@ function numberToWords(num) {
 
 // Helper function to convert amount to words with paisa
 function amountToWords(amount) {
-  const rupees = Math.floor(amount);
-  const paisa = Math.round((amount - rupees) * 100);
+  let rupees = Math.floor(amount);
+  let paisa = Math.round((amount - rupees) * 100);
+  
+  // Handle edge case where paisa rounds to 100 (carry over to rupees)
+  if (paisa >= 100) {
+    rupees += Math.floor(paisa / 100);
+    paisa = paisa % 100;
+  }
   
   let words = numberToWords(rupees) + ' Rupees';
   
