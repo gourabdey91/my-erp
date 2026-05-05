@@ -771,7 +771,7 @@ router.get('/:id/pdf', async (req, res) => {
 
     doc.rect(margin, remarksStartY, pageWidth, remarksHeight).stroke();
     
-    doc.fontSize(10).font(getFont(true));
+    doc.fontSize(9).font(getFont(true));
     doc.text('Remarks', margin + 8, remarksStartY + 4);
     
     const col1Start = margin + 8;
