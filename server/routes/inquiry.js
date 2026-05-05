@@ -419,13 +419,13 @@ router.get('/:id/pdf', async (req, res) => {
 
     const rightCol1Width = rightSectionWidth * 0.5;
     const rightCol2Width = rightSectionWidth * 0.5;
-    const cellRowHeight = 28;
+    const cellRowHeight = 20;
     let rowY = y;
 
     const drawInvoiceCell = (label, value, cellX, cellY, cellWidth) => {
       doc.rect(cellX, cellY, cellWidth, cellRowHeight).stroke();
       doc.fontSize(9).font(getFont(true)).text(label, cellX + 4, cellY + 2, { width: cellWidth - 8 });
-      doc.fontSize(9).font(getFont()).text(value || '', cellX + 4, cellY + 14, { width: cellWidth - 8 });
+      doc.fontSize(9).font(getFont()).text(value || '', cellX + 4, cellY + 11, { width: cellWidth - 8 });
     };
 
     drawInvoiceCell('Invoice No.', inquiry.inquiryNumber, rightX, rowY, rightCol1Width);
