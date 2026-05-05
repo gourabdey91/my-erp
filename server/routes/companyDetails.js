@@ -2,17 +2,56 @@ const express = require('express');
 const router = express.Router();
 const CompanyDetails = require('../models/CompanyDetails');
 
-// Get company details
+// Get all active companies for current business unit
 router.get('/', async (req, res) => {
   try {
-    const companyDetails = await CompanyDetails.findOne({ isActive: true })
+    const { businessUnitId } = req.query;
+    
+    const query = { isActive: true };
+    if (businessUnitId) {
+      query.businessUnit = businessUnitId;
+    }
+
+    const companies = await CompanyDetails.find(query)
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName')
+      .sort({ companyCode: 1 });
+
+    res.json({
+      success: true,
+      data: companies
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching company details',
+      error: error.message
+    });
+  }
+});
+
+// Get company by company code
+router.get('/code/:companyCode', async (req, res) => {
+  try {
+    const { companyCode } = req.params;
+    const { businessUnitId } = req.query;
+
+    const query = { 
+      companyCode: companyCode.toUpperCase(),
+      isActive: true 
+    };
+    if (businessUnitId) {
+      query.businessUnit = businessUnitId;
+    }
+
+    const companyDetails = await CompanyDetails.findOne(query)
       .populate('createdBy', 'firstName lastName')
       .populate('updatedBy', 'firstName lastName');
 
     if (!companyDetails) {
       return res.status(404).json({
         success: false,
-        message: 'Company details not found'
+        message: `Company with code ${companyCode} not found`
       });
     }
 
@@ -29,26 +68,28 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create or update company details
+// Create new company
 router.post('/', async (req, res) => {
   try {
     console.log('Received company details data:', JSON.stringify(req.body, null, 2));
     
     const {
+      companyCode,
       companyName,
       legalName,
       address,
       contact,
       compliance,
+      businessUnit,
       createdBy,
       updatedBy
     } = req.body;
 
     // Validate required fields
-    if (!companyName || !legalName || !createdBy) {
+    if (!companyCode || !companyName || !legalName || !businessUnit || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: companyName, legalName, or createdBy'
+        message: 'Missing required fields: companyCode, companyName, legalName, businessUnit, or createdBy'
       });
     }
 
@@ -82,68 +123,58 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check if company details already exist
-    const existingDetails = await CompanyDetails.findOne({ isActive: true });
+    // Check if company code already exists
+    const existingCompany = await CompanyDetails.findOne({ 
+      companyCode: companyCode.toUpperCase(),
+      businessUnit,
+      isActive: true
+    });
 
-    if (existingDetails) {
-      // Update existing details
-      const updatedDetails = await CompanyDetails.findByIdAndUpdate(
-        existingDetails._id,
-        {
-          companyName,
-          legalName,
-          address,
-          contact,
-          compliance,
-          updatedBy: updatedBy || createdBy
-        },
-        { new: true, runValidators: true }
-      )
-      .populate('createdBy', 'firstName lastName')
-      .populate('updatedBy', 'firstName lastName');
-
-      return res.json({
-        success: true,
-        message: 'Company details updated successfully',
-        data: updatedDetails
-      });
-    } else {
-      // Create new details
-      const companyDetails = new CompanyDetails({
-        companyName,
-        legalName,
-        address,
-        contact,
-        compliance,
-        createdBy
-      });
-
-      await companyDetails.save();
-      
-      const populatedDetails = await CompanyDetails.findById(companyDetails._id)
-        .populate('createdBy', 'firstName lastName');
-
-      res.status(201).json({
-        success: true,
-        message: 'Company details created successfully',
-        data: populatedDetails
+    if (existingCompany) {
+      return res.status(409).json({
+        success: false,
+        message: `Company code ${companyCode} already exists in this business unit`
       });
     }
+
+    // Create new company
+    const newCompany = new CompanyDetails({
+      companyCode: companyCode.toUpperCase(),
+      companyName,
+      legalName,
+      address,
+      contact,
+      compliance,
+      businessUnit,
+      createdBy
+    });
+
+    await newCompany.save();
+    
+    const populatedCompany = await CompanyDetails.findById(newCompany._id)
+      .populate('createdBy', 'firstName lastName');
+
+    res.status(201).json({
+      success: true,
+      message: 'Company created successfully',
+      data: populatedCompany
+    });
   } catch (error) {
-    console.error('Error saving company details:', error);
+    console.error('Error creating company:', error);
     res.status(500).json({
       success: false,
-      message: 'Error saving company details',
+      message: 'Error creating company',
       error: error.message,
       details: error.name === 'ValidationError' ? error.errors : undefined
     });
   }
 });
 
-// Update company details
+// Update company by ID
 router.put('/:id', async (req, res) => {
   try {
     const {
+      companyCode,
       companyName,
       legalName,
       address,
@@ -152,9 +183,26 @@ router.put('/:id', async (req, res) => {
       updatedBy
     } = req.body;
 
+    // If companyCode is being updated, check for duplicates
+    if (companyCode) {
+      const existingCompany = await CompanyDetails.findOne({ 
+        companyCode: companyCode.toUpperCase(),
+        _id: { $ne: req.params.id },
+        isActive: true
+      });
+
+      if (existingCompany) {
+        return res.status(409).json({
+          success: false,
+          message: `Company code ${companyCode} already exists`
+        });
+      }
+    }
+
     const companyDetails = await CompanyDetails.findByIdAndUpdate(
       req.params.id,
       {
+        ...(companyCode && { companyCode: companyCode.toUpperCase() }),
         companyName,
         legalName,
         address,
@@ -170,19 +218,56 @@ router.put('/:id', async (req, res) => {
     if (!companyDetails) {
       return res.status(404).json({
         success: false,
-        message: 'Company details not found'
+        message: 'Company not found'
       });
     }
 
     res.json({
       success: true,
-      message: 'Company details updated successfully',
+      message: 'Company updated successfully',
       data: companyDetails
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating company details',
+      message: 'Error updating company',
+      error: error.message
+    });
+  }
+});
+
+// Deactivate company
+router.delete('/:id', async (req, res) => {
+  try {
+    const { updatedBy } = req.body;
+
+    const companyDetails = await CompanyDetails.findByIdAndUpdate(
+      req.params.id,
+      {
+        isActive: false,
+        updatedBy
+      },
+      { new: true }
+    )
+    .populate('createdBy', 'firstName lastName')
+    .populate('updatedBy', 'firstName lastName');
+
+    if (!companyDetails) {
+      return res.status(404).json({
+        success: false,
+        message: 'Company not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Company deactivated successfully',
+      data: companyDetails
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating company',
       error: error.message
     });
   }

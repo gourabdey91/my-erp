@@ -24,6 +24,7 @@ const BusinessUnitList = ({ businessUnits, onEdit, onDelete }) => {
             <tr>
               <th>Code</th>
               <th>Name</th>
+              <th>Company</th>
               <th>Partners</th>
               <th>Status</th>
               <th>Actions</th>
@@ -37,6 +38,15 @@ const BusinessUnitList = ({ businessUnits, onEdit, onDelete }) => {
                 </td>
                 <td>
                   <span className="name-text">{businessUnit.name}</span>
+                </td>
+                <td>
+                  {businessUnit.companyDetails ? (
+                    <span className="company-badge">
+                      {businessUnit.companyDetails.companyCode} - {businessUnit.companyDetails.companyName}
+                    </span>
+                  ) : (
+                    <span className="text-muted">No company assigned</span>
+                  )}
                 </td>
                 <td>
                   {businessUnit.partners && businessUnit.partners.length > 0 ? (
@@ -94,6 +104,12 @@ const BusinessUnitList = ({ businessUnits, onEdit, onDelete }) => {
               { 
                 label: 'Status', 
                 value: businessUnit.isActive ? 'Active' : 'Inactive' 
+              },
+              {
+                label: 'Company',
+                value: businessUnit.companyDetails 
+                  ? `${businessUnit.companyDetails.companyCode} - ${businessUnit.companyDetails.companyName}`
+                  : 'No company assigned'
               }
             ]}
             sections={[

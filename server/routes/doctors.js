@@ -232,6 +232,89 @@ router.get('/dropdown', async (req, res) => {
   }
 });
 
+// Get surgeons by hospital, surgical category, and optionally procedure (for inquiry form)
+router.get('/surgeons/:hospitalId/:categoryId', async (req, res) => {
+  try {
+    const { hospitalId, categoryId } = req.params;
+    const { procedureId } = req.query;
+
+    console.log('🏥 Fetching surgeons for hospital:', hospitalId, 'category:', categoryId, 'procedure:', procedureId);
+
+    // Build query with flexible filters
+    // Match: hospital + (category OR procedure) if they exist in assignment
+    const query = {
+      hospital: hospitalId,
+      isActive: true,
+      validityFrom: { $lte: new Date() },
+      validityTo: { $gte: new Date() }
+    };
+
+    // Add category and/or procedure filters
+    if (categoryId && procedureId) {
+      // Both specified: match either category OR procedure (assignment could be for either)
+      query.$or = [
+        { surgicalCategory: categoryId },
+        { procedure: procedureId }
+      ];
+    } else if (categoryId) {
+      // Only category: filter by category (category can be null if procedure is used instead)
+      query.$or = [
+        { surgicalCategory: categoryId },
+        { surgicalCategory: { $exists: false } }  // Include assignments without specific category
+      ];
+    } else if (procedureId) {
+      // Only procedure: filter by procedure
+      query.procedure = procedureId;
+    }
+
+    console.log('📊 Query:', JSON.stringify(query, null, 2));
+
+    // Find doctor assignments for this hospital and surgical category/procedure
+    const doctorAssignments = await DoctorAssignment.find(query)
+      .distinct('doctor');
+
+    console.log('📋 Found', doctorAssignments.length, 'doctor assignments');
+
+    if (doctorAssignments.length === 0) {
+      console.log('⚠️  No doctor assignments found. Trying fallback: hospital only');
+      // Fallback: get all doctors assigned to this hospital
+      const fallbackAssignments = await DoctorAssignment.find({
+        hospital: hospitalId,
+        isActive: true,
+        validityFrom: { $lte: new Date() },
+        validityTo: { $gte: new Date() }
+      })
+      .distinct('doctor');
+      
+      console.log('📋 Fallback found', fallbackAssignments.length, 'doctor assignments');
+      doctorAssignments.push(...fallbackAssignments);
+    }
+
+    // Fetch doctor details
+    const surgeons = await Doctor.find({
+      _id: { $in: doctorAssignments },
+      isActive: true
+    })
+    .select('_id name email surgicalCategories')
+    .sort({ name: 1 });
+
+    console.log('👨‍⚕️ Returning', surgeons.length, 'surgeons');
+
+    res.json({
+      success: true,
+      data: surgeons,
+      count: surgeons.length
+    });
+  } catch (error) {
+    console.error('❌ Error fetching surgeons:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching surgeons',
+      error: error.message
+    });
+  }
+});
+
 // Get doctor by ID
 router.get('/:id', async (req, res) => {
   try {

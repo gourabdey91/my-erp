@@ -34,6 +34,18 @@ export const doctorAPI = {
     return await apiRequest('/api/doctors/dropdown');
   },
 
+  // Get surgeons for inquiry (by hospital and surgical category, optionally procedure)
+  getSurgeonsByHospitalAndCategory: async (hospitalId, categoryId, procedureId = null) => {
+    if (!hospitalId || !categoryId) {
+      return { success: false, data: [], error: 'Hospital ID and Category ID are required' };
+    }
+    let url = `/api/doctors/surgeons/${hospitalId}/${categoryId}`;
+    if (procedureId) {
+      url += `?procedureId=${procedureId}`;
+    }
+    return await apiRequest(url);
+  },
+
   // Create new doctor
   create: async (doctorData) => {
     return await apiRequest('/api/doctors', {

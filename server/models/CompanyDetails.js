@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
 const companyDetailsSchema = new mongoose.Schema({
+  // Company Code (Unique Identifier)
+  companyCode: {
+    type: String,
+    required: true,
+    trim: true,
+    uppercase: true
+  },
+
   // Basic Company Information
   companyName: {
     type: String,
@@ -120,7 +128,10 @@ const companyDetailsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// One active company details record per business unit
-companyDetailsSchema.index({ businessUnit: 1, isActive: 1 }, { unique: true, partialFilterExpression: { isActive: true } });
+// Unique company code per business unit
+companyDetailsSchema.index({ businessUnit: 1, companyCode: 1 }, { unique: true });
+
+// Index for fetching all active companies by business unit
+companyDetailsSchema.index({ businessUnit: 1, isActive: 1 });
 
 module.exports = mongoose.model('CompanyDetails', companyDetailsSchema);

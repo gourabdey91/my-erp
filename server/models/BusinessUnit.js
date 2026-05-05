@@ -18,6 +18,11 @@ const businessUnitSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  companyDetails: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CompanyDetails',
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true

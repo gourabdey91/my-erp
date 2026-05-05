@@ -141,6 +141,8 @@
   background: #f8f9fa;
   display: flex;
   justify-content: flex-end;
+  gap: 16px;
+  align-items: center;
 }
 
 .btn-primary {

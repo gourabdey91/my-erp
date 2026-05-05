@@ -24,6 +24,7 @@ import MaterialMasterValidation from './features/file-upload/MaterialMasterValid
 import MaterialAssignmentUpload from './features/material-assignment-upload/MaterialAssignmentUpload';
 import Inquiry from './features/inquiry/Inquiry';
 import Template from './features/templates/Template';
+import NumberRangeSettings from './features/settings/pages/NumberRangeSettings';
 import LoginScreen from './features/auth/LoginScreen';
 import './App.css';
 
@@ -98,6 +99,8 @@ function AppContent() {
         return <Inquiry />;
       case 'templates':
         return <Template />;
+      case 'number-ranges':
+        return <NumberRangeSettings />;
       case 'company-details':
         return <CompanyDetails />;
       case 'billing':

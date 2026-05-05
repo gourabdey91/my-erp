@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { inquiryAPI } from '../../services/inquiryAPI';
+import { doctorAPI } from '../doctors/services/doctorAPI';
 import InquiryItems from './InquiryItems';
 import '../../shared/styles/unified-design.css';
 import './Inquiry.css';
@@ -12,6 +13,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     patientName: inquiry?.patientName || '',
     patientUHID: inquiry?.patientUHID || '',
     hospital: inquiry?.hospital || '',
+    surgeon: inquiry?.surgeon || '',
     surgicalProcedure: inquiry?.surgicalProcedure || '',
     surgicalCategories: inquiry?.surgicalCategories || [], // Multiple categories from procedure
     paymentMethod: inquiry?.paymentMethod || '',
@@ -21,12 +23,14 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       currency: inquiry?.limit?.currency || 'INR'
     },
     items: inquiry?.items || [],
-    totalInquiryAmount: inquiry?.totalInquiryAmount || 0
+    totalInquiryAmount: inquiry?.totalInquiryAmount || 0,
+    rounding: inquiry?.rounding || 0
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [filteredSurgicalCategories, setFilteredSurgicalCategories] = useState([]);
   const [filteredSurgicalProcedures, setFilteredSurgicalProcedures] = useState([]);
+  const [filteredSurgeons, setFilteredSurgeons] = useState([]);
 
   // Fetch surgical procedures when category or payment method changes
   const fetchSurgicalProcedures = useCallback(async (hospitalId, categoryId, paymentMethodId) => {
@@ -73,6 +77,27 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
     }
   }, []);
 
+  // Fetch surgeons when hospital and surgical category change
+  const fetchSurgeons = useCallback(async (hospitalId, categoryId, procedureId = null) => {
+    if (!hospitalId || !categoryId) {
+      setFilteredSurgeons([]);
+      return;
+    }
+
+    try {
+      const response = await doctorAPI.getSurgeonsByHospitalAndCategory(hospitalId, categoryId, procedureId);
+      
+      if (response && response.success && response.data) {
+        setFilteredSurgeons(response.data);
+      } else {
+        setFilteredSurgeons([]);
+      }
+    } catch (error) {
+      console.error('Error fetching surgeons:', error);
+      setFilteredSurgeons([]);
+    }
+  }, []);
+
   // Initialize form data when inquiry changes
   useEffect(() => {
     if (inquiry) {
@@ -83,6 +108,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientName: inquiry.patientName || '',
         patientUHID: inquiry.patientUHID || '',
         hospital: inquiry.hospital?._id || inquiry.hospital || '',
+        surgeon: inquiry.surgeon?._id || inquiry.surgeon || '',
         surgicalProcedure: inquiry.surgicalProcedure?._id || inquiry.surgicalProcedure || '',
         surgicalCategories: inquiry.surgicalProcedure?.items?.map(item => ({
           id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
@@ -112,6 +138,19 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         if (newFormData.paymentMethod) {
           fetchSurgicalProcedures(newFormData.hospital, '', newFormData.paymentMethod);
         }
+
+        // If surgical procedure is selected, fetch surgeons
+        if (newFormData.surgicalProcedure) {
+          // Get the first category from the procedure to fetch surgeons
+          const surgicalCategories = inquiry.surgicalProcedure?.items?.map(item => ({
+            id: item.surgicalCategoryId?._id || item.surgicalCategoryId,
+            name: item.surgicalCategoryId?.description || item.surgicalCategoryId?.name || 'Unknown Category'
+          })) || [];
+          
+          if (surgicalCategories.length > 0) {
+            fetchSurgeons(newFormData.hospital, surgicalCategories[0].id, newFormData.surgicalProcedure);
+          }
+        }
       }
     } else {
       // New inquiry
@@ -121,6 +160,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         patientName: '',
         patientUHID: '',
         hospital: '',
+        surgeon: '',
         surgicalProcedure: '',
         surgicalCategories: [],
         paymentMethod: '',
@@ -134,6 +174,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       });
       setFilteredSurgicalCategories([]);
       setFilteredSurgicalProcedures([]);
+      setFilteredSurgeons([]);
     }
   }, [inquiry, fetchSurgicalCategories, fetchSurgicalProcedures]);
 
@@ -144,6 +185,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       setFormData(prev => ({
         ...prev,
         hospital: value,
+        surgeon: '',  // Clear surgeon when hospital changes
         surgicalProcedure: ''   // Clear surgical procedure when hospital changes
       }));
       
@@ -154,6 +196,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
       } else {
         setFilteredSurgicalCategories([]);
         setFilteredSurgicalProcedures([]);
+        setFilteredSurgeons([]);
       }
     } else if (field === 'paymentMethod') {
       // Payment method changed - clear procedure and fetch new procedures
@@ -200,6 +243,11 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             currency: selectedProcedure.currency || prev.limit?.currency || 'INR'
           }
         }));
+
+        // Fetch surgeons based on hospital and first category
+        if (formData.hospital && surgicalCategories.length > 0) {
+          fetchSurgeons(formData.hospital, surgicalCategories[0].id, value);
+        }
       } else {
         // Clear categories and limits if no procedure selected
         setFormData(prev => ({
@@ -212,6 +260,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
             currency: 'INR'
           }
         }));
+        setFilteredSurgeons([]);
       }
     } else {
       // Regular field update
@@ -362,6 +411,7 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
         ...formData,
         items: sortedItems,
         hospital: formData.hospital || null,
+        surgeon: formData.surgeon || null,
         surgicalCategory: derivedSurgicalCategory, // Derived from procedure, not user input
         surgicalProcedure: formData.surgicalProcedure || null,
         paymentMethod: formData.paymentMethod || null
@@ -521,6 +571,28 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                   </select>
                 </div>
 
+                <div className="unified-form-field">
+                  <label className="unified-form-label">Surgeon <span className="unified-optional">(Optional)</span></label>
+                  <select
+                    className="unified-input"
+                    value={formData.surgeon}
+                    onChange={(e) => handleChange('surgeon', e.target.value)}
+                    disabled={filteredSurgeons.length === 0}
+                  >
+                    <option value="">Select Surgeon (Optional)</option>
+                    {filteredSurgeons.map(surgeon => (
+                      <option key={surgeon._id} value={surgeon._id}>
+                        {surgeon.name}
+                      </option>
+                    ))}
+                  </select>
+                  {filteredSurgeons.length === 0 && formData.surgicalProcedure && (
+                    <span className="unified-optional" style={{fontSize: '12px', color: '#666'}}>
+                      No surgeons available for selected procedure and hospital
+                    </span>
+                  )}
+                </div>
+
                 {/* Surgical Categories with Editable Limits */}
                 {formData.surgicalCategories && formData.surgicalCategories.length > 0 && (
                   <div className="unified-form-field">
@@ -667,6 +739,20 @@ const InquiryForm = ({ inquiry, dropdownData, onSubmit, onCancel }) => {
                           maximumFractionDigits: 2
                         })} INR
                       </span>
+                    </div>
+                    <div className="summary-row" style={{ marginTop: '1rem' }}>
+                      <label className="summary-label" htmlFor="rounding">Rounding Adjustment:</label>
+                      <input
+                        type="number"
+                        id="rounding"
+                        name="rounding"
+                        step="0.01"
+                        value={formData.rounding}
+                        onChange={(e) => setFormData(prev => ({ ...prev, rounding: parseFloat(e.target.value) || 0 }))}
+                        className="unified-input"
+                        style={{ width: '150px' }}
+                        placeholder="0.00"
+                      />
                     </div>
                   </div>
                 </div>

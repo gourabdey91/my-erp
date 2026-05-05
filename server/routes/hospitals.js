@@ -832,73 +832,198 @@ router.get('/:hospitalId/assigned-materials-for-inquiry', async (req, res) => {
       search 
     } = req.query;
 
+    const MaterialMaster = require('../models/MaterialMaster');
+
+    console.log('📋 Fetching assigned materials for inquiry:', { hospitalId, surgicalCategory, implantType, subCategory, lengthMm });
+
     // Get hospital with assigned materials
     const hospital = await Hospital.findById(hospitalId)
+      .populate('businessUnit', '_id')
       .populate({
         path: 'materialAssignments.material',
         populate: [
-          { path: 'surgicalCategory', select: 'description code' },
+          { path: 'surgicalCategories', select: 'description code' },
           { path: 'implantType', select: 'name subcategories' }
         ]
       });
 
     if (!hospital) {
+      console.warn('⚠️ Hospital not found:', hospitalId);
       return res.status(404).json({ 
         success: false,
         message: 'Hospital not found' 
       });
     }
 
-    // Filter active material assignments
-    let materials = hospital.materialAssignments
-      .filter(assignment => assignment.isActive && assignment.material)
-      .map(assignment => ({
-        ...assignment.material.toObject(),
-        assignmentId: assignment._id,
-        assignedMrp: assignment.mrp,
-        assignedInstitutionalPrice: assignment.institutionalPrice
-      }));
+    console.log('✅ Hospital found:', hospital.shortName, '| Business unit:', hospital.businessUnit?._id, '| Assignments:', hospital.materialAssignments.length, '| Default pricing:', hospital.defaultPricing);
 
-    // Apply filters
-    if (surgicalCategory) {
-      materials = materials.filter(material => 
-        material.surgicalCategories && 
-        Array.isArray(material.surgicalCategories) &&
-        material.surgicalCategories.some(cat => cat._id.toString() === surgicalCategory)
-      );
+    let materials = [];
+
+    // Check if hospital has material assignments
+    if (hospital.materialAssignments && hospital.materialAssignments.length > 0) {
+      // Use ONLY the assigned materials
+      console.log('🔧 Using hospital material assignments ONLY');
+      
+      materials = hospital.materialAssignments
+        .filter(assignment => assignment.isActive && assignment.material)
+        .map(assignment => {
+          const material = assignment.material.toObject();
+          
+          // Determine which prices to use based on defaultPricing flag
+          let mrp, institutionalPrice;
+          if (hospital.defaultPricing) {
+            // Use prices from MaterialMaster
+            mrp = material.mrp;
+            institutionalPrice = material.institutionalPrice;
+            console.log(`   📌 ${material.materialNumber}: Using MaterialMaster prices (defaultPricing=true)`);
+          } else {
+            // Use prices from assignment
+            mrp = assignment.mrp;
+            institutionalPrice = assignment.institutionalPrice;
+            console.log(`   📌 ${material.materialNumber}: Using assignment prices (defaultPricing=false)`);
+          }
+          
+          return {
+            ...material,
+            assignmentId: assignment._id,
+            assignedMrp: mrp,
+            assignedInstitutionalPrice: institutionalPrice,
+            source: 'hospital-assignment'
+          };
+        });
+        
+      console.log('📦 Materials from hospital assignments:', materials.length);
+    } else {
+      // No assignments: use all MaterialMaster materials for this business unit
+      console.log('🔄 No material assignments - using all MaterialMaster materials for business unit:', hospital.businessUnit?._id);
+      
+      if (!hospital.businessUnit) {
+        console.warn('⚠️ Hospital has no business unit assigned');
+        return res.status(400).json({ 
+          success: false,
+          message: 'Hospital has no business unit assigned' 
+        });
+      }
+      
+      try {
+        const businessUnitId = hospital.businessUnit._id || hospital.businessUnit;
+        const masterMaterials = await MaterialMaster.find({
+          businessUnitId: businessUnitId,
+          isActive: true
+        })
+        .populate('surgicalCategories', 'description code')
+        .populate('implantType', 'name subcategories');
+
+        console.log(`📚 Found ${masterMaterials.length} materials in MaterialMaster for this business unit`);
+        
+        materials = masterMaterials.map(material => {
+          // When using MaterialMaster, always use MaterialMaster prices
+          return {
+            ...material.toObject(),
+            source: 'material-master',
+            assignedMrp: material.mrp,
+            assignedInstitutionalPrice: material.institutionalPrice
+          };
+        });
+      } catch (fallbackError) {
+        console.error('❌ Failed to query MaterialMaster:', fallbackError.message);
+        return res.status(500).json({
+          success: false,
+          message: 'Error fetching materials from material master',
+          error: fallbackError.message
+        });
+      }
     }
 
-    if (implantType) {
-      materials = materials.filter(material => {
-        if (!material.implantType) return false;
-        
-        // Check if implantType filter matches either ID or name
-        return material.implantType._id.toString() === implantType || 
-               material.implantType.name === implantType;
+    console.log('📦 Total materials for filtering:', materials.length);
+    
+    // Debug: Log all materials and their surgical categories
+    if (materials.length > 0 && materials.length <= 20) {
+      console.log('🔍 DEBUG: Materials and their surgical categories:');
+      materials.forEach((material, idx) => {
+        const catInfo = material.surgicalCategories 
+          ? (Array.isArray(material.surgicalCategories) 
+            ? material.surgicalCategories.map(cat => {
+              if (cat && typeof cat === 'object' && cat._id) {
+                return `${cat._id.toString().substring(0, 8)}...`; 
+              } else if (cat) {
+                return `"${cat.toString().substring(0, 8)}..."`;
+              } else {
+                return 'null';
+              }
+            }).join(', ')
+            : 'NOT_ARRAY')
+          : 'UNDEFINED';
+        console.log(`   [${idx}] ${material.materialNumber}: surgicalCategories=[${catInfo}]`);
       });
     }
 
+    // Apply filters
+    if (surgicalCategory) {
+      console.log(`\n🔎 Filtering by surgical category: ${surgicalCategory}`);
+      const beforeFilter = materials.length;
+      
+      materials = materials.filter(material => {
+        const hasCategories = material.surgicalCategories && Array.isArray(material.surgicalCategories);
+        
+        if (!hasCategories) {
+          return false;
+        }
+        
+        const matches = material.surgicalCategories.some(cat => {
+          if (!cat || typeof cat !== 'object') {
+            return false;
+          }
+          const catId = cat._id ? cat._id.toString() : String(cat);
+          return catId === surgicalCategory;
+        });
+        
+        return matches;
+      });
+      
+      console.log(`🏷️ After surgical category filter:`, beforeFilter, '→', materials.length);
+    }
+
+    if (implantType) {
+      const beforeFilter = materials.length;
+      materials = materials.filter(material => {
+        if (!material.implantType) return false;
+        
+        return material.implantType._id.toString() === implantType || 
+               material.implantType.name === implantType;
+      });
+      console.log(`🎯 After implant type filter (${implantType}):`, beforeFilter, '→', materials.length);
+    }
+
     if (subCategory) {
+      const beforeFilter = materials.length;
       materials = materials.filter(material => 
         material.subCategory && material.subCategory.toLowerCase().includes(subCategory.toLowerCase())
       );
+      console.log(`📍 After sub-category filter (${subCategory}):`, beforeFilter, '→', materials.length);
     }
 
     if (lengthMm) {
+      const beforeFilter = materials.length;
       const targetLength = parseFloat(lengthMm);
       materials = materials.filter(material => 
         material.lengthMm && Math.abs(material.lengthMm - targetLength) < 0.1
       );
+      console.log(`📏 After length filter (${lengthMm}mm):`, beforeFilter, '→', materials.length);
     }
 
     if (search) {
+      const beforeFilter = materials.length;
       const searchTerm = search.toLowerCase();
       materials = materials.filter(material =>
         material.materialNumber.toLowerCase().includes(searchTerm) ||
         material.description.toLowerCase().includes(searchTerm) ||
         material.hsnCode.includes(searchTerm)
       );
+      console.log(`🔍 After search filter (${searchTerm}):`, beforeFilter, '→', materials.length);
     }
+
+    console.log('✅ Final materials returned:', materials.length);
 
     res.json({
       success: true,
@@ -907,7 +1032,7 @@ router.get('/:hospitalId/assigned-materials-for-inquiry', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching assigned materials for inquiry:', error);
+    console.error('❌ Error fetching assigned materials for inquiry:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error while fetching assigned materials',

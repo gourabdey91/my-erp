@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import '../../../shared/styles/unified-design.css';
 import './BusinessUnitForm.css';
+import { companyDetailsAPI } from '../../company/services/companyDetailsAPI';
 
 const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
     partners: [],
+    companyDetails: null,
     isActive: true
   });
   const [partnerInput, setPartnerInput] = useState('');
   const [errors, setErrors] = useState({});
+  const [companies, setCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+
+  useEffect(() => {
+    // Fetch companies on component mount
+    fetchCompanies();
+  }, []);
 
   useEffect(() => {
     if (businessUnit) {
@@ -18,10 +27,26 @@ const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
         name: businessUnit.name || '',
         code: businessUnit.code || '',
         partners: businessUnit.partners || [],
+        companyDetails: businessUnit.companyDetails?._id || null,
         isActive: businessUnit.isActive !== undefined ? businessUnit.isActive : true
       });
     }
   }, [businessUnit]);
+
+  const fetchCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const response = await companyDetailsAPI.getAll();
+      if (response.success) {
+        setCompanies(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+      setCompanies([]);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -121,6 +146,32 @@ const BusinessUnitForm = ({ businessUnit, onSubmit, onCancel }) => {
             style={{ textTransform: 'uppercase' }}
           />
           {errors.code && <span className="error-text">{errors.code}</span>}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="companyDetails">Company Details</label>
+          {loadingCompanies ? (
+            <div style={{ padding: '0.75rem', color: '#666' }}>Loading companies...</div>
+          ) : (
+            <select
+              id="companyDetails"
+              name="companyDetails"
+              value={formData.companyDetails || ''}
+              onChange={handleInputChange}
+              className="form-input"
+              style={{ width: '100%' }}
+            >
+              <option value="">-- Select a Company --</option>
+              {companies.map((company) => (
+                <option key={company._id} value={company._id}>
+                  {company.companyCode} - {company.companyName}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="unified-help-text">
+            Assign a company to this business unit
+          </div>
         </div>
 
         <div className="form-group">

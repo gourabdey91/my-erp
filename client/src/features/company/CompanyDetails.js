@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBusinessUnit } from '../../contexts/BusinessUnitContext';
 import { companyDetailsAPI } from './services/companyDetailsAPI';
 import '../../shared/styles/unified-design.css';
 import './CompanyDetails.css';
 
 const CompanyDetails = () => {
   const [formData, setFormData] = useState({
+    companyCode: '',
     companyName: '',
     legalName: '',
     address: {
@@ -35,30 +37,78 @@ const CompanyDetails = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [companyId, setCompanyId] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState('');
+  const [isNewCompany, setIsNewCompany] = useState(false);
 
   const { currentUser } = useAuth();
+  const { currentBusinessUnit } = useBusinessUnit();
 
   useEffect(() => {
-    fetchCompanyDetails();
+    fetchAllCompanies();
   }, []);
 
-  const fetchCompanyDetails = async () => {
+  const fetchAllCompanies = async () => {
     try {
       setLoading(true);
-      const response = await companyDetailsAPI.get();
+      const response = await companyDetailsAPI.getAll();
       if (response.success) {
-        setFormData(response.data);
-        setCompanyId(response.data._id);
+        setCompanies(response.data);
+        // If companies exist, select the first one
+        if (response.data.length > 0) {
+          selectCompany(response.data[0]);
+        } else {
+          setIsNewCompany(true);
+        }
       }
     } catch (err) {
-      // If no company details exist, that's fine - we'll create new ones
-      if (err.status !== 404) {
-        setError('Failed to fetch company details');
-        console.error(err);
-      }
+      console.error('Error fetching companies:', err);
+      setIsNewCompany(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectCompany = (company) => {
+    setFormData(company);
+    setCompanyId(company._id);
+    setSelectedCompanyCode(company.companyCode);
+    setIsNewCompany(false);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleNewCompany = () => {
+    setFormData({
+      companyCode: '',
+      companyName: '',
+      legalName: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        pincode: '',
+        country: 'India'
+      },
+      contact: {
+        email: '',
+        mobile1: '',
+        mobile2: '',
+        landline: ''
+      },
+      compliance: {
+        gstNumber: '',
+        stateCode: '',
+        dlNumber: '',
+        panNumber: '',
+        cinNumber: ''
+      }
+    });
+    setCompanyId(null);
+    setSelectedCompanyCode('');
+    setIsNewCompany(true);
+    setError('');
+    setSuccess('');
   };
 
   const handleInputChange = (e) => {
@@ -97,12 +147,28 @@ const CompanyDetails = () => {
       return;
     }
 
+    // Validate business unit is available
+    if (!currentBusinessUnit || !currentBusinessUnit._id) {
+      setError('Business unit not found. Please select a business unit before saving.');
+      setSaving(false);
+      return;
+    }
+
+    // Validate company code
+    if (!formData.companyCode) {
+      setError('Company Code is required');
+      setSaving(false);
+      return;
+    }
+
     try {
       console.log('Submitting company details:', formData);
       console.log('User ID:', currentUser._id);
+      console.log('Business Unit ID:', currentBusinessUnit._id);
       
       const dataToSave = {
         ...formData,
+        businessUnit: currentBusinessUnit._id,
         ...(companyId ? { updatedBy: currentUser._id } : { createdBy: currentUser._id })
       };
 
@@ -113,16 +179,70 @@ const CompanyDetails = () => {
         : await companyDetailsAPI.save(dataToSave);
 
       if (response.success) {
-        setSuccess('Company details saved successfully');
+        setSuccess('Company saved successfully');
         if (!companyId) {
+          // New company created, update the list
           setCompanyId(response.data._id);
+          setCompanies([...companies, response.data]);
+          setIsNewCompany(false);
+        } else {
+          // Update existing company in list
+          const updatedCompanies = companies.map(c => 
+            c._id === response.data._id ? response.data : c
+          );
+          setCompanies(updatedCompanies);
         }
       } else {
-        setError(response.message || 'Failed to save company details');
+        setError(response.message || 'Failed to save company');
       }
     } catch (err) {
-      console.error('Error saving company details:', err);
-      setError(err.message || 'Failed to save company details');
+      console.error('Error saving company:', err);
+      setError(err.message || 'Failed to save company');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!companyId) {
+      setError('Cannot delete a new company');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete company code ${formData.companyCode}? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await companyDetailsAPI.delete(companyId, currentUser._id);
+
+      if (response.success) {
+        setSuccess('Company deleted successfully');
+        
+        // Remove from list
+        const updatedCompanies = companies.filter(c => c._id !== companyId);
+        setCompanies(updatedCompanies);
+        
+        // Reset form to first company or new company mode
+        if (updatedCompanies.length > 0) {
+          selectCompany(updatedCompanies[0]);
+        } else {
+          handleNewCompany();
+        }
+      } else {
+        setError(response.message || 'Failed to delete company');
+      }
+    } catch (err) {
+      console.error('Error deleting company:', err);
+      setError(err.message || 'Failed to delete company');
     } finally {
       setSaving(false);
     }
@@ -142,8 +262,8 @@ const CompanyDetails = () => {
       <div className="unified-header">
         <div className="unified-header-content">
           <div className="unified-header-text">
-            <h1>Company Details</h1>
-            <p>Manage your company information</p>
+            <h1>Company Master</h1>
+            <p>Manage multiple company codes and their information</p>
           </div>
         </div>
       </div>
@@ -166,11 +286,73 @@ const CompanyDetails = () => {
         </div>
       )}
 
+      {/* Company Selection */}
+      <div className="unified-content">
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Select or Create Company</h2>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {companies.length > 0 && (
+              <select 
+                value={selectedCompanyCode}
+                onChange={(e) => {
+                  const selected = companies.find(c => c.companyCode === e.target.value);
+                  if (selected) selectCompany(selected);
+                }}
+                className="form-input"
+                style={{ flex: 1, minWidth: '200px' }}
+              >
+                <option value="">-- Select a Company --</option>
+                {companies.map(company => (
+                  <option key={company._id} value={company.companyCode}>
+                    {company.companyCode} - {company.companyName}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              onClick={handleNewCompany}
+              className="unified-btn unified-btn-secondary"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              + New Company
+            </button>
+          </div>
+          {isNewCompany && companies.length > 0 && (
+            <p style={{ color: '#666', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+              Creating a new company...
+            </p>
+          )}
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="company-form">
         {/* Basic Company Information */}
         <div className="form-section">
           <h2 className="section-title">Basic Information</h2>
+          
           <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="companyCode" className="form-label">
+                Company Code <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="companyCode"
+                name="companyCode"
+                value={formData.companyCode}
+                onChange={handleInputChange}
+                className="form-input"
+                placeholder="Enter unique company code (e.g., CC001)"
+                required
+                disabled={!isNewCompany && companyId}
+                maxLength="20"
+              />
+              <small style={{ color: '#666', marginTop: '0.25rem' }}>
+                {!isNewCompany && companyId ? 'Company code cannot be changed' : 'Unique identifier for this company'}
+              </small>
+            </div>
+
             <div className="form-group">
               <label htmlFor="companyName" className="form-label">
                 Company Name <span className="required">*</span>
@@ -186,7 +368,9 @@ const CompanyDetails = () => {
                 required
               />
             </div>
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="legalName" className="form-label">
                 Legal Name <span className="required">*</span>
@@ -451,8 +635,28 @@ const CompanyDetails = () => {
             className="unified-btn unified-btn-primary"
             disabled={saving}
           >
-            {saving ? 'Saving...' : 'Save Company Details'}
+            {saving ? 'Saving...' : isNewCompany ? 'Create Company' : 'Save Changes'}
           </button>
+          {!isNewCompany && (
+            <>
+              <button
+                type="button"
+                onClick={handleNewCompany}
+                className="unified-btn unified-btn-secondary"
+              >
+                Add New Company
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="unified-btn unified-btn-danger"
+                disabled={saving}
+                style={{ marginLeft: 'auto' }}
+              >
+                {saving ? 'Deleting...' : 'Delete Company'}
+              </button>
+            </>
+          )}
         </div>
       </form>
     </div>

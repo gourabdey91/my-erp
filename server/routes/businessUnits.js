@@ -5,7 +5,9 @@ const BusinessUnit = require('../models/BusinessUnit');
 // GET /api/business-units - Get all business units
 router.get('/', async (req, res) => {
   try {
-    const businessUnits = await BusinessUnit.find({ isActive: true }).sort({ code: 1 });
+    const businessUnits = await BusinessUnit.find({ isActive: true })
+      .populate('companyDetails', 'companyCode companyName')
+      .sort({ code: 1 });
     res.json({
       success: true,
       data: businessUnits,
@@ -46,7 +48,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/business-units - Create new business unit
 router.post('/', async (req, res) => {
   try {
-    const { name, code, partners } = req.body;
+    const { name, code, partners, companyDetails } = req.body;
 
     // Check if code already exists
     const existingBU = await BusinessUnit.findOne({ code: code.toUpperCase() });
@@ -60,10 +62,14 @@ router.post('/', async (req, res) => {
     const businessUnit = new BusinessUnit({
       name,
       code: code.toUpperCase(),
-      partners: partners || []
+      partners: partners || [],
+      companyDetails: companyDetails || null
     });
 
     const savedBusinessUnit = await businessUnit.save();
+    // Populate companyDetails before returning
+    await savedBusinessUnit.populate('companyDetails', 'companyCode companyName');
+    
     res.status(201).json({
       success: true,
       data: savedBusinessUnit,
@@ -81,7 +87,7 @@ router.post('/', async (req, res) => {
 // PUT /api/business-units/:id - Update business unit
 router.put('/:id', async (req, res) => {
   try {
-    const { name, code, partners, isActive } = req.body;
+    const { name, code, partners, isActive, companyDetails } = req.body;
 
     // Check if new code conflicts with existing (excluding current)
     if (code) {
@@ -103,10 +109,11 @@ router.put('/:id', async (req, res) => {
         ...(name && { name }),
         ...(code && { code: code.toUpperCase() }),
         ...(partners !== undefined && { partners }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(companyDetails !== undefined && { companyDetails })
       },
       { new: true, runValidators: true }
-    );
+    ).populate('companyDetails', 'companyCode companyName');
 
     if (!updatedBusinessUnit) {
       return res.status(404).json({

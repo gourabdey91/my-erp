@@ -12,7 +12,11 @@ const inquiryItemSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  // Material description is derived from material master, not stored
+  // Material description fetched from material master
+  materialDescription: {
+    type: String,
+    default: ''
+  },
   hsnCode: {
     type: String,
     required: true,
@@ -134,6 +138,11 @@ const inquirySchema = new mongoose.Schema({
     ref: 'Procedure'
     // Note: Optional field, not required
   },
+  surgeon: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false  // Optional field
+  },
   paymentMethod: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PaymentType',
@@ -157,6 +166,11 @@ const inquirySchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: 0,
+    set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
+  },
+  rounding: {
+    type: Number,
+    default: 0,
     set: v => Math.round(v * 100) / 100 // Round to 2 decimal places
   },
   isActive: {
@@ -486,29 +500,7 @@ async function validateCategoryLevelLimits(inquiry, procedure) {
   }
 }
 
-// Pre-save hook to generate inquiry number
-inquirySchema.pre('save', async function(next) {
-  if (this.isNew && !this.inquiryNumber) {
-    try {
-      const counter = await mongoose.model('InquirySequence').findOneAndUpdate(
-        { _id: 'inquiryNumber' },
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
-      );
-      this.inquiryNumber = `INCS${counter.seq.toString().padStart(8, '0')}`;
-    } catch (error) {
-      next(error);
-    }
-  }
-  next();
-});
-
-// Create sequence model for inquiry numbers
-const inquirySequenceSchema = new mongoose.Schema({
-  _id: { type: String, required: true },
-  seq: { type: Number, default: 10000000 }
-});
-
-const InquirySequence = mongoose.model('InquirySequence', inquirySequenceSchema);
+// DEPRECATED: Inquiry number generation is now handled by NumberRange model
+// Legacy pre-save hook removed - use NumberRange.getNextNumberForType() instead
 
 module.exports = mongoose.model('Inquiry', inquirySchema);

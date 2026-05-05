@@ -85,6 +85,15 @@ const Dashboard = ({ onViewChange }) => {
             enabled: true
           },
           {
+            id: 'number-ranges',
+            title: 'Document Number Ranges',
+            subtitle: 'Configure Numbering',
+            icon: '#️⃣',
+            count: '6',
+            onClick: () => onViewChange('number-ranges'),
+            enabled: true
+          },
+          {
             id: 'payment-types',
             title: 'Payment Types',
             subtitle: 'Manage Payment Types',
