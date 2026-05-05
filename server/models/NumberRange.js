@@ -113,7 +113,7 @@ numberRangeSchema.statics.getOrCreateRange = async function(businessUnitId, docu
   if (!range) {
     // Define defaults for each document type
     const defaults = {
-      'Inquiry': { prefix: 'EST', paddingLength: 8, startingNumber: 0 },
+      'Inquiry': { prefix: 'EST', paddingLength: 8, startingNumber: 11009 },
       'SalesOrder': { prefix: 'CS', paddingLength: 8, startingNumber: 10000000 },
       'Billing': { prefix: 'CINV', paddingLength: 6, startingNumber: 100000 },
       'CreditNote': { prefix: 'CN', paddingLength: 7, startingNumber: 1000000 },

@@ -672,7 +672,9 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(12).font(getFont(true));
     doc.text('Amount Chargeable (in words): ', margin + 5, amountInWordsY + 3, { continued: true });
     doc.fontSize(12).font(getFont());
-    doc.text(numberToWords(Math.floor(totalWithTax)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+    // Include rounding in the words: ensure total includes rounding
+    const finalChargeable = totalAmount + cgstAmount + sgstAmount + igstAmount + roundingAmount;
+    doc.text(numberToWords(Math.floor(finalChargeable)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
 
     y = amountInWordsY + amountInWordsHeight;
     
@@ -694,7 +696,8 @@ router.get('/:id/pdf', async (req, res) => {
       doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 15).stroke();
 
       doc.fontSize(12).font(getFont());
-      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      const totalTaxesAndRoundingIGST = igstAmount + roundingAmount;
+      doc.text(totalTaxesAndRoundingIGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
     } else {
@@ -718,7 +721,8 @@ router.get('/:id/pdf', async (req, res) => {
       doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 15).stroke();
 
       doc.fontSize(12).font(getFont());
-      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
+      const totalTaxesAndRounding = cgstAmount + sgstAmount + roundingAmount;
+      doc.text(totalTaxesAndRounding.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
       doc.text(totalWithTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 2, { width: taxTableColWidth - 10, height: 15, align: 'right' });
