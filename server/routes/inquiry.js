@@ -486,9 +486,9 @@ router.get('/:id/pdf', async (req, res) => {
     const colAmount = colDisc + colDiscWidth;
     const colAmountWidth = 66;
 
-    const rowHeight = 24;
-    const taxRowHeight = 18;
-    const fixedItemRows = 12;
+    const rowHeight = 20;
+    const taxRowHeight = 16;
+    const fixedItemRows = 10;
 
     const drawTableGridLines = (startY, numRows, includeHeader = false) => {
       const totalHeight = numRows * rowHeight;
@@ -527,7 +527,7 @@ router.get('/:id/pdf', async (req, res) => {
     const headerY = y;
     drawTableGridLines(headerY, 1, true);
     
-    doc.fontSize(9).font(getFont(true));
+    doc.fontSize(8).font(getFont(true));
     doc.text('Sl No.', colSl + 2, headerY + 3, { width: colSlWidth - 4 });
     doc.text('Product', colProduct + 2, headerY + 3, { width: colProductWidth - 4 });
     doc.text('Description of Goods', colDesc + 2, headerY + 3, { width: colDescWidth - 4 });
@@ -568,7 +568,7 @@ router.get('/:id/pdf', async (req, res) => {
             });
           }
 
-          doc.fontSize(9).font(getFont());
+          doc.fontSize(8).font(getFont());
           doc.text((index + 1).toString(), colSl + 2, rowY + 4, { width: colSlWidth - 4 });
           doc.text(item.materialNumber || '', colProduct + 2, rowY + 4, { width: colProductWidth - 4 });
           doc.text(item.materialDescription || 'Implant', colDesc + 2, rowY + 4, { width: colDescWidth - 4 });
@@ -614,7 +614,7 @@ router.get('/:id/pdf', async (req, res) => {
     logBoth('💰 TOTAL CALC: Amount=' + totalAmount + ' + CGST=' + cgstAmount + ' + SGST=' + sgstAmount + ' + IGST=' + igstAmount + ' = ' + totalWithTax);
 
     let subtotalY = itemsStartY + (fixedItemRows * rowHeight);
-    doc.fontSize(9).font(getFont());
+    doc.fontSize(8).font(getFont());
     
     doc.moveTo(margin, subtotalY).lineTo(margin + pageWidth, subtotalY).stroke();
     doc.moveTo(margin, subtotalY + taxRowHeight).lineTo(margin + pageWidth, subtotalY + taxRowHeight).stroke();
@@ -629,7 +629,7 @@ router.get('/:id/pdf', async (req, res) => {
     drawTableGridLinesTax(taxY, taxRowCount);
     
     // CONDITIONAL TAX RENDERING - Show IGST or CGST/SGST based on location
-    doc.fontSize(9).font(getFont());
+    doc.fontSize(8).font(getFont());
     
     if (isIGST) {
       console.log('\n🟣 RENDERING IGST (Inter-state)');
@@ -674,7 +674,7 @@ router.get('/:id/pdf', async (req, res) => {
     doc.moveTo(margin, totalRowStartY).lineTo(margin + pageWidth, totalRowStartY).stroke();
     doc.moveTo(margin, totalRowStartY + totalRowHeight).lineTo(margin + pageWidth, totalRowStartY + totalRowHeight).stroke();
     
-    doc.fontSize(9).font(getFont(true));
+    doc.fontSize(8).font(getFont(true));
     doc.text('Total', colDesc + 2, totalRowStartY + 2, { width: colDescWidth - 4 });
     doc.text(totalQty.toFixed(0), colQty + 2, totalRowStartY + 2, { width: colQtyWidth - 4, align: 'center' });
     doc.text('NOS', colUnit + 2, totalRowStartY + 2, { width: colUnitWidth - 4, align: 'center' });
@@ -683,13 +683,13 @@ router.get('/:id/pdf', async (req, res) => {
     y = totalRowStartY + totalRowHeight;
 
     const amountInWordsY = y;
-    const amountInWordsHeight = 15;
+    const amountInWordsHeight = 12;
     
     doc.rect(margin, amountInWordsY, pageWidth, amountInWordsHeight).stroke();
     
-    doc.fontSize(10).font(getFont(true));
-    doc.text('Amount Chargeable (in words): ', margin + 5, amountInWordsY + 2, { continued: true });
-    doc.fontSize(10).font(getFont());
+    doc.fontSize(9).font(getFont(true));
+    doc.text('Amount Chargeable (in words): ', margin + 5, amountInWordsY + 1, { continued: true });
+    doc.fontSize(9).font(getFont());
     // Include rounding in the words: ensure total includes rounding with paisa
     const finalChargeable = totalAmount + cgstAmount + sgstAmount + igstAmount + roundingAmount;
     doc.text(amountToWords(finalChargeable), { width: pageWidth - 60, align: 'left' });
@@ -699,84 +699,84 @@ router.get('/:id/pdf', async (req, res) => {
     if (isIGST) {
       const taxTableColWidth = pageWidth / 3;
 
-      doc.rect(margin, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 12).stroke();
+      doc.rect(margin, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 10).stroke();
 
-      doc.fontSize(10).font(getFont(true));
-      doc.text('Taxable Value', margin + 5, y + 1, { height: 12 });
-      doc.text('IGST (₹)', margin + taxTableColWidth + 5, y + 1, { height: 12 });
-      doc.text('Total Tax (₹)', margin + taxTableColWidth * 2 + 5, y + 1, { height: 12 });
+      doc.fontSize(9).font(getFont(true));
+      doc.text('Taxable Value', margin + 5, y + 1, { height: 10 });
+      doc.text('IGST (₹)', margin + taxTableColWidth + 5, y + 1, { height: 10 });
+      doc.text('Total Tax (₹)', margin + taxTableColWidth * 2 + 5, y + 1, { height: 10 });
 
-      y += 12;
-      doc.rect(margin, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 12).stroke();
+      y += 10;
+      doc.rect(margin, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 10).stroke();
 
-      doc.fontSize(10).font(getFont());
+      doc.fontSize(9).font(getFont());
       // Show: Taxable Value | IGST | Total Tax (sum of all taxes)
       const totalTaxIGST = igstAmount;
-      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
-      doc.text(igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
-      doc.text(totalTaxIGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
+      doc.text(igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
+      doc.text(totalTaxIGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
     } else {
       const taxTableColWidth = pageWidth / 4;
 
-      doc.rect(margin, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 12).stroke();
+      doc.rect(margin, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 10).stroke();
 
-      doc.fontSize(10).font(getFont(true));
-      doc.text('Taxable Value', margin + 5, y + 1, { height: 12 });
-      doc.text('CGST (₹)', margin + taxTableColWidth + 5, y + 1, { height: 12 });
-      doc.text('SGST/UTGST (₹)', margin + taxTableColWidth * 2 + 5, y + 1, { height: 12 });
-      doc.text('Total Tax (₹)', margin + taxTableColWidth * 3 + 5, y + 1, { height: 12 });
+      doc.fontSize(9).font(getFont(true));
+      doc.text('Taxable Value', margin + 5, y + 1, { height: 10 });
+      doc.text('CGST (₹)', margin + taxTableColWidth + 5, y + 1, { height: 10 });
+      doc.text('SGST/UTGST (₹)', margin + taxTableColWidth * 2 + 5, y + 1, { height: 10 });
+      doc.text('Total Tax (₹)', margin + taxTableColWidth * 3 + 5, y + 1, { height: 10 });
 
-      y += 12;
-      doc.rect(margin, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 12).stroke();
-      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 12).stroke();
+      y += 10;
+      doc.rect(margin, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 2, y, taxTableColWidth, 10).stroke();
+      doc.rect(margin + taxTableColWidth * 3, y, taxTableColWidth, 10).stroke();
 
-      doc.fontSize(10).font(getFont());
+      doc.fontSize(9).font(getFont());
       // Show: Taxable Value | CGST | SGST | Total Tax (CGST + SGST)
       const totalTaxCGSTSGST = cgstAmount + sgstAmount;
-      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
-      doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
-      doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
-      doc.text(totalTaxCGSTSGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 1, { width: taxTableColWidth - 10, height: 12, align: 'right' });
+      doc.text(totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
+      doc.text(cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
+      doc.text(sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 2 + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
+      doc.text(totalTaxCGSTSGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + taxTableColWidth * 3 + 5, y + 1, { width: taxTableColWidth - 10, height: 10, align: 'right' });
     }
 
-    y += 12;
+    y += 10;
     const taxAmountInWordsY = y;
-    const taxAmountInWordsHeight = 15;
+    const taxAmountInWordsHeight = 12;
     
     doc.rect(margin, taxAmountInWordsY, pageWidth, taxAmountInWordsHeight).stroke();
     
     const totalTaxAmount = isIGST ? igstAmount : (cgstAmount + sgstAmount);
     
-    doc.fontSize(10).font(getFont(true));
-    doc.text('Tax Amount (in words): ', margin + 5, taxAmountInWordsY + 2, { continued: true });
-    doc.fontSize(10).font(getFont());
+    doc.fontSize(9).font(getFont(true));
+    doc.text('Tax Amount (in words): ', margin + 5, taxAmountInWordsY + 1, { continued: true });
+    doc.fontSize(9).font(getFont());
     doc.text(amountToWords(totalTaxAmount), { width: pageWidth - 60, align: 'left' });
 
     y = taxAmountInWordsY + taxAmountInWordsHeight;
     const remarksStartY = y;
-    const remarksHeight = 100;
+    const remarksHeight = 85;
 
     doc.rect(margin, remarksStartY, pageWidth, remarksHeight).stroke();
     
-    doc.fontSize(11).font(getFont(true));
-    doc.text('Remarks', margin + 5, remarksStartY + 4);
+    doc.fontSize(10).font(getFont(true));
+    doc.text('Remarks', margin + 5, remarksStartY + 3);
     
     const col1Start = margin + 5;
     const col2Start = margin + 140;
     const col3Start = margin + 155;
     
-    doc.fontSize(10).font(getFont());
-    let tableY = remarksStartY + 20;
-    const tableRowHeight = 12;
+    doc.fontSize(9).font(getFont());
+    let tableY = remarksStartY + 18;
+    const tableRowHeight = 11;
     
     doc.text('Patient Name', col1Start, tableY);
     doc.text(':', col2Start, tableY);
@@ -799,13 +799,13 @@ router.get('/:id/pdf', async (req, res) => {
     doc.text(new Date(inquiry.inquiryDate).toLocaleDateString('en-IN'), col3Start, tableY, { width: pageWidth - col3Start - 5 });
     tableY += tableRowHeight;
     
-    doc.fontSize(10).font(getFont(true));
+    doc.fontSize(9).font(getFont(true));
     doc.text('Declaration:', col1Start, tableY, { continued: true });
-    doc.fontSize(10).font(getFont());
+    doc.fontSize(9).font(getFont());
     doc.text(' We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.', { width: pageWidth - col1Start - 10, align: 'left' });
 
     y = remarksStartY + remarksHeight;
-    const signatureSectionHeight = 70;
+    const signatureSectionHeight = 60;
     const midLine = margin + pageWidth / 2;
     
     doc.moveTo(midLine, y).lineTo(midLine, y + signatureSectionHeight).stroke();
@@ -817,10 +817,10 @@ router.get('/:id/pdf', async (req, res) => {
     doc.moveTo(margin + pageWidth, y).lineTo(margin + pageWidth, y + signatureSectionHeight).stroke();
     doc.moveTo(midLine + 0.5, y + signatureSectionHeight).lineTo(margin + pageWidth, y + signatureSectionHeight).stroke();
     
-    doc.fontSize(10).font(getFont());
-    doc.text("Receiver's Signature & Stamp", margin + 5, y + signatureSectionHeight - 12, { width: pageWidth / 2 - 10, align: 'center' });
-    doc.text(`For ${companyName}`, midLine + 5, y + 6, { width: pageWidth / 2 - 10, align: 'center' });
-    doc.text('Authorized Signatory', midLine + 5, y + signatureSectionHeight - 12, { width: pageWidth / 2 - 10, align: 'center' });
+    doc.fontSize(9).font(getFont());
+    doc.text("Receiver's Signature & Stamp", margin + 5, y + signatureSectionHeight - 10, { width: pageWidth / 2 - 10, align: 'center' });
+    doc.text(`For ${companyName}`, midLine + 5, y + 5, { width: pageWidth / 2 - 10, align: 'center' });
+    doc.text('Authorized Signatory', midLine + 5, y + signatureSectionHeight - 10, { width: pageWidth / 2 - 10, align: 'center' });
 
     doc.end();
   } catch (error) {
