@@ -672,9 +672,9 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(12).font(getFont(true));
     doc.text('Amount Chargeable (in words): ', margin + 5, amountInWordsY + 3, { continued: true });
     doc.fontSize(12).font(getFont());
-    // Include rounding in the words: ensure total includes rounding
+    // Include rounding in the words: ensure total includes rounding with paisa
     const finalChargeable = totalAmount + cgstAmount + sgstAmount + igstAmount + roundingAmount;
-    doc.text(numberToWords(Math.floor(finalChargeable)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+    doc.text(amountToWords(finalChargeable), { width: pageWidth - 60, align: 'left' });
 
     y = amountInWordsY + amountInWordsHeight;
     
@@ -741,7 +741,7 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(12).font(getFont(true));
     doc.text('Tax Amount (in words): ', margin + 5, taxAmountInWordsY + 3, { continued: true });
     doc.fontSize(12).font(getFont());
-    doc.text(numberToWords(Math.floor(totalTaxAmount)) + ' Rupees Only', { width: pageWidth - 60, align: 'left' });
+    doc.text(amountToWords(totalTaxAmount), { width: pageWidth - 60, align: 'left' });
 
     y = taxAmountInWordsY + taxAmountInWordsHeight;
     const remarksStartY = y;
@@ -1210,6 +1210,20 @@ function numberToWords(num) {
   }
 
   return parts.join('').trim();
+}
+
+// Helper function to convert amount to words with paisa
+function amountToWords(amount) {
+  const rupees = Math.floor(amount);
+  const paisa = Math.round((amount - rupees) * 100);
+  
+  let words = numberToWords(rupees) + ' Rupees';
+  
+  if (paisa > 0) {
+    words += ' and ' + numberToWords(paisa) + ' Paisa';
+  }
+  
+  return words + ' Only';
 }
 
 module.exports = router;
