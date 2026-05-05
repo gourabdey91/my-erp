@@ -487,10 +487,28 @@ router.get('/:id/pdf', async (req, res) => {
     const colAmountWidth = 66;
 
     const rowHeight = 24;
+    const taxRowHeight = 18;
     const fixedItemRows = 12;
 
     const drawTableGridLines = (startY, numRows, includeHeader = false) => {
       const totalHeight = numRows * rowHeight;
+      
+      doc.moveTo(margin, startY).lineTo(margin, startY + totalHeight).stroke();
+      doc.moveTo(colProduct, startY).lineTo(colProduct, startY + totalHeight).stroke();
+      doc.moveTo(colDesc, startY).lineTo(colDesc, startY + totalHeight).stroke();
+      doc.moveTo(colHSN, startY).lineTo(colHSN, startY + totalHeight).stroke();
+      doc.moveTo(colQty, startY).lineTo(colQty, startY + totalHeight).stroke();
+      doc.moveTo(colPrice, startY).lineTo(colPrice, startY + totalHeight).stroke();
+      doc.moveTo(colUnit, startY).lineTo(colUnit, startY + totalHeight).stroke();
+      doc.moveTo(colDisc, startY).lineTo(colDisc, startY + totalHeight).stroke();
+      doc.moveTo(colAmount, startY).lineTo(colAmount, startY + totalHeight).stroke();
+      doc.moveTo(margin + pageWidth, startY).lineTo(margin + pageWidth, startY + totalHeight).stroke();
+      doc.moveTo(margin, startY).lineTo(margin + pageWidth, startY).stroke();
+      doc.moveTo(margin, startY + totalHeight).lineTo(margin + pageWidth, startY + totalHeight).stroke();
+    };
+
+    const drawTableGridLinesTax = (startY, numRows) => {
+      const totalHeight = numRows * taxRowHeight;
       
       doc.moveTo(margin, startY).lineTo(margin, startY + totalHeight).stroke();
       doc.moveTo(colProduct, startY).lineTo(colProduct, startY + totalHeight).stroke();
@@ -599,16 +617,16 @@ router.get('/:id/pdf', async (req, res) => {
     doc.fontSize(9).font(getFont());
     
     doc.moveTo(margin, subtotalY).lineTo(margin + pageWidth, subtotalY).stroke();
-    doc.moveTo(margin, subtotalY + rowHeight).lineTo(margin + pageWidth, subtotalY + rowHeight).stroke();
-    doc.moveTo(margin, subtotalY).lineTo(margin, subtotalY + rowHeight).stroke();
-    doc.moveTo(margin + pageWidth, subtotalY).lineTo(margin + pageWidth, subtotalY + rowHeight).stroke();
+    doc.moveTo(margin, subtotalY + taxRowHeight).lineTo(margin + pageWidth, subtotalY + taxRowHeight).stroke();
+    doc.moveTo(margin, subtotalY).lineTo(margin, subtotalY + taxRowHeight).stroke();
+    doc.moveTo(margin + pageWidth, subtotalY).lineTo(margin + pageWidth, subtotalY + taxRowHeight).stroke();
     
     doc.text('₹ ' + totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, subtotalY + 2, { width: colAmountWidth, align: 'right' });
 
-    let taxY = subtotalY + rowHeight;
+    let taxY = subtotalY + taxRowHeight;
     const taxRowCount = isIGST ? 3 : 4;  // Show 2 taxes (CGST+SGST or IGST) + Rounding + blank row for alignment
     
-    drawTableGridLines(taxY, taxRowCount, false);
+    drawTableGridLinesTax(taxY, taxRowCount);
     
     // CONDITIONAL TAX RENDERING - Show IGST or CGST/SGST based on location
     doc.fontSize(9).font(getFont());
@@ -620,7 +638,7 @@ router.get('/:id/pdf', async (req, res) => {
       doc.text('IGST @ 5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
       doc.text('₹ ' + igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
       
-      taxY += rowHeight;
+      taxY += taxRowHeight;
     } else {
       console.log('\n🟢 RENDERING CGST & SGST (Same state)');
       logBoth('🟢 RENDERING CGST & SGST - CGST: ' + cgstAmount + ', SGST: ' + sgstAmount);
@@ -628,20 +646,20 @@ router.get('/:id/pdf', async (req, res) => {
       doc.text('CGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
       doc.text('₹ ' + cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
       
-      taxY += rowHeight;
+      taxY += taxRowHeight;
       doc.text('SGST/UTGST @ 2.5 %', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
       doc.text('₹ ' + sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
       
-      taxY += rowHeight;
+      taxY += taxRowHeight;
     }
 
     doc.text('Rounding', colDesc + 2, taxY + 2, { width: colDescWidth - 4 });
     doc.text('₹ ' + roundingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), colAmount, taxY + 2, { width: colAmountWidth, align: 'right' });
 
-    taxY += rowHeight;
+    taxY += taxRowHeight;
     
     const totalRowStartY = taxY;
-    const totalRowHeight = rowHeight;
+    const totalRowHeight = taxRowHeight;
     
     doc.moveTo(margin, totalRowStartY).lineTo(margin, totalRowStartY + totalRowHeight).stroke();
     doc.moveTo(colProduct, totalRowStartY).lineTo(colProduct, totalRowStartY + totalRowHeight).stroke();
