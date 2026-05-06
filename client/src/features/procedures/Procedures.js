@@ -120,16 +120,15 @@ const Procedures = () => {
     return `P${nextNumber.toString().padStart(5, '0')}`;
   }, [procedures]);
 
-  // Set auto-generated code when creating new procedure
+  // Set auto-generated code placeholder when creating new procedure
   useEffect(() => {
     if (showForm && !editingProcedure && formData.code === '') {
-      const nextCode = generateNextCode();
       setFormData(prev => ({
         ...prev,
-        code: nextCode
+        code: '(Auto-generated)'
       }));
     }
-  }, [showForm, editingProcedure, formData.code, generateNextCode]);
+  }, [showForm, editingProcedure]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -168,29 +167,25 @@ const Procedures = () => {
       }).filter(item => item.surgicalCategoryId); // Filter out items without surgical category
 
       const procedureData = {
-        code: formData.code,
         name: formData.name,
         description: formData.description,
         paymentTypeId: formData.paymentTypeId,
         limitAppliedByIndividualCategory: formData.limitAppliedByIndividualCategory,
         items: processedItems,
+        businessUnitId: currentUser.businessUnitId || '68920a453993bf82a0512c02',
         createdBy: currentUser.id,
         updatedBy: currentUser.id
       };
 
       if (editingProcedure) {
-        await procedureAPI.update(editingProcedure._id, {
-          ...procedureData,
-          createdBy: editingProcedure.createdBy
-        });
+        await procedureAPI.update(editingProcedure._id, procedureData);
       } else {
         await procedureAPI.create(procedureData);
       }
 
-      // Reset form with new auto-generated code for next procedure
-      const nextCode = generateNextCode();
+      // Reset form for next procedure
       setFormData({
-        code: nextCode,
+        code: '(Auto-generated)',
         name: '',
         paymentTypeId: '',
         description: '',

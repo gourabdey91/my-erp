@@ -27,8 +27,8 @@ const procedureSchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true,
-    match: /^P\d{5}$/,  // Format: P00001, P00002, etc.
-    maxLength: 6
+    match: /^[A-Z0-9]+$/,  // Allow alphanumeric codes: CRA001, DUR001, P00001, PRO00001, etc.
+    maxLength: 15
   },
   name: {
     type: String,

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { doctorAPI } from '../doctors/services/doctorAPI';
 import './SalesOrders.css';
 
 const SalesOrders = () => {
   const { currentUser } = useAuth();
   const [salesOrders, setSalesOrders] = useState([]);
+  const [editingSalesOrder, setEditingSalesOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [customers, setCustomers] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [procedures, setProcedures] = useState([]);
   const [filteredProcedures, setFilteredProcedures] = useState([]);
   const [paymentTypes, setPaymentTypes] = useState([]);
@@ -20,7 +25,6 @@ const SalesOrders = () => {
   const [formData, setFormData] = useState({
     customer: '',
     documentDate: new Date().toISOString().split('T')[0],
-    dueDate: '',
     patientName: '',
     uhid: '',
     surgeon: '',
@@ -28,7 +32,7 @@ const SalesOrders = () => {
     surgicalCategory: '',
     procedure: '',
     paymentType: '',
-    specialInstructions: '',
+    notes: '',
     status: 'DRAFT'
   });
 
@@ -68,99 +72,177 @@ const SalesOrders = () => {
       customer: customerId,
       surgeon: '',
       consultingDoctor: '',
-      surgicalCategory: '',
+      surgicalCategory: '', // Will be auto-derived from procedure
       procedure: '',
       paymentType: '',
-      // Clear hospital-specific fields for non-hospital customers
       patientName: customer?.customerIsHospital ? prev.patientName : '',
       uhid: customer?.customerIsHospital ? prev.uhid : ''
     }));
 
-    // Filter surgical categories based on customer assignments
-    if (customer?.customerIsHospital && customer.surgicalCategories) {
-      const customerCategories = categories.filter(cat => 
-        customer.surgicalCategories.includes(cat._id)
-      );
-      setFilteredCategories(customerCategories);
-    } else {
-      setFilteredCategories([]);
-    }
-    
-    // Clear other filtered arrays
+    // Clear filtered arrays
     setFilteredDoctors([]);
     setFilteredProcedures([]);
   };
 
-  // Handle surgical category change
-  const handleSurgicalCategoryChange = async (surgicalCategoryId) => {
-    setFormData(prev => ({
-      ...prev,
-      surgicalCategory: surgicalCategoryId,
-      surgeon: '',
-      consultingDoctor: '',
-      procedure: ''
-    }));
-
-    if (formData.customer && surgicalCategoryId) {
-      // Load filtered doctors for this customer and surgical category
-      try {
-        const response = await fetch(`/api/sales-orders/meta/doctors/${formData.customer}/${surgicalCategoryId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setFilteredDoctors(data.doctors || []);
-        }
-      } catch (err) {
-        console.error('Error loading filtered doctors:', err);
-      }
-    } else if (formData.customer) {
-      // Load all doctors for this customer (no surgical category filter)
-      try {
-        const response = await fetch(`/api/sales-orders/meta/doctors/${formData.customer}`);
-        if (response.ok) {
-          const data = await response.json();
-          setFilteredDoctors(data.doctors || []);
-        }
-      } catch (err) {
-        console.error('Error loading filtered doctors:', err);
-      }
-    }
-  };
+  // Note: Surgical category is now derived from procedure selection, not user input
+  // This is handled in handleProcedureChange
 
   // Handle payment type change
   const handlePaymentTypeChange = async (paymentTypeId) => {
     setFormData(prev => ({
       ...prev,
       paymentType: paymentTypeId,
-      procedure: ''
+      procedure: '', // Clear procedure when payment type changes
+      surgicalCategory: '' // Will be re-derived from new procedure
     }));
 
-    if (paymentTypeId) {
-      // Load procedures for this payment type
+    if (formData.customer && paymentTypeId) {
+      // Load procedures for this customer and payment type
+      // Note: Category will be auto-derived from selected procedure
       try {
-        const response = await fetch(`/api/sales-orders/meta/procedures/${paymentTypeId}`);
+        const response = await fetch(
+          `/api/sales-orders/procedures/${formData.customer}?paymentType=${paymentTypeId}`
+        );
         if (response.ok) {
           const data = await response.json();
-          setFilteredProcedures(data.procedures || []);
+          setFilteredProcedures(data.data || []);
         }
       } catch (err) {
-        console.error('Error loading filtered procedures:', err);
+        console.error('Error loading procedures:', err);
       }
     } else {
       setFilteredProcedures([]);
     }
   };
 
+  // Handle procedure selection - derives surgical category automatically
+  const handleProcedureChange = (procedureId) => {
+    // Find the selected procedure to extract category
+    const selectedProcedure = filteredProcedures.find(p => p._id === procedureId);
+    const derivedCategory = selectedProcedure?.items?.[0]?.surgicalCategoryId?._id || 
+                           selectedProcedure?.items?.[0]?.surgicalCategoryId || null;
+
+    setFormData(prev => ({
+      ...prev,
+      procedure: procedureId,
+      surgicalCategory: derivedCategory // Auto-set from procedure
+    }));
+
+    // Load surgeons based on the derived category and customer
+    if (formData.customer && derivedCategory) {
+      doctorAPI.getSurgeonsByHospitalAndCategory(formData.customer, derivedCategory)
+        .then(response => {
+          if (response.success) {
+            setFilteredDoctors(response.data || []);
+          }
+        })
+        .catch(err => console.error('Error loading surgeons:', err));
+    }
+  };
+
+  // Handle View sales order
+  const handleView = (orderId) => {
+    const order = salesOrders.find(o => o._id === orderId);
+    if (order) {
+      alert(`Sales Order: ${order.salesOrderNumber}\nCustomer: ${order.customer?.shortName}\nStatus: ${order.status}`);
+      // TODO: Open detail view modal or navigate to detail page
+    }
+  };
+
+  // Handle Edit sales order
+  const handleEdit = (orderId) => {
+    const order = salesOrders.find(o => o._id === orderId);
+    if (order) {
+      // Load order data into form
+      setFormData({
+        customer: order.customer?._id || '',
+        documentDate: order.documentDate ? new Date(order.documentDate).toISOString().split('T')[0] : '',
+        patientName: order.patientName || '',
+        uhid: order.uhid || '',
+        surgeon: order.surgeon?._id || '',
+        consultingDoctor: order.consultingDoctor?._id || '',
+        surgicalCategory: order.surgicalCategory?._id || '',
+        procedure: order.procedure?._id || '',
+        paymentType: order.paymentType?._id || '',
+        notes: order.notes || '',
+        status: order.status || 'DRAFT'
+      });
+      setEditingSalesOrder(order);
+      
+      // Fetch the full customer object from dropdown options to get customerIsHospital flag
+      const fullCustomer = customers.find(c => c._id === order.customer?._id);
+      setSelectedCustomer(fullCustomer || order.customer);
+      
+      // Populate procedures if payment type is set
+      // Surgical category will be auto-derived from selected procedure
+      if (order.paymentType?._id && order.customer?._id) {
+        fetch(`/api/sales-orders/procedures/${order.customer._id}?paymentType=${order.paymentType._id}`)
+          .then(res => res.json())
+          .then(response => {
+            if (response.success) {
+              setFilteredProcedures(response.data || []);
+            } else {
+              setFilteredProcedures([]);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load procedures:', err);
+            setFilteredProcedures([]);
+          });
+      } else {
+        setFilteredProcedures([]);
+      }
+      
+      // Populate surgeons if category is set (derived from procedure)
+      if (order.surgicalCategory?._id && order.customer?._id) {
+        doctorAPI.getSurgeonsByHospitalAndCategory(order.customer._id, order.surgicalCategory._id)
+          .then(response => {
+            if (response.success) {
+              setFilteredDoctors(response.data || []);
+            } else {
+              setFilteredDoctors([]);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load surgeons:', err);
+            setFilteredDoctors([]);
+          });
+      }
+      
+      setShowForm(true);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Derive surgical category from selected procedure (like Inquiry)
+      const selectedProcedure = filteredProcedures.find(p => p._id === formData.procedure);
+      const derivedSurgicalCategory = selectedProcedure?.items?.[0]?.surgicalCategoryId?._id || 
+                                      selectedProcedure?.items?.[0]?.surgicalCategoryId || null;
+      
+      // Map form fields to backend field names
       const salesOrderData = {
-        ...formData,
+        customer: formData.customer,
+        patientName: formData.patientName,
+        uhid: formData.uhid,
+        surgeon: formData.surgeon || undefined,
+        consultingDoctor: formData.consultingDoctor || undefined,
+        surgicalCategory: derivedSurgicalCategory, // Derived from procedure, not user input
+        procedure: formData.procedure || undefined,
+        paymentType: formData.paymentType || undefined,
+        notes: formData.notes || '', // Map specialInstructions → notes
+        status: formData.status || 'DRAFT',
         createdBy: currentUser?.id,
         updatedBy: currentUser?.id
       };
 
-      const response = await fetch('/api/sales-orders', {
-        method: 'POST',
+      // If editing, send PUT request; otherwise send POST request
+      const url = editingSalesOrder ? `/api/sales-orders/${editingSalesOrder._id}` : '/api/sales-orders';
+      const method = editingSalesOrder ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -171,6 +253,7 @@ const SalesOrders = () => {
       
       if (response.ok) {
         setShowForm(false);
+        setEditingSalesOrder(null);
         setSelectedCustomer(null);
         setFilteredDoctors([]);
         setFilteredCategories([]);
@@ -178,7 +261,6 @@ const SalesOrders = () => {
         setFormData({
           customer: '',
           documentDate: new Date().toISOString().split('T')[0],
-          dueDate: '',
           patientName: '',
           uhid: '',
           surgeon: '',
@@ -186,7 +268,7 @@ const SalesOrders = () => {
           surgicalCategory: '',
           procedure: '',
           paymentType: '',
-          specialInstructions: '',
+          notes: '',
           status: 'DRAFT'
         });
         loadSalesOrders();
@@ -197,18 +279,25 @@ const SalesOrders = () => {
         if (contentType && contentType.includes('application/json')) {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
+          
+          // Add detailed field errors if available
+          if (errorData.details && errorData.details.length > 0) {
+            errorMessage += '\n\nField errors:\n' + errorData.details.join('\n');
+          }
         }
         
         setError(errorMessage);
+        console.error('Error creating/updating sales order:', errorMessage);
       }
     } catch (err) {
       setError('Failed to connect to server');
-      console.error('Error creating sales order:', err);
+      console.error('Error creating/updating sales order:', err);
     }
   };
 
   const handleCancel = () => {
     setShowForm(false);
+    setEditingSalesOrder(null);
     setSelectedCustomer(null);
     setFilteredDoctors([]);
     setFilteredCategories([]);
@@ -216,7 +305,6 @@ const SalesOrders = () => {
     setFormData({
       customer: '',
       documentDate: new Date().toISOString().split('T')[0],
-      dueDate: '',
       patientName: '',
       uhid: '',
       surgeon: '',
@@ -224,7 +312,7 @@ const SalesOrders = () => {
       surgicalCategory: '',
       procedure: '',
       paymentType: '',
-      specialInstructions: '',
+      notes: '',
       status: 'DRAFT'
     });
     setError('');
@@ -240,7 +328,7 @@ const SalesOrders = () => {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (response.ok) {
-          setSalesOrders(data.salesOrders || []);
+          setSalesOrders(data.data || []);
         } else {
           setError(data.message || 'Failed to load sales orders');
         }
@@ -265,7 +353,28 @@ const SalesOrders = () => {
         <h1>Sales Orders</h1>
         <button
           className="btn btn-primary"
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setEditingSalesOrder(null);
+            setFormData({
+              customer: '',
+              documentDate: new Date().toISOString().split('T')[0],
+              patientName: '',
+              uhid: '',
+              surgeon: '',
+              consultingDoctor: '',
+              surgicalCategory: '',
+              procedure: '',
+              paymentType: '',
+              notes: '',
+              status: 'DRAFT'
+            });
+            setSelectedCustomer(null);
+            setFilteredDoctors([]);
+            setFilteredCategories([]);
+            setFilteredProcedures([]);
+            setError('');
+            setShowForm(true);
+          }}
         >
           + Add New Sales Order
         </button>
@@ -296,10 +405,10 @@ const SalesOrders = () => {
         <div className="form-overlay">
           <div className="form-container">
             <div className="form-header">
-              <h2>Add New Sales Order</h2>
+              <h2>{editingSalesOrder ? `Edit Sales Order ${editingSalesOrder.salesOrderNumber}` : 'Create New Sales Order'}</h2>
               <button 
                 className="close-btn"
-                onClick={() => setShowForm(false)}
+                onClick={handleCancel}
               >
                 ×
               </button>
@@ -336,15 +445,6 @@ const SalesOrders = () => {
                 </div>
 
                 <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="dueDate">Due Date</label>
-                    <input
-                      type="date"
-                      id="dueDate"
-                      value={formData.dueDate}
-                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    />
-                  </div>
                   <div className="form-group">
                     <label htmlFor="status">Status</label>
                     <select
@@ -387,21 +487,6 @@ const SalesOrders = () => {
 
                     <div className="form-row">
                       <div className="form-group">
-                        <label htmlFor="surgicalCategory">Surgical Category</label>
-                        <select
-                          id="surgicalCategory"
-                          value={formData.surgicalCategory}
-                          onChange={(e) => handleSurgicalCategoryChange(e.target.value)}
-                        >
-                          <option value="">Select Category</option>
-                          {filteredCategories.map((category) => (
-                            <option key={category._id} value={category._id}>
-                              {category.code} - {category.description}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
                         <label htmlFor="paymentType">Payment Type</label>
                         <select
                           id="paymentType"
@@ -424,7 +509,7 @@ const SalesOrders = () => {
                         <select
                           id="procedure"
                           value={formData.procedure}
-                          onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
+                          onChange={(e) => handleProcedureChange(e.target.value)}
                         >
                           <option value="">Select Procedure</option>
                           {filteredProcedures.map((procedure) => (
@@ -460,7 +545,7 @@ const SalesOrders = () => {
                           onChange={(e) => setFormData({ ...formData, consultingDoctor: e.target.value })}
                         >
                           <option value="">Select Consulting Doctor</option>
-                          {filteredDoctors.map((doctor) => (
+                          {doctors.map((doctor) => (
                             <option key={doctor._id} value={doctor._id}>
                               {doctor.name}
                             </option>
@@ -475,19 +560,19 @@ const SalesOrders = () => {
                 )}
 
                 <div className="form-group full-width">
-                  <label htmlFor="specialInstructions">Special Instructions</label>
+                  <label htmlFor="notes">Notes</label>
                   <textarea
-                    id="specialInstructions"
-                    value={formData.specialInstructions}
-                    onChange={(e) => setFormData({ ...formData, specialInstructions: e.target.value })}
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows="3"
-                    placeholder="Enter any special instructions..."
+                    placeholder="Enter any notes or special instructions..."
                   />
                 </div>
 
                 <div className="form-actions">
                   <button type="submit" className="btn btn-primary">
-                    Create Sales Order
+                    {editingSalesOrder ? 'Update Sales Order' : 'Create Sales Order'}
                   </button>
                   <button type="button" className="btn btn-secondary" onClick={handleCancel}>
                     Cancel
@@ -547,8 +632,8 @@ const SalesOrders = () => {
                   )}
                 </div>
                 <div className="order-actions">
-                  <button className="btn btn-outline">View</button>
-                  <button className="btn btn-outline">Edit</button>
+                  <button className="btn btn-outline" onClick={() => handleView(order._id)}>View</button>
+                  <button className="btn btn-outline" onClick={() => handleEdit(order._id)}>Edit</button>
                 </div>
               </div>
             ))}

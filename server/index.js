@@ -25,7 +25,9 @@ console.log(`Connecting to database: ${decodedMongoUri.split('@')[1].split('?')[
 const corsOptions = {
   origin: [
     'http://localhost:3000', // Development
+    'http://localhost:3001', // Development (alternate port)
     'https://localhost:3000', // Development with HTTPS
+    'https://localhost:3001', // Development with HTTPS (alternate port)
     'https://my-erp.onrender.com', // Production frontend URL
     'https://myerp-frontend.onrender.com', // Alternative frontend URL
     process.env.CORS_ORIGIN, // Additional production frontend URL

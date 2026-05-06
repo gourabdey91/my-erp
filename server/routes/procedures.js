@@ -135,20 +135,21 @@ router.get('/hospital/:hospitalId', async (req, res) => {
 // Create new procedure
 router.post('/', async (req, res) => {
   try {
+    console.log('📝 POST /procedures called with data:', JSON.stringify(req.body, null, 2));
     const { 
-      code,
       name,
       items,
       paymentTypeId,
       limitAppliedByIndividualCategory,
-      createdBy 
+      createdBy,
+      businessUnitId
     } = req.body;
     
     // Validation
-    if (!code || !name || !items || !paymentTypeId || !createdBy) {
+    if (!name || !items || !paymentTypeId || !createdBy || !businessUnitId) {
       return res.status(400).json({
         success: false,
-        message: 'Code, name, items, payment type, and created by are required'
+        message: 'Name, items, payment type, business unit, and created by are required'
       });
     }
 
@@ -177,58 +178,69 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Validate procedure code format
-    if (!/^P\d{5}$/.test(code)) {
-      return res.status(400).json({
+    // Generate next procedure code using NumberRange for uniqueness guarantee
+    const NumberRange = require('../models/NumberRange');
+    const procedureCode = await NumberRange.getNextNumberForType(
+      businessUnitId,
+      'Procedure',
+      createdBy
+    );
+
+    if (!procedureCode) {
+      return res.status(500).json({
         success: false,
-        message: 'Procedure code must be in format: P##### (P followed by 5 digits)'
+        message: 'Failed to generate procedure code'
       });
     }
 
-    // Check for existing procedure with same code
-    const existingProcedure = await Procedure.findOne({ 
-      code: code.toUpperCase(),
-      isActive: true
-    });
-    
-    if (existingProcedure) {
-      return res.status(400).json({
-        success: false,
-        message: `Procedure with code ${code.toUpperCase()} already exists`
-      });
-    }
+    console.log('✅ Generated procedure code:', procedureCode);
 
     const procedure = new Procedure({
-      code: code.toUpperCase(),
+      code: procedureCode,
       name,
       items,
       paymentTypeId,
       limitAppliedByIndividualCategory: limitAppliedByIndividualCategory || false,
+      businessUnitId,
       createdBy,
       updatedBy: createdBy
     });
 
     await procedure.save();
     
-    // Populate the created procedure before returning
-    await procedure.populate('paymentTypeId', 'code description');
-    await procedure.populate('items.surgicalCategoryId', 'code description');
-    await procedure.populate('createdBy', 'firstName lastName');
-    await procedure.populate('updatedBy', 'firstName lastName');
+    // Populate the created procedure before returning - refetch with proper populate
+    const populatedProcedure = await Procedure.findById(procedure._id)
+      .populate('paymentTypeId', 'code description')
+      .populate('items.surgicalCategoryId', 'code description')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName');
 
     res.status(201).json({
       success: true,
-      data: procedure,
+      data: populatedProcedure,
       message: 'Procedure created successfully'
     });
   } catch (error) {
-    console.error('Error creating procedure:', error);
+    console.error('Error creating procedure:', error.message);
+    console.error('Error stack:', error.stack);
     
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
         message: 'Procedure with this code already exists'
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const details = Object.values(error.errors).map(err => ({
+        field: err.path,
+        error: err.message
+      }));
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        details
       });
     }
     
@@ -304,26 +316,47 @@ router.put('/:id', async (req, res) => {
     }
     procedure.updatedBy = updatedBy;
 
-    await procedure.save();
+    const savedProcedure = await procedure.save();
     
-    // Populate before returning
-    await procedure.populate('paymentTypeId', 'code description');
-    await procedure.populate('items.surgicalCategoryId', 'code description');
-    await procedure.populate('createdBy', 'firstName lastName');
-    await procedure.populate('updatedBy', 'firstName lastName');
+    // Populate before returning - refetch with proper populate
+    const populatedProcedure = await Procedure.findById(savedProcedure._id)
+      .populate('paymentTypeId', 'code description')
+      .populate('items.surgicalCategoryId', 'code description')
+      .populate('createdBy', 'firstName lastName')
+      .populate('updatedBy', 'firstName lastName');
+
+    if (!populatedProcedure) {
+      return res.status(404).json({
+        success: false,
+        message: 'Procedure not found after update'
+      });
+    }
 
     res.json({
       success: true,
-      data: procedure,
+      data: populatedProcedure,
       message: 'Procedure updated successfully'
     });
   } catch (error) {
-    console.error('Error updating procedure:', error);
+    console.error('Error updating procedure:', error.message);
+    console.error('Error stack:', error.stack);
     
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
         message: 'Procedure with this code already exists'
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const details = Object.values(error.errors).map(err => ({
+        field: err.path,
+        error: err.message
+      }));
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        details
       });
     }
     

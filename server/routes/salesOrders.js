@@ -1,93 +1,215 @@
 const express = require('express');
 const router = express.Router();
 const SalesOrder = require('../models/SalesOrder');
-const SalesOrderSequence = require('../models/SalesOrderSequence');
-const MaterialMaster = require('../models/MaterialMaster');
 const Hospital = require('../models/Hospital');
 const Doctor = require('../models/Doctor');
-const DoctorAssignment = require('../models/DoctorAssignment');
 const Category = require('../models/Category');
-const Procedure = require('../models/Procedure');
 const PaymentType = require('../models/PaymentType');
+const Procedure = require('../models/Procedure');
 const CompanyDetails = require('../models/CompanyDetails');
+const NumberRange = require('../models/NumberRange');
+const User = require('../models/User');
 
-// Get all sales orders with pagination and filters
+// Get all sales orders with pagination and search
 router.get('/', async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      search = '', 
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
       customer = '',
+      surgicalCategory = '',
+      paymentType = '',
       status = '',
-      dateFrom = '',
-      dateTo = '',
-      surgeon = ''
+      sortBy = 'documentDate',
+      sortOrder = 'desc'
     } = req.query;
 
-    // For now, we'll use a default business unit - this should be from auth later
-    const businessUnit = '6767dd82b1eeccc42e09b59b'; // This should come from req.user.businessUnit
-    if (!businessUnit) {
-      return res.status(400).json({ message: 'Business unit is required' });
-    }
+    const query = { isActive: true };
 
-    const query = { 
-      businessUnit: businessUnit,
-      isActive: true 
-    };
-
-    // Apply filters
-    if (customer) query.customer = customer;
-    if (status) query.status = status;
-    if (surgeon) query.surgeon = surgeon;
-
-    // Date range filter
-    if (dateFrom || dateTo) {
-      query.documentDate = {};
-      if (dateFrom) query.documentDate.$gte = new Date(dateFrom);
-      if (dateTo) query.documentDate.$lte = new Date(dateTo);
-    }
-
-    // Search functionality
+    // Add search functionality
     if (search) {
       query.$or = [
         { salesOrderNumber: { $regex: search, $options: 'i' } },
-        { customerName: { $regex: search, $options: 'i' } },
         { patientName: { $regex: search, $options: 'i' } },
         { uhid: { $regex: search, $options: 'i' } }
       ];
     }
 
+    // Add filters
+    if (customer) query.customer = customer;
+    if (surgicalCategory) query.surgicalCategory = surgicalCategory;
+    if (paymentType) query.paymentType = paymentType;
+    if (status) query.status = status;
+
+    // Execute query with pagination
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
-      sort: { documentDate: -1, salesOrderNumber: -1 },
+      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
       populate: [
-        { path: 'customer', select: 'shortName legalName' },
+        { path: 'customer', select: 'shortName legalName code' },
+        { 
+          path: 'procedure', 
+          select: 'name code totalLimit currency items',
+          populate: {
+            path: 'items.surgicalCategoryId',
+            select: 'name description code'
+          }
+        },
+        { path: 'paymentType', select: 'description code' },
         { path: 'surgeon', select: 'name' },
         { path: 'consultingDoctor', select: 'name' },
-        { path: 'surgicalCategory', select: 'name' },
-        { path: 'procedure', select: 'name' },
-        { path: 'createdBy', select: 'name email' }
+        { path: 'surgicalCategory', select: 'name code description' },
+        { path: 'createdBy', select: 'name email' },
+        { path: 'updatedBy', select: 'name email' }
       ]
     };
 
     const result = await SalesOrder.paginate(query, options);
 
     res.json({
-      salesOrders: result.docs,
+      success: true,
+      data: result.docs,
       pagination: {
-        page: result.page,
-        limit: result.limit,
-        total: result.totalDocs,
+        currentPage: result.page,
         totalPages: result.totalPages,
-        hasNext: result.hasNextPage,
-        hasPrev: result.hasPrevPage
+        totalItems: result.totalDocs,
+        itemsPerPage: result.limit,
+        hasNextPage: result.hasNextPage,
+        hasPrevPage: result.hasPrevPage
       }
     });
   } catch (error) {
     console.error('Error fetching sales orders:', error);
-    res.status(500).json({ message: 'Failed to fetch sales orders' });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching sales orders',
+      error: error.message
+    });
+  }
+});
+
+// Get surgical categories for a hospital - MUST be before /:id route
+router.get('/hospital/:hospitalId/surgical-categories', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    
+    // Get hospital with populated surgical categories
+    const hospital = await Hospital.findById(hospitalId)
+      .populate('surgicalCategories', 'description code name _id')
+      .select('surgicalCategories');
+    
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: hospital.surgicalCategories || []
+    });
+  } catch (error) {
+    console.error('Error fetching surgical categories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching surgical categories',
+      error: error.message
+    });
+  }
+});
+
+// Get procedures filtered by hospital - MUST be before /:id route
+router.get('/procedures/:hospitalId', async (req, res) => {
+  try {
+    const { hospitalId } = req.params;
+    const { category, paymentType } = req.query;
+    
+    // Get hospital with surgical categories to filter procedures
+    const hospital = await Hospital.findById(hospitalId).populate('surgicalCategories');
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found'
+      });
+    }
+    
+    const hospitalCategoryIds = hospital.surgicalCategories.map(cat => cat._id.toString());
+    
+    // Build procedure filter
+    const procedureFilter = { isActive: true };
+    
+    // Filter by selected category (if specified)
+    if (category && category !== '') {
+      procedureFilter['items.surgicalCategoryId'] = category;
+    } else {
+      // If no specific category, filter by hospital's categories
+      if (hospitalCategoryIds.length > 0) {
+        procedureFilter['items.surgicalCategoryId'] = { $in: hospitalCategoryIds };
+      }
+    }
+    
+    // Filter by payment type (if specified)
+    if (paymentType && paymentType !== '') {
+      procedureFilter.paymentTypeId = paymentType;
+    }
+    
+    // Fetch procedures with population
+    const procedures = await Procedure.find(procedureFilter)
+      .populate('items.surgicalCategoryId', 'code description name')
+      .populate('paymentTypeId', 'code description')
+      .select('_id code name items paymentTypeId totalLimit')
+      .sort({ name: 1 });
+    
+    res.json({
+      success: true,
+      data: procedures
+    });
+  } catch (error) {
+    console.error('Error fetching procedures:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching procedures',
+      error: error.message
+    });
+  }
+});
+
+// Get dropdown data for sales order form - MUST be before /:id route
+router.get('/meta/dropdown-data', async (req, res) => {
+  try {
+    const [customers, doctors, categories, procedures, paymentTypes] = await Promise.all([
+      Hospital.find({ isActive: true })
+        .select('shortName legalName code stateCode customerIsHospital _id'),
+      Doctor.find({ isActive: true })
+        .select('name specialization _id'),
+      Category.find({ isActive: true })
+        .select('code description name _id'),
+      Procedure.find({ isActive: true })
+        .populate('items.surgicalCategoryId', 'code description name')
+        .select('name code items totalLimit currency _id'),
+      PaymentType.find({ isActive: true })
+        .select('code description _id')
+    ]);
+
+    res.json({
+      customers,
+      doctors,
+      categories,
+      procedures,
+      paymentTypes
+    });
+  } catch (error) {
+    console.error('Error fetching dropdown data:', error);
+    res.status(500).json({
+      customers: [],
+      doctors: [],
+      categories: [],
+      procedures: [],
+      paymentTypes: []
+    });
   }
 });
 
@@ -95,177 +217,162 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const salesOrder = await SalesOrder.findById(req.params.id)
-      .populate('customer', 'shortName legalName address gstNumber stateCode')
+      .populate('customer', 'shortName legalName code stateCode')
+      .populate({
+        path: 'procedure',
+        select: 'name code totalLimit currency items',
+        populate: {
+          path: 'items.surgicalCategoryId',
+          select: 'name description code'
+        }
+      })
+      .populate('paymentType', 'description code')
       .populate('surgeon', 'name')
       .populate('consultingDoctor', 'name')
-      .populate('surgicalCategory', 'name')
-      .populate('procedure', 'name')
-      .populate('items.material', 'materialNumber description hsnCode unit gstPercentage')
+      .populate('surgicalCategory', 'name code description')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
 
     if (!salesOrder) {
-      return res.status(404).json({ message: 'Sales order not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
     }
 
-    // Check business unit access
-    if (salesOrder.businessUnit.toString() !== req.user.businessUnit.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    res.json(salesOrder);
+    res.json({
+      success: true,
+      data: salesOrder
+    });
   } catch (error) {
     console.error('Error fetching sales order:', error);
-    res.status(500).json({ message: 'Failed to fetch sales order' });
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching sales order',
+      error: error.message
+    });
   }
 });
 
 // Create new sales order
 router.post('/', async (req, res) => {
   try {
-    const businessUnit = req.user.businessUnit;
-    if (!businessUnit) {
-      return res.status(400).json({ message: 'Business unit is required' });
+    const {
+      patientName,
+      uhid,
+      customer,
+      surgicalCategory,
+      procedure,
+      surgeon,
+      consultingDoctor,
+      paymentType,
+      items = [],
+      rounding = 0,
+      notes = '',
+      businessUnit
+    } = req.body;
+
+    // Validate required fields
+    if (!customer) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required field: customer'
+      });
     }
 
-    // Get next sales order number
-    const sequence = await SalesOrderSequence.getSequenceForBusinessUnit(businessUnit, req.user._id);
-    const salesOrderNumber = sequence.getNextNumber();
+    // Get customer details for state code and to check if hospital
+    const customerData = await Hospital.findById(customer);
+    if (!customerData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer hospital not found'
+      });
+    }
+
+    // For hospital customers, patientName, uhid, and paymentType are required
+    if (customerData.customerIsHospital) {
+      if (!patientName) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required field: patientName'
+        });
+      }
+      if (!uhid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required field: uhid'
+        });
+      }
+      if (!paymentType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required field: paymentType'
+        });
+      }
+    }
 
     // Get company details for GST calculation
     const company = await CompanyDetails.findOne({ isActive: true });
     if (!company) {
-      return res.status(400).json({ message: 'Company details not found' });
+      return res.status(400).json({
+        success: false,
+        message: 'Company details not found'
+      });
     }
 
-    // Get customer details
-    const customer = await Hospital.findById(req.body.customer);
-    if (!customer) {
-      return res.status(400).json({ message: 'Customer not found' });
-    }
+    // Get next sales order number using NumberRange model
+    const businessUnitId = businessUnit || '6767dd82b1eeccc42e09b59b'; // Default business unit
+    const createdByUser = req.user?._id || '6767dd82b1eeccc42e09b565'; // Default user
+    const salesOrderNumber = await NumberRange.getNextNumberForType(businessUnitId, 'SalesOrder', createdByUser);
 
-    // Determine GST type based on state codes
-    const gstType = company.compliance.stateCode === customer.stateCode ? 'INTRA_STATE' : 'INTER_STATE';
-
-    // Process items and calculate totals
-    let totalAmount = 0;
-    let totalDiscount = 0;
-    let totalGST = 0;
-    let totalCGST = 0;
-    let totalSGST = 0;
-    let totalIGST = 0;
-
-    const processedItems = [];
-
-    for (let i = 0; i < req.body.items.length; i++) {
-      const item = req.body.items[i];
-      
-      // Get material details
-      const material = await MaterialMaster.findById(item.material);
-      if (!material) {
-        return res.status(400).json({ message: `Material not found for item ${i + 1}` });
-      }
-
-      // Calculate item amounts
-      const quantity = parseFloat(item.quantity);
-      const unitPrice = parseFloat(item.unitPrice);
-      const discountPercentage = parseFloat(item.discountPercentage || 0);
-      
-      const basicAmount = quantity * unitPrice;
-      const discountAmount = (basicAmount * discountPercentage) / 100;
-      const discountedAmount = basicAmount - discountAmount;
-      
-      // Calculate GST
-      const gstPercentage = material.gstPercentage;
-      let cgstPercentage = 0, sgstPercentage = 0, igstPercentage = 0;
-      let cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
-      
-      if (gstType === 'INTRA_STATE') {
-        cgstPercentage = gstPercentage / 2;
-        sgstPercentage = gstPercentage / 2;
-        cgstAmount = (discountedAmount * cgstPercentage) / 100;
-        sgstAmount = (discountedAmount * sgstPercentage) / 100;
-      } else {
-        igstPercentage = gstPercentage;
-        igstAmount = (discountedAmount * igstPercentage) / 100;
-      }
-      
-      const gstAmount = cgstAmount + sgstAmount + igstAmount;
-      const lineTotal = discountedAmount + gstAmount;
-
-      const processedItem = {
-        serialNumber: i + 1,
-        material: material._id,
-        materialNumber: material.materialNumber,
-        materialDescription: material.description,
-        hsnCode: material.hsnCode,
-        unit: material.unit,
-        quantity,
-        unitPrice,
-        discountPercentage,
-        discountAmount: Math.round(discountAmount * 100) / 100,
-        gstPercentage,
-        gstAmount: Math.round(gstAmount * 100) / 100,
-        cgstPercentage,
-        cgstAmount: Math.round(cgstAmount * 100) / 100,
-        sgstPercentage,
-        sgstAmount: Math.round(sgstAmount * 100) / 100,
-        igstPercentage,
-        igstAmount: Math.round(igstAmount * 100) / 100,
-        lineTotal: Math.round(lineTotal * 100) / 100
-      };
-
-      processedItems.push(processedItem);
-
-      // Add to totals
-      totalAmount += basicAmount;
-      totalDiscount += discountAmount;
-      totalGST += gstAmount;
-      totalCGST += cgstAmount;
-      totalSGST += sgstAmount;
-      totalIGST += igstAmount;
-    }
-
-    const grandTotal = totalAmount - totalDiscount + totalGST;
-
-    // Create sales order
+    // Create sales order object
     const salesOrderData = {
-      ...req.body,
       salesOrderNumber,
-      customerName: customer.legalName,
-      customerStateCode: customer.stateCode,
-      companyStateCode: company.compliance.stateCode,
-      gstType,
-      items: processedItems,
-      totalAmount: Math.round(totalAmount * 100) / 100,
-      totalDiscount: Math.round(totalDiscount * 100) / 100,
-      totalGST: Math.round(totalGST * 100) / 100,
-      totalCGST: Math.round(totalCGST * 100) / 100,
-      totalSGST: Math.round(totalSGST * 100) / 100,
-      totalIGST: Math.round(totalIGST * 100) / 100,
-      grandTotal: Math.round(grandTotal * 100) / 100,
-      businessUnit,
-      createdBy: req.user._id
+      documentDate: new Date(),
+      patientName: patientName || '',
+      uhid: uhid || '',
+      customer,
+      surgicalCategory: surgicalCategory || undefined,
+      procedure: procedure || undefined,
+      surgeon: surgeon || undefined,
+      consultingDoctor: consultingDoctor || undefined,
+      paymentType: paymentType || undefined,
+      items,
+      rounding,
+      notes,
+      businessUnit: businessUnit || '6767dd82b1eeccc42e09b59b', // Default business unit
+      status: 'DRAFT',
+      isActive: true,
+      createdBy: req.user?._id || '6767dd82b1eeccc42e09b565', // Default user
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     const salesOrder = new SalesOrder(salesOrderData);
     await salesOrder.save();
 
-    // Increment sequence number
-    await sequence.incrementNumber();
-
     // Populate and return
     const populatedSalesOrder = await SalesOrder.findById(salesOrder._id)
-      .populate('customer', 'shortName legalName')
+      .populate('customer', 'shortName legalName code')
       .populate('surgeon', 'name')
       .populate('consultingDoctor', 'name')
-      .populate('surgicalCategory', 'name')
-      .populate('procedure', 'name');
+      .populate('surgicalCategory', 'name code')
+      .populate('procedure', 'name code');
 
-    res.status(201).json(populatedSalesOrder);
+    res.status(201).json({
+      success: true,
+      message: 'Sales order created successfully',
+      data: populatedSalesOrder
+    });
   } catch (error) {
-    console.error('Error creating sales order:', error);
-    res.status(500).json({ message: 'Failed to create sales order' });
+    console.error('❌ Error creating sales order:', error.message);
+    console.error('Error details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating sales order',
+      error: error.message,
+      details: error.errors ? Object.keys(error.errors).map(key => `${key}: ${error.errors[key].message}`) : []
+    });
   }
 });
 
@@ -275,36 +382,59 @@ router.put('/:id', async (req, res) => {
     const salesOrder = await SalesOrder.findById(req.params.id);
     
     if (!salesOrder) {
-      return res.status(404).json({ message: 'Sales order not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
     }
 
-    // Check business unit access - this should be from auth later
-    // if (salesOrder.businessUnit.toString() !== req.user.businessUnit.toString()) {
-    //   return res.status(403).json({ message: 'Access denied' });
-    // }
+    // Update allowed fields
+    const allowedFields = [
+      'patientName',
+      'uhid',
+      'surgicalCategory',
+      'procedure',
+      'surgeon',
+      'consultingDoctor',
+      'paymentType',
+      'items',
+      'rounding',
+      'notes',
+      'status'
+    ];
 
-    // Don't allow editing of confirmed or delivered orders
-    if (['CONFIRMED', 'DELIVERED'].includes(salesOrder.status)) {
-      return res.status(400).json({ message: 'Cannot edit confirmed or delivered sales orders' });
-    }
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        salesOrder[field] = req.body[field];
+      }
+    });
 
-    // Similar processing as create for items and totals calculation
-    // ... (implementation similar to create route)
+    salesOrder.updatedBy = req.user?._id || '6767dd82b1eeccc42e09b565';
+    salesOrder.updatedAt = new Date();
 
-    const updatedSalesOrder = await SalesOrder.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, updatedBy: req.user._id },
-      { new: true, runValidators: true }
-    ).populate('customer', 'shortName legalName')
-     .populate('surgeon', 'name')
-     .populate('consultingDoctor', 'name')
-     .populate('surgicalCategory', 'name')
-     .populate('procedure', 'name');
+    await salesOrder.save();
 
-    res.json(updatedSalesOrder);
+    // Populate and return
+    const populatedSalesOrder = await SalesOrder.findById(salesOrder._id)
+      .populate('customer', 'shortName legalName code')
+      .populate('surgeon', 'name')
+      .populate('surgicalCategory', 'name code')
+      .populate('procedure', 'name code')
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email');
+
+    res.json({
+      success: true,
+      message: 'Sales order updated successfully',
+      data: populatedSalesOrder
+    });
   } catch (error) {
     console.error('Error updating sales order:', error);
-    res.status(500).json({ message: 'Failed to update sales order' });
+    res.status(500).json({
+      success: false,
+      message: 'Error updating sales order',
+      error: error.message
+    });
   }
 });
 
@@ -314,207 +444,239 @@ router.delete('/:id', async (req, res) => {
     const salesOrder = await SalesOrder.findById(req.params.id);
     
     if (!salesOrder) {
-      return res.status(404).json({ message: 'Sales order not found' });
-    }
-
-    // Check business unit access
-    if (salesOrder.businessUnit.toString() !== req.user.businessUnit.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
     }
 
     // Don't allow deletion of confirmed or delivered orders
     if (['CONFIRMED', 'DELIVERED'].includes(salesOrder.status)) {
-      return res.status(400).json({ message: 'Cannot delete confirmed or delivered sales orders' });
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete confirmed or delivered sales orders'
+      });
     }
 
     salesOrder.isActive = false;
-    salesOrder.updatedBy = req.user._id;
+    salesOrder.updatedBy = req.user?._id || '6767dd82b1eeccc42e09b565';
     await salesOrder.save();
 
-    res.json({ message: 'Sales order deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting sales order:', error);
-    res.status(500).json({ message: 'Failed to delete sales order' });
-  }
-});
-
-// Get dropdown data for sales order form
-router.get('/meta/dropdown-data', async (req, res) => {
-  try {
-    // Remove businessUnit requirement since it's causing issues
-    // const businessUnit = req.user.businessUnit;
-
-    const [customers, doctors, categories, procedures, materials, paymentTypes] = await Promise.all([
-      Hospital.find({ isActive: true })
-        .populate('surgicalCategories', 'code description')
-        .select('shortName legalName stateCode discountAllowed customerIsHospital surgicalCategories'),
-      Doctor.find({ isActive: true }).select('name specialization'),
-      Category.find({ isActive: true }).select('code description'),
-      Procedure.find({ isActive: true })
-        .populate('items.surgicalCategoryId', 'code description')
-        .populate('paymentTypeId', 'code description')
-        .select('name items paymentTypeId totalLimit'),
-      MaterialMaster.find({ isActive: true }).select('materialNumber description hsnCode unit institutionalPrice gstPercentage'),
-      PaymentType.find({ isActive: true }).select('code description')
-    ]);
-
     res.json({
-      customers,
-      doctors,
-      categories,
-      procedures,
-      materials,
-      paymentTypes
+      success: true,
+      message: 'Sales order deleted successfully'
     });
   } catch (error) {
-    console.error('Error fetching dropdown data:', error);
-    res.status(500).json({ message: 'Failed to fetch dropdown data' });
+    console.error('Error deleting sales order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting sales order',
+      error: error.message
+    });
   }
 });
 
-// Get filtered doctors by customer
-router.get('/meta/doctors/:customerId', async (req, res) => {
+// Add item to sales order
+router.post('/:id/items', async (req, res) => {
   try {
-    const { customerId } = req.params;
+    const salesOrder = await SalesOrder.findById(req.params.id);
     
-    // Get doctor assignments for this customer
-    const assignments = await DoctorAssignment.find({ 
-      hospital: customerId, 
-      isActive: true 
-    })
-      .populate('doctor', 'name specialization')
-      .select('doctor');
-      
-    const doctors = assignments.map(assignment => assignment.doctor).filter(doctor => doctor);
-    
-    res.json({ doctors });
-  } catch (error) {
-    console.error('Error fetching filtered doctors:', error);
-    res.status(500).json({ message: 'Failed to fetch filtered doctors' });
-  }
-});
-
-// Get filtered doctors by customer and surgical category
-router.get('/meta/doctors/:customerId/:surgicalCategoryId', async (req, res) => {
-  try {
-    const { customerId, surgicalCategoryId } = req.params;
-    
-    // Get doctor assignments for this customer and surgical category
-    const query = { hospital: customerId, isActive: true };
-    if (surgicalCategoryId && surgicalCategoryId !== 'undefined' && surgicalCategoryId !== 'null') {
-      query.surgicalCategory = surgicalCategoryId;
-    }
-    
-    const assignments = await DoctorAssignment.find(query)
-      .populate('doctor', 'name specialization')
-      .select('doctor');
-      
-    const doctors = assignments.map(assignment => assignment.doctor).filter(doctor => doctor);
-    
-    res.json({ doctors });
-  } catch (error) {
-    console.error('Error fetching filtered doctors:', error);
-    res.status(500).json({ message: 'Failed to fetch filtered doctors' });
-  }
-});
-
-// Get procedures by payment type
-router.get('/meta/procedures/:paymentTypeId', async (req, res) => {
-  try {
-    const { paymentTypeId } = req.params;
-    
-    const procedures = await Procedure.find({ 
-      paymentTypes: paymentTypeId,
-      isActive: true 
-    }).select('name category');
-    
-    res.json({ procedures });
-  } catch (error) {
-    console.error('Error fetching filtered procedures:', error);
-    res.status(500).json({ message: 'Failed to fetch filtered procedures' });
-  }
-});
-
-// Get materials by customer (for price filtering)
-router.get('/meta/materials/:customerId', async (req, res) => {
-  try {
-    const customer = await Hospital.findById(req.params.customerId)
-      .populate('materialAssignments.material', 'materialNumber description hsnCode unit gstPercentage');
-
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+    if (!salesOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
     }
 
-    // Return assigned materials with custom pricing if available
-    const materials = customer.materialAssignments
-      .filter(assignment => assignment.isActive)
-      .map(assignment => ({
-        ...assignment.material.toObject(),
-        institutionalPrice: assignment.institutionalPrice,
-        customPricing: true
-      }));
+    if (salesOrder.status !== 'DRAFT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only add items to DRAFT sales orders'
+      });
+    }
 
-    // Also include all other materials with default pricing
-    const assignedMaterialIds = materials.map(m => m._id.toString());
-    const otherMaterials = await MaterialMaster.find({
-      isActive: true,
-      _id: { $nin: assignedMaterialIds }
-    }).select('materialNumber description hsnCode unit institutionalPrice gstPercentage');
+    const {
+      materialNumber,
+      materialDescription,
+      hsnCode,
+      unitRate,
+      gstPercentage,
+      quantity,
+      unit,
+      discountPercentage = 0,
+      discountAmount = 0
+    } = req.body;
 
-    const allMaterials = [
-      ...materials,
-      ...otherMaterials.map(m => ({ ...m.toObject(), customPricing: false }))
-    ];
+    // Calculate total amount
+    const baseAmount = unitRate * quantity;
+    const discount = discountAmount || ((baseAmount * discountPercentage) / 100);
+    const amountAfterDiscount = baseAmount - discount;
+    const gstAmount = (amountAfterDiscount * gstPercentage) / 100;
+    const totalAmount = amountAfterDiscount + gstAmount;
 
-    res.json({ materials: allMaterials, discountAllowed: customer.discountAllowed });
+    const newItem = {
+      serialNumber: (salesOrder.items?.length || 0) + 1,
+      materialNumber,
+      materialDescription,
+      hsnCode,
+      unitRate: Math.round(unitRate * 100) / 100,
+      gstPercentage: Math.round(gstPercentage * 100) / 100,
+      quantity: Math.round(quantity * 100) / 100,
+      unit,
+      discountPercentage: Math.round(discountPercentage * 100) / 100,
+      discountAmount: Math.round(discount * 100) / 100,
+      totalAmount: Math.round(totalAmount * 100) / 100,
+      gstAmount: Math.round(gstAmount * 100) / 100,
+      cgstAmount: 0,
+      sgstAmount: 0,
+      igstAmount: 0,
+      currency: 'INR'
+    };
+
+    salesOrder.items.push(newItem);
+    await salesOrder.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Item added successfully',
+      data: salesOrder
+    });
   } catch (error) {
-    console.error('Error fetching customer materials:', error);
-    res.status(500).json({ message: 'Failed to fetch customer materials' });
+    console.error('Error adding item:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding item',
+      error: error.message
+    });
   }
 });
 
-// Sales order sequence management routes
-
-// Get current sequence for business unit
-router.get('/meta/sequence', async (req, res) => {
+// Update item in sales order
+router.put('/:id/items/:itemIndex', async (req, res) => {
   try {
-    const businessUnit = req.user.businessUnit;
-    const sequence = await SalesOrderSequence.getSequenceForBusinessUnit(businessUnit, req.user._id);
-    res.json(sequence);
+    const { id, itemIndex } = req.params;
+    const salesOrder = await SalesOrder.findById(id);
+    
+    if (!salesOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
+    }
+
+    if (salesOrder.status !== 'DRAFT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only update items in DRAFT sales orders'
+      });
+    }
+
+    const idx = parseInt(itemIndex);
+    if (idx < 0 || idx >= salesOrder.items.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid item index'
+      });
+    }
+
+    const item = salesOrder.items[idx];
+    const {
+      materialNumber,
+      materialDescription,
+      hsnCode,
+      unitRate,
+      gstPercentage,
+      quantity,
+      unit,
+      discountPercentage = 0,
+      discountAmount = 0
+    } = req.body;
+
+    // Recalculate totals
+    const baseAmount = unitRate * quantity;
+    const discount = discountAmount || ((baseAmount * discountPercentage) / 100);
+    const amountAfterDiscount = baseAmount - discount;
+    const gstAmount = (amountAfterDiscount * gstPercentage) / 100;
+    const totalAmount = amountAfterDiscount + gstAmount;
+
+    item.materialNumber = materialNumber;
+    item.materialDescription = materialDescription;
+    item.hsnCode = hsnCode;
+    item.unitRate = Math.round(unitRate * 100) / 100;
+    item.gstPercentage = Math.round(gstPercentage * 100) / 100;
+    item.quantity = Math.round(quantity * 100) / 100;
+    item.unit = unit;
+    item.discountPercentage = Math.round(discountPercentage * 100) / 100;
+    item.discountAmount = Math.round(discount * 100) / 100;
+    item.totalAmount = Math.round(totalAmount * 100) / 100;
+    item.gstAmount = Math.round(gstAmount * 100) / 100;
+
+    await salesOrder.save();
+
+    res.json({
+      success: true,
+      message: 'Item updated successfully',
+      data: salesOrder
+    });
   } catch (error) {
-    console.error('Error fetching sequence:', error);
-    res.status(500).json({ message: 'Failed to fetch sequence' });
+    console.error('Error updating item:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating item',
+      error: error.message
+    });
   }
 });
 
-// Update sequence number
-router.put('/meta/sequence', async (req, res) => {
+// Delete item from sales order
+router.delete('/:id/items/:itemIndex', async (req, res) => {
   try {
-    const businessUnit = req.user.businessUnit;
-    const { currentNumber } = req.body;
-
-    if (!currentNumber || currentNumber < 1) {
-      return res.status(400).json({ message: 'Invalid sequence number' });
+    const { id, itemIndex } = req.params;
+    const salesOrder = await SalesOrder.findById(id);
+    
+    if (!salesOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sales order not found'
+      });
     }
 
-    const sequence = await SalesOrderSequence.findOneAndUpdate(
-      { businessUnit, isActive: true },
-      { 
-        currentNumber: parseInt(currentNumber),
-        updatedBy: req.user._id,
-        updatedAt: new Date()
-      },
-      { new: true }
-    );
-
-    if (!sequence) {
-      return res.status(404).json({ message: 'Sequence not found' });
+    if (salesOrder.status !== 'DRAFT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only delete items from DRAFT sales orders'
+      });
     }
 
-    res.json(sequence);
+    const idx = parseInt(itemIndex);
+    if (idx < 0 || idx >= salesOrder.items.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid item index'
+      });
+    }
+
+    salesOrder.items.splice(idx, 1);
+
+    // Renumber remaining items
+    salesOrder.items.forEach((item, index) => {
+      item.serialNumber = index + 1;
+    });
+
+    await salesOrder.save();
+
+    res.json({
+      success: true,
+      message: 'Item deleted successfully',
+      data: salesOrder
+    });
   } catch (error) {
-    console.error('Error updating sequence:', error);
-    res.status(500).json({ message: 'Failed to update sequence' });
+    console.error('Error deleting item:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting item',
+      error: error.message
+    });
   }
 });
 

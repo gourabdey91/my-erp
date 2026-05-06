@@ -9,7 +9,7 @@ const numberRangeSchema = new mongoose.Schema({
   documentType: {
     type: String,
     required: [true, 'Document type is required'],
-    enum: ['Inquiry', 'SalesOrder', 'Billing', 'CreditNote', 'PurchaseOrder', 'Invoice']
+    enum: ['Inquiry', 'SalesOrder', 'Billing', 'CreditNote', 'PurchaseOrder', 'Invoice', 'Procedure']
   },
   prefix: {
     type: String,
@@ -118,7 +118,8 @@ numberRangeSchema.statics.getOrCreateRange = async function(businessUnitId, docu
       'Billing': { prefix: 'CINV', paddingLength: 6, startingNumber: 100000 },
       'CreditNote': { prefix: 'CN', paddingLength: 7, startingNumber: 1000000 },
       'PurchaseOrder': { prefix: 'PO', paddingLength: 8, startingNumber: 5000000 },
-      'Invoice': { prefix: 'INV', paddingLength: 8, startingNumber: 1000000 }
+      'Invoice': { prefix: 'INV', paddingLength: 8, startingNumber: 1000000 },
+      'Procedure': { prefix: 'PRO', paddingLength: 5, startingNumber: 1 }
     };
 
     const config = defaults[documentType] || { prefix: documentType.substring(0, 3).toUpperCase(), paddingLength: 8, startingNumber: 0 };
@@ -155,7 +156,8 @@ numberRangeSchema.statics.getNextNumberForType = async function(businessUnitId, 
     'Billing': { prefix: 'CINV', paddingLength: 6, startingNumber: 100000 },
     'CreditNote': { prefix: 'CN', paddingLength: 7, startingNumber: 1000000 },
     'PurchaseOrder': { prefix: 'PO', paddingLength: 8, startingNumber: 5000000 },
-    'Invoice': { prefix: 'INV', paddingLength: 8, startingNumber: 1000000 }
+    'Invoice': { prefix: 'INV', paddingLength: 8, startingNumber: 1000000 },
+    'Procedure': { prefix: 'PRO', paddingLength: 5, startingNumber: 1 }
   };
   const typeDefaults = defaults[documentType] || { prefix: documentType.substring(0, 3).toUpperCase(), paddingLength: 8, startingNumber: 0 };
 
